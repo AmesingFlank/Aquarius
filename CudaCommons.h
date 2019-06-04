@@ -154,7 +154,7 @@ inline GLFWwindow* createWindowOpenGL(int screenWidth,int screenHeight){
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
-    window = glfwCreateWindow(screenWidth, screenHeight, "Viral", nullptr, nullptr);
+    window = glfwCreateWindow(screenWidth, screenHeight, "Aquarius", nullptr, nullptr);
     glewExperimental = GL_TRUE;
     if (!window )
     {

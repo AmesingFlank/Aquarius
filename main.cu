@@ -1,6 +1,9 @@
 #include <iostream>
 #include <thrust/device_vector.h>
 #include "CudaCommons.h"
+#include <chrono>
+#include <thread>
+
 
 #include "PCG.h"
 #include "Quad.h"
@@ -156,6 +159,9 @@ int main( void ) {
     initCuda();
     //kernalTest();
     //pcgTest(); return 0;
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+
     GLFWwindow* window = createWindowOpenGL(1024,512);
 
     Fluid2D fluid;
