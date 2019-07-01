@@ -2,8 +2,8 @@
 // Created by AmesingFlank on 2019-04-16.
 //
 
-#ifndef AQUARIUS_FLUID_H
-#define AQUARIUS_FLUID_H
+#ifndef AQUARIUS_FLUID_2D_SEMILAGRANGE_H
+#define AQUARIUS_FLUID_2D_SEMILAGRANGE_H
 
 #include "MAC_Grid.h"
 #include "PCG.h"
@@ -21,7 +21,7 @@ struct PressureEquation{
     int y;
 };
 
-class Fluid2D{
+class Fluid_2D_SemiLagrange{
 public:
     const int sizeX = 256;
     const int sizeY = 128;
@@ -33,7 +33,7 @@ public:
 
     GLuint texture;
 
-    Fluid2D(){
+    Fluid_2D_SemiLagrange(){
         init();
         initTexture();
     }
@@ -372,7 +372,7 @@ public:
         }
 
         //solve the pressure equation
-        double *result_device = solveSPD3(A,R,f_host,n);
+        double *result_device = solveSPD4(A,R,f_host,n);
 
         double *result_host = new double[n];
         HANDLE_ERROR(cudaMemcpy(result_host, result_device, n * sizeof(*result_host), cudaMemcpyDeviceToHost));
@@ -586,4 +586,4 @@ public:
 
 };
 
-#endif //AQUARIUS_FLUID_H
+#endif //AQUARIUS_FLUID_2D_SEMILAGRANGE_H

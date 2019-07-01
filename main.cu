@@ -7,7 +7,7 @@
 
 #include "PCG.h"
 #include "Quad.h"
-#include "Fluid.h"
+#include "Fluid_2D_SemiLagrange.h"
 
 /*
 __global__ void add( int a, int b, int *c ) {
@@ -160,11 +160,11 @@ int main( void ) {
     //kernalTest();
     //pcgTest(); return 0;
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
     GLFWwindow* window = createWindowOpenGL(1024,512);
 
-    Fluid2D fluid;
+    Fluid_2D_SemiLagrange fluid;
     Quad quad;
 
     double framesSinceLast = 0;
