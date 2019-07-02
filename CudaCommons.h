@@ -85,10 +85,25 @@ static void HandleError( cusparseStatus_t err,const char *file,int line ) {
 }
 static void HandleError( cusolverStatus_t  err,const char *file,int line ) {
     if (err != CUSPARSE_STATUS_SUCCESS) {
-        printf( "CUSPARSE error: %s in %s at line %d\n", cusolverGetErrorString( err ), file, line );
+        printf( "CUSOLVER error: %s in %s at line %d\n", cusolverGetErrorString( err ), file, line );
         exit( EXIT_FAILURE );
     }
 }
+inline void __getLastCudaError(const char *errorMessage, const char *file, const int line)
+{
+    cudaError_t err = cudaGetLastError();
+
+    if (cudaSuccess != err)
+    {
+        fprintf(stderr, "%s(%i) : getLastCudaError() CUDA error : %s : (%d) %s.\n",
+                file, line, errorMessage, (int)err, cudaGetErrorString(err));
+        cudaDeviceReset();
+        exit(EXIT_FAILURE);
+    }
+}
+// This will output the proper error string when calling cudaGetLastError
+#define CHECK_CUDA_ERROR(msg) __getLastCudaError (msg, __FILE__, __LINE__)
+
 #define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
 
 

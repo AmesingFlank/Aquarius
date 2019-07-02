@@ -8,6 +8,7 @@
 #include "PCG.h"
 #include "Quad.h"
 #include "Fluid_2D_SemiLagrange.h"
+#include "Fluid_2D_PCISPH.cuh"
 
 /*
 __global__ void add( int a, int b, int *c ) {
@@ -161,6 +162,9 @@ int main( void ) {
     //pcgTest(); return 0;
 
     //std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+
+    Fluid_2D_PCISPH f;
+    f.performSpatialHashing();
 
     GLFWwindow* window = createWindowOpenGL(1024,512);
 

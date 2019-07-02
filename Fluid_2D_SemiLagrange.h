@@ -372,7 +372,7 @@ public:
         }
 
         //solve the pressure equation
-        double *result_device = solveSPD4(A,R,f_host,n);
+        double *result_device = solveSPD3(A,R,f_host,n);
 
         double *result_host = new double[n];
         HANDLE_ERROR(cudaMemcpy(result_host, result_device, n * sizeof(*result_host), cudaMemcpyDeviceToHost));
