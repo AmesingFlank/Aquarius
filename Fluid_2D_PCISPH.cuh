@@ -9,6 +9,7 @@
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 #include <iostream>
+#include "WeightKernels.h"
 
 __global__ struct Particle{
     float2 position;
