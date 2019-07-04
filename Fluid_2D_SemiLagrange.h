@@ -6,10 +6,11 @@
 #define AQUARIUS_FLUID_2D_SEMILAGRANGE_H
 
 #include "MAC_Grid.h"
-#include "PCG.h"
+#include "SPD_Solver.h"
 #include <vector>
 #include <utility>
 #include "CudaCommons.h"
+#include "Fluid_2D.h"
 #include <unordered_map>
 
 struct PressureEquation{
@@ -21,7 +22,7 @@ struct PressureEquation{
     int y;
 };
 
-class Fluid_2D_SemiLagrange{
+class Fluid_2D_SemiLagrange:public Fluid_2D{
 public:
     const int sizeX = 256;
     const int sizeY = 128;
@@ -31,11 +32,9 @@ public:
     MAC_Grid_2D grid = MAC_Grid_2D(sizeX,sizeY,cellPhysicalSize);
     std::vector<float3> particles;
 
-    GLuint texture;
 
     Fluid_2D_SemiLagrange(){
         init();
-        initTexture();
     }
 
     void simulationStep(float totalTime){
@@ -495,17 +494,9 @@ public:
     }
 
 
-    void initTexture(){
-        glGenTextures(1,&texture);
-        glBindTexture(GL_TEXTURE_2D,texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glBindTexture(GL_TEXTURE_2D, 0);
-    }
 
-    void updateTexture(){
+
+    virtual void updateTexture()override {
         printGLError();
         glBindTexture(GL_TEXTURE_2D,texture);
         unsigned char* image = (unsigned char*) malloc(sizeX*sizeY*4);

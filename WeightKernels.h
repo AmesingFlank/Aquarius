@@ -7,6 +7,7 @@
 
 #include <math.h>
 
+__host__ __device__
 float poly6(float3 v,float h){
     float r = length(v);
     if(0<=r && r<=h){
@@ -17,6 +18,7 @@ float poly6(float3 v,float h){
     }
 }
 
+__host__ __device__
 float poly6(float2 v,float h){
     float r = length(v);
     if(0<=r && r<=h){
@@ -28,6 +30,8 @@ float poly6(float2 v,float h){
 }
 
 // the grad/laplacian of the poly6 are not used, due to the kernel having 0 gradient at center
+
+__host__ __device__
 float3 poly6_grad(float3 v,float h){
     float r = length(v);
     if(0<=r && r<=h){
@@ -38,6 +42,7 @@ float3 poly6_grad(float3 v,float h){
     }
 }
 
+__host__ __device__
 float poly6_laplacian(float3 v,float h){
     float r = length(v);
     if(0<=r && r<=h){
@@ -50,6 +55,7 @@ float poly6_laplacian(float3 v,float h){
 }
 
 
+__host__ __device__
 float2 poly6_grad(float2 v,float h){
     float r = length(v);
     if(0<=r && r<=h){
@@ -60,6 +66,7 @@ float2 poly6_grad(float2 v,float h){
     }
 }
 
+__host__ __device__
 float spikey(float3 v,float h){
     float r = length(v);
     if(0<=r && r<=h){
@@ -70,6 +77,7 @@ float spikey(float3 v,float h){
     }
 }
 
+__host__ __device__
 float spikey(float2 v,float h){
     float r = length(v);
     if(0<=r && r<=h){
@@ -80,6 +88,7 @@ float spikey(float2 v,float h){
     }
 }
 
+__host__ __device__
 float3 spikey_grad(float3 v,float h){
     float r = length(v);
     if(0<=r && r<=h){
@@ -90,6 +99,7 @@ float3 spikey_grad(float3 v,float h){
     }
 }
 
+__host__ __device__
 float2 spikey_grad(float2 v,float h){
     float r = length(v);
     if(0<=r && r<=h){
@@ -103,6 +113,7 @@ float2 spikey_grad(float2 v,float h){
 
 // unused if solving Euler equation. Used of N-S equation
 
+__host__ __device__
 float viscosity(float3 v,float h){
     float r = length(v);
     if(0<=r && r<=h){
@@ -114,6 +125,7 @@ float viscosity(float3 v,float h){
 }
 
 
+__host__ __device__
 float viscosity(float2 v,float h){
     float r = length(v);
     if(0<=r && r<=h){
@@ -124,6 +136,7 @@ float viscosity(float2 v,float h){
     }
 }
 
+__host__ __device__
 float viscosity_laplacian(float3 v,float h){
     float r = length(v);
     if(0<=r && r<=h){
@@ -135,6 +148,7 @@ float viscosity_laplacian(float3 v,float h){
 }
 
 
+__host__ __device__
 float viscosity_laplacian(float2 v,float h){
     float r = length(v);
     if(0<=r && r<=h){

@@ -5,7 +5,7 @@
 #include <math.h>
 
 
-#include "PCG.h"
+#include "SPD_Solver.h"
 #include "Quad.h"
 #include "Fluid_2D_SemiLagrange.h"
 #include "Fluid_2D_PCISPH.cuh"
@@ -165,12 +165,10 @@ int main( void ) {
     //std::this_thread::sleep_for(std::chrono::milliseconds(10000));
 
 
-    Fluid_2D_PCISPH f;
-    f.performSpatialHashing();
-
     GLFWwindow* window = createWindowOpenGL(1024,512);
 
-    Fluid_2D_SemiLagrange fluid;
+
+    Fluid_2D_PCISPH fluid;
     Quad quad;
 
     double framesSinceLast = 0;

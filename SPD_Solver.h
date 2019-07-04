@@ -2,8 +2,8 @@
 // Created by AmesingFlank on 2019-04-20.
 //
 
-#ifndef AQUARIUS_PCG_H
-#define AQUARIUS_PCG_H
+#ifndef AQUARIUS_SPD_SOLVER_H
+#define AQUARIUS_SPD_SOLVER_H
 
 #include "CudaCommons.h"
 #include <iostream>
@@ -434,4 +434,4 @@ inline double* solveSPD(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_ho
 
 }
 
-#endif //AQUARIUS_PCG_H
+#endif //AQUARIUS_SPD_SOLVER_H
