@@ -91,8 +91,12 @@ float spikey(float2 v,float h){
 __host__ __device__
 float3 spikey_grad(float3 v,float h){
     float r = length(v);
+    float3 v_unit = v;
+    if(r!=0){
+        v_unit/=r;
+    }
     if(0<=r && r<=h){
-        return v*pow(h-r,2)*45/(M_PI*pow(h,6)*r);
+        return -v_unit * pow(h-r,2)*45/(M_PI*pow(h,6));
     }
     else{
         return make_float3(0,0,0);
@@ -102,8 +106,12 @@ float3 spikey_grad(float3 v,float h){
 __host__ __device__
 float2 spikey_grad(float2 v,float h){
     float r = length(v);
+    float2 v_unit = v;
+    if(r!=0){
+        v_unit/=r;
+    }
     if(0<=r && r<=h){
-        return v*pow(h-r,2)*30/(M_PI*pow(h,5)*r);
+        return -v_unit*pow(h-r,2)*30/(M_PI*pow(h,5));
     }
     else{
         return make_float2(0,0);

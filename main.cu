@@ -157,8 +157,13 @@ cusparseHandle_t cusparseHandle;
 cusolverSpHandle_t cusolverSpHandle;
 AMGX_resources_handle amgxResource;
 
+
+
+
 int main( void ) {
     initCuda();
+    //printIndex<<<16,16>>>();
+    //return 0;
     //kernalTest();
     //pcgTest(); return 0;
 
@@ -203,6 +208,8 @@ int main( void ) {
         printGLError();
         glfwPollEvents();
         glfwSwapBuffers(window);
+
+        //break;
     }
 
     std::cout<<"finished everything"<<std::endl;

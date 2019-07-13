@@ -14,6 +14,9 @@
 #include <GLFW/glfw3.h>
 #include <amgx_c.h>
 
+#include <curand.h>
+#include <curand_kernel.h>
+
 inline const char* cublasGetErrorString(cublasStatus_t status)
 {
     switch(status)
@@ -91,6 +94,7 @@ static void HandleError( cusolverStatus_t  err,const char *file,int line ) {
 }
 inline void __getLastCudaError(const char *errorMessage, const char *file, const int line)
 {
+    cudaDeviceSynchronize();
     cudaError_t err = cudaGetLastError();
 
     if (cudaSuccess != err)
@@ -104,7 +108,9 @@ inline void __getLastCudaError(const char *errorMessage, const char *file, const
 // This will output the proper error string when calling cudaGetLastError
 #define CHECK_CUDA_ERROR(msg) __getLastCudaError (msg, __FILE__, __LINE__)
 
-#define HANDLE_ERROR( err ) (HandleError( err, __FILE__, __LINE__ ))
+#define HANDLE_ERROR( err ) \
+    cudaDeviceSynchronize(); \
+    HandleError( err, __FILE__, __LINE__ )
 
 
 #define HANDLE_NULL( a ) {if (a == NULL) { \
