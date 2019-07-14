@@ -3,7 +3,7 @@ project(Aquarius)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(Aquarius main.cu CudaCommons.h MAC_Grid.h Fluid_2D_SemiLagrange.h SPD_Solver.h Shader.h Quad.h Fluid_2D_PCISPH.cuh WeightKernels.h Fluid_2D.h)
+add_executable(Aquarius main.cu CudaCommons.h MAC_Grid_2D.h Fluid_2D_SemiLagrange.h SPD_Solver.h Shader.h Quad.h Fluid_2D_PCISPH.cuh WeightKernels.h Fluid_2D.h)
 
 
 

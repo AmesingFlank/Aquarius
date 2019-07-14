@@ -5,7 +5,7 @@
 #ifndef AQUARIUS_FLUID_2D_SEMILAGRANGE_H
 #define AQUARIUS_FLUID_2D_SEMILAGRANGE_H
 
-#include "MAC_Grid.h"
+#include "MAC_Grid_2D.h"
 #include "SPD_Solver.h"
 #include <vector>
 #include <utility>
@@ -56,7 +56,7 @@ public:
                 Cell2D thisCell = grid.cells[x][y];
                 Cell2D rightCell = grid.cells[x+1][y];
                 Cell2D upCell = grid.cells[x][y+1];
-                float div = (thisCell.uY - upCell.uY + thisCell.uX - rightCell.uX);
+                float div = (thisCell.velocity.y - upCell.velocity.y + thisCell.velocity.x - rightCell.velocity.x);
                 if(abs(div)>0.01)
                     std::cout<<x<<" "<<y<<"     divergence: "<<div<<std::endl;
             }
@@ -73,8 +73,8 @@ public:
         //set everything to air first
         for (int y = 0; y <=sizeY ; ++y) {
             for (int x = 0; x <=sizeX ; ++x) {
-                grid.cells[x][y].uX = 0;
-                grid.cells[x][y].uY = 0;
+                grid.cells[x][y].velocity.x = 0;
+                grid.cells[x][y].velocity.y = 0;
                 grid.cells[x][y].content = CONTENT_AIR;
             }
         }
@@ -95,13 +95,12 @@ public:
                 float2 midVelocity = grid.getPointVelocity(midPos.x,midPos.y);
                 float2 sourcePos = thisPos - midVelocity*timeStep;
                 float2 sourceVelocity = grid.getPointVelocity(sourcePos.x,sourcePos.y);
-                grid.cells[x][y].uX_new = sourceVelocity.x;
-                grid.cells[x][y].uY_new = sourceVelocity.y;
+                grid.cells[x][y].newVelocity = sourceVelocity;
                 if(y+1 <= sizeY && grid.cells[x][y+1].content == CONTENT_AIR){
-                    grid.cells[x][y+1].uY_new = sourceVelocity.y;
+                    grid.cells[x][y+1].newVelocity.y = sourceVelocity.y;
                 }
                 if(x+1 <= sizeX && grid.cells[x+1][y].content == CONTENT_AIR){
-                    grid.cells[x+1][y].uX_new = sourceVelocity.x;
+                    grid.cells[x+1][y].newVelocity.x = sourceVelocity.x;
                 }
             }
         }
@@ -145,12 +144,12 @@ public:
         for (int y = 0; y <sizeY ; ++y) {
             for (int x = 0; x <sizeX ; ++x) {
                 if(grid.cells[x][y].content==CONTENT_FLUID){
-                    grid.cells[x][y].uY -= gravitationalAcceleration*timeStep;
-                    if(grid.cells[x][y+1].content == CONTENT_AIR) grid.cells[x][y+1].uY -= gravitationalAcceleration*timeStep;
+                    grid.cells[x][y].velocity.y -= gravitationalAcceleration*timeStep;
+                    if(grid.cells[x][y+1].content == CONTENT_AIR) grid.cells[x][y+1].velocity.y -= gravitationalAcceleration*timeStep;
                 }
                 else if(grid.cells[x][y].content==CONTENT_AIR){
-                    //if( x-1 >0 && grid.cells[x-1][y].content == CONTENT_AIR) grid.cells[x][y].uX = 0;
-                    //if( y-1 >0 && grid.cells[x][y-1].content == CONTENT_AIR) grid.cells[x][y].uY = 0;
+                    //if( x-1 >0 && grid.cells[x-1][y].content == CONTENT_AIR) grid.cells[x][y].velocity.x = 0;
+                    //if( y-1 >0 && grid.cells[x][y-1].content == CONTENT_AIR) grid.cells[x][y].velocity.y = 0;
                 }
             }
         }
@@ -158,15 +157,15 @@ public:
 
     void fixBoundary(){
         for (int y = 0; y <= sizeY ; ++y) {
-            grid.cells[0][y].uX = 0;
-            grid.cells[sizeX][y].uX = 0;
+            grid.cells[0][y].velocity.x = 0;
+            grid.cells[sizeX][y].velocity.x = 0;
             grid.cells[0][y].hasVelocityX = true;
             grid.cells[sizeX][y].hasVelocityX = true;
             grid.cells[sizeX][y].content = CONTENT_SOLID;
         }
         for (int x = 0; x <= sizeX ; ++x) {
-            grid.cells[x][0].uY = 0;
-            //grid.cells[x][sizeY].uY = 0;
+            grid.cells[x][0].velocity.y = 0;
+            //grid.cells[x][sizeY].velocity.y = 0;
             grid.cells[x][0].hasVelocityY = true;
             grid.cells[x][sizeY].hasVelocityY = true;
             grid.cells[x][sizeY].content = CONTENT_AIR;
@@ -211,14 +210,14 @@ public:
                 Cell2D upCell = grid.cells[x][y+1];
 
                 PressureEquation thisEquation;
-                float RHS = (thisCell.uY-upCell.uY + thisCell.uX-rightCell.uX);
+                float RHS = (thisCell.velocity.y-upCell.velocity.y + thisCell.velocity.x-rightCell.velocity.x);
 
                 float centerCoeff = temp*4;
 
-                float leftCoeff = getNeibourCoefficient(x-1,y,temp,thisCell.uX,centerCoeff,RHS);
-                float rightCoeff = getNeibourCoefficient(x+1,y,temp,rightCell.uX,centerCoeff,RHS);
-                float downCoeff = getNeibourCoefficient(x,y-1,temp,thisCell.uY,centerCoeff,RHS);
-                float upCoeff = getNeibourCoefficient(x,y+1,temp,upCell.uY,centerCoeff,RHS);
+                float leftCoeff = getNeibourCoefficient(x-1,y,temp,thisCell.velocity.x,centerCoeff,RHS);
+                float rightCoeff = getNeibourCoefficient(x+1,y,temp,rightCell.velocity.x,centerCoeff,RHS);
+                float downCoeff = getNeibourCoefficient(x,y-1,temp,thisCell.velocity.y,centerCoeff,RHS);
+                float upCoeff = getNeibourCoefficient(x,y+1,temp,upCell.velocity.y,centerCoeff,RHS);
 
                 if(downCoeff){
                     Cell2D downCell = grid.cells[x][y-1];
@@ -266,7 +265,7 @@ public:
         int n = equations.size();
 
 
-        
+
         //construct the matrix of the linear equations
         int nnz_A = nnz;
         double* A_host = (double*) malloc(nnz_A* sizeof(*A_host));
@@ -325,7 +324,7 @@ public:
         cusparseSetMatType(descrA, CUSPARSE_MATRIX_TYPE_GENERAL);
         cusparseSetMatDiagType(descrA, CUSPARSE_DIAG_TYPE_NON_UNIT);
         cusparseSetMatIndexBase(descrA, CUSPARSE_INDEX_BASE_ZERO);
-        
+
         SparseMatrixCSR A(n,n,A_device,A_rowPtr_device,A_colInd_device,descrA,nnz_A);
 
         double *R_device;
@@ -395,15 +394,15 @@ public:
                 if(x>0){
                     Cell2D leftCell = grid.cells[x-1][y];
                     if(thisCell.content==CONTENT_FLUID || leftCell.content==CONTENT_FLUID){
-                        float uX = thisCell.uX - temp* (thisCell.pressure-leftCell.pressure);
-                        thisCell.uX = uX;
+                        float uX = thisCell.velocity.x - temp* (thisCell.pressure-leftCell.pressure);
+                        thisCell.velocity.x = uX;
                     }
                 }
                 if(y>0){
                     Cell2D downCell = grid.cells[x][y-1];
                     if(thisCell.content==CONTENT_FLUID || downCell.content==CONTENT_FLUID){
-                        float uY = thisCell.uY - temp* (thisCell.pressure-downCell.pressure);
-                        thisCell.uY = uY;
+                        float uY = thisCell.velocity.y - temp* (thisCell.pressure-downCell.pressure);
+                        thisCell.velocity.y = uY;
                     }
                 }
 
@@ -439,7 +438,7 @@ public:
                 if(x>0){
                     Cell2D leftCell = grid.cells[x-1][y];
                     if(thisCell.content==CONTENT_FLUID || leftCell.content==CONTENT_FLUID){
-                        float uX = thisCell.uX;
+                        float uX = thisCell.velocity.x;
                         maxSpeed = max(maxSpeed,abs(uX)*2);
                         thisCell.hasVelocityX = true;
                     }
@@ -447,7 +446,7 @@ public:
                 if(y>0){
                     Cell2D downCell = grid.cells[x][y-1];
                     if(thisCell.content==CONTENT_FLUID || downCell.content==CONTENT_FLUID){
-                        float uY = thisCell.uY;
+                        float uY = thisCell.velocity.y;
                         maxSpeed = max(maxSpeed,abs(uY)*2);
                         thisCell.hasVelocityY = true;
                     }
@@ -461,31 +460,31 @@ public:
             for (int y = 0; y < sizeY ; ++y) {
                 for (int x = 0; x < sizeX; ++x) {
                     Cell2D& thisCell = grid.cells[x][y];
-                    float uX = thisCell.uX;
-                    float uY = thisCell.uY;
+                    float uX = thisCell.velocity.x;
+                    float uY = thisCell.velocity.y;
                     const float epsilon = 1e-6;
                     if(x>0){
                         Cell2D& leftCell = grid.cells[x-1][y];
                         if(leftCell.content!=CONTENT_FLUID && !leftCell.hasVelocityX && thisCell.hasVelocityX && uX < -epsilon) {
-                            leftCell.uX = uX;
+                            leftCell.velocity.x = uX;
                             leftCell.hasVelocityX = true;
                         }
                     }
                     if(y>0){
                         Cell2D& downCell = grid.cells[x][y-1];
                         if(downCell.content!=CONTENT_FLUID &&! downCell.hasVelocityY && thisCell.hasVelocityY && uY < -epsilon) {
-                            downCell.uY = uY;
+                            downCell.velocity.y = uY;
                             downCell.hasVelocityY = true;
                         }
                     }
                     Cell2D& rightCell = grid.cells[x+1][y];
                     if(rightCell.content!=CONTENT_FLUID && thisCell.content!=CONTENT_FLUID && !rightCell.hasVelocityX && thisCell.hasVelocityX && uX>epsilon) {
-                        rightCell.uX = thisCell.uX;
+                        rightCell.velocity.x = thisCell.velocity.x;
                         rightCell.hasVelocityX = true;
                     }
                     Cell2D& upCell = grid.cells[x][y+1];
                     if(upCell.content!=CONTENT_FLUID && thisCell.content!=CONTENT_FLUID &&! upCell.hasVelocityY && thisCell.hasVelocityY && uY > epsilon) {
-                        upCell.uY = thisCell.uY;
+                        upCell.velocity.y = thisCell.velocity.y;
                         upCell.hasVelocityY = true;
                     }
                 }
@@ -541,8 +540,8 @@ public:
         int index = startIndex;
         for (int y = 0 * sizeY; y < 0.2 * sizeY ; ++y) {
             for (int x = 0 * sizeX; x < 1 * sizeX ; ++x) {
-                grid.cells[x][y].uX = 0;
-                grid.cells[x][y].uY = 0;
+                grid.cells[x][y].velocity.x = 0;
+                grid.cells[x][y].velocity.y = 0;
                 grid.cells[x][y].content = CONTENT_FLUID;
                 grid.cells[x][y].index = index;
                 ++index;
@@ -560,8 +559,8 @@ public:
         for (int y = 0 * sizeY; y < 1 * sizeY ; ++y) {
             for (int x = 0 * sizeX; x < 1 * sizeX ; ++x) {
                 if( pow(x- 0.5*sizeX,2)+pow(y- 0.7*sizeY ,2) <= pow(0.2*sizeY,2) ){
-                    grid.cells[x][y].uX = 0;
-                    grid.cells[x][y].uY = 0;
+                    grid.cells[x][y].velocity.x = 0;
+                    grid.cells[x][y].velocity.y = 0;
                     grid.cells[x][y].content = CONTENT_FLUID;
                     grid.cells[x][y].index = index;
                     ++index;

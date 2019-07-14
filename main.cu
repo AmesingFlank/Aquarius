@@ -173,7 +173,7 @@ int main( void ) {
     GLFWwindow* window = createWindowOpenGL(1024,512);
 
 
-    Fluid_2D_PCISPH fluid;
+    Fluid_2D_SemiLagrange fluid;
     Quad quad;
 
     double framesSinceLast = 0;

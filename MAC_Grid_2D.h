@@ -2,8 +2,8 @@
 // Created by AmesingFlank on 2019-04-16.
 //
 
-#ifndef AQUARIUS_MAC_GRID_H
-#define AQUARIUS_MAC_GRID_H
+#ifndef AQUARIUS_MAC_GRID_2D_H
+#define AQUARIUS_MAC_GRID_2D_H
 
 #include <stdlib.h>
 #include <memory>
@@ -16,10 +16,10 @@
 
 struct Cell2D{
     float pressure;
-    float uX;
-    float uY;
-    float uX_new;
-    float uY_new;
+
+    float2 velocity;
+    float2 newVelocity;
+
     //float signedDistance;
     float content;
     float content_new;
@@ -32,17 +32,6 @@ struct Cell2D{
 
 };
 
-struct InterpolationCoords2D{
-    int x0 ;
-    int x1 ;
-    int y0 ;
-    int y1 ;
-
-    float u0 ;
-    float u1 ;
-    float v0 ;
-    float v1 ;
-};
 
 
 class MAC_Grid_2D{
@@ -87,7 +76,7 @@ public:
             x = max(min(x,sizeX-1),0);
             y = max(min(y,sizeY-1),0);
         }
-        float2 velocity = make_float2(cells[x][y].uX + cells[x+1][y].uX ,cells[x][y].uX + cells[1][y+1].uY);
+        float2 velocity = make_float2(cells[x][y].velocity.x + cells[x+1][y].velocity.x ,cells[x][y].velocity.x + cells[1][y+1].velocity.y);
         velocity /= 2.f;
         return velocity;
     }
@@ -116,14 +105,14 @@ public:
             }
         }
 
-        float uX = weightX[0][0] * cells[i][j].uX +
-                   weightX[1][0] * cells[i+1][j].uX +
-                   weightX[0][1] * cells[i][j+1].uX +
-                   weightX[1][1] * cells[i+1][j+1].uX;
-        float uY = weightY[0][0] * cells[i][j].uY +
-                   weightY[1][0] * cells[i+1][j].uY +
-                   weightY[0][1] * cells[i][j+1].uY +
-                   weightY[1][1] * cells[i+1][j+1].uY;
+        float uX = weightX[0][0] * cells[i][j].velocity.x +
+                   weightX[1][0] * cells[i+1][j].velocity.x +
+                   weightX[0][1] * cells[i][j+1].velocity.x +
+                   weightX[1][1] * cells[i+1][j+1].velocity.x;
+        float uY = weightY[0][0] * cells[i][j].velocity.y +
+                   weightY[1][0] * cells[i+1][j].velocity.y +
+                   weightY[0][1] * cells[i][j+1].velocity.y +
+                   weightY[1][1] * cells[i+1][j+1].velocity.y;
         return make_float2(uX,uY);
     }
 
@@ -199,8 +188,7 @@ public:
     void commitVelocityChanges(){
         for (int y = 0; y < sizeY+1 ; ++y) {
             for (int x = 0; x <sizeX+1 ; ++x) {
-                cells[x][y].uY=cells[x][y].uY_new;
-                cells[x][y].uX=cells[x][y].uX_new;
+                cells[x][y].velocity = cells[x][y].newVelocity;
             }
         }
     }
@@ -222,4 +210,4 @@ public:
 
 };
 
-#endif //AQUARIUS_MAC_GRID_H
+#endif //AQUARIUS_MAC_GRID_2D_H
