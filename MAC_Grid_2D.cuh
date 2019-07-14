@@ -2,8 +2,8 @@
 // Created by AmesingFlank on 2019-04-16.
 //
 
-#ifndef AQUARIUS_MAC_GRID_2D_H
-#define AQUARIUS_MAC_GRID_2D_H
+#ifndef AQUARIUS_MAC_GRID_2D_CUH
+#define AQUARIUS_MAC_GRID_2D_CUH
 
 #include <stdlib.h>
 #include <memory>
@@ -14,6 +14,8 @@
 #define CONTENT_FLUID  1.0
 #define CONTENT_SOLID  2.0
 
+
+__host__ __device__
 struct Cell2D{
     float pressure;
 
@@ -34,6 +36,8 @@ struct Cell2D{
 
 
 
+
+
 class MAC_Grid_2D{
 public:
     const int sizeX;
@@ -46,6 +50,7 @@ public:
     int fluidCount = 0;
 
     Cell2D** cells;
+    Cell2D* cellsData;
 
     MAC_Grid_2D(int X,int Y,float cellPhysicalSize_):
             sizeX(X),sizeY(Y),cellPhysicalSize(cellPhysicalSize_),
@@ -54,24 +59,43 @@ public:
         cells = createCells();
     }
 
+    Cell2D* copyCellsToHost(){
+        Cell2D* cellsTemp = new Cell2D[(sizeX+1)*(sizeY+1)];
+        HANDLE_ERROR(cudaMemcpy(cellsTemp,cellsData,(sizeX+1)*(sizeY+1)*sizeof(Cell2D),cudaMemcpyDeviceToHost));
+        return cellsTemp;
+    }
+
+    void copyCellsToDevice(Cell2D* cellsTemp){
+        HANDLE_ERROR(cudaMemcpy(cellsData,cellsTemp,(sizeX+1)*(sizeY+1)*sizeof(Cell2D),cudaMemcpyHostToDevice));
+    }
+
     Cell2D** createCells(){
         int cellsCount = (sizeX+1)*(sizeY+1);
         int memorySize = sizeof(Cell2D)*cellsCount;
         std::cout<<"malloc size "<<memorySize<<std::endl;
-        Cell2D* data = new Cell2D[cellsCount];
-        std::memset(data,0, sizeof(Cell2D)*cellsCount);
-        Cell2D** result = new Cell2D*[sizeX+1];
+
+        HANDLE_ERROR(cudaMalloc (&cellsData,memorySize));
+        HANDLE_ERROR(cudaMemset(cellsData,0,memorySize));
+
+        Cell2D** result;
+        HANDLE_ERROR(cudaMalloc (&result,(sizeX+1)*sizeof(Cell2D*)  ));
+
+        Cell2D** resultHost = new Cell2D*[sizeX+1];
+
         for (int x = 0; x <sizeX+1 ; ++x) {
             int offset = x* (sizeY+1);
-            result[x] = &data[offset];
+            resultHost[x] = cellsData + offset;
         }
-        std::cout<< & result[sizeX][sizeY] <<std::endl;
-        std::cout<< & data[(sizeX+1)*(sizeY+1)-1] <<std::endl;
+
+        HANDLE_ERROR(cudaMemcpy(result,resultHost,(sizeX+1)*sizeof(Cell2D*),cudaMemcpyHostToDevice));
+
+        delete []resultHost;
+
         return result;
     }
 
-
-    float2 getCellVelocity(int x,int y){
+    __device__ __host__
+    static float2 getCellVelocity(int x,int y,int sizeX, int sizeY, Cell2D** cells){
         if(x < 0 ||x > sizeX-1 ||   y < 0|| y > sizeY-1  ){
             x = max(min(x,sizeX-1),0);
             y = max(min(y,sizeY-1),0);
@@ -81,9 +105,10 @@ public:
         return velocity;
     }
 
-    float2 getInterpolatedVelocity(float x, float y){
-        x = max(min(x,sizeX-2.f),0.f);
-        y = max(min(y,sizeY-2.f),0.f);
+    __device__ __host__
+    static float2 getInterpolatedVelocity(float x, float y,int sizeX,int sizeY,Cell2D** cells){
+        x = max(min(x,sizeX-1.f),0.f);
+        y = max(min(y,sizeY-1.f),0.f);
         int i = floor(x);
         int j = floor(y);
 
@@ -117,97 +142,51 @@ public:
     }
 
 
-    float2 getPointVelocity(float physicalX,float physicalY){
+    __device__ __host__
+    static float2 getPointVelocity(float physicalX,float physicalY, float cellPhysicalSize,int sizeX,int sizeY,Cell2D** cells){
         float x = physicalX/cellPhysicalSize;
         float y = physicalY/cellPhysicalSize;
 
         float2 result;
 
-        result.x = getInterpolatedVelocity(x,y-0.5).x;
-        result.y = getInterpolatedVelocity(x-0.5,y).y;
+        result.x = getInterpolatedVelocity(x,y-0.5,sizeX,sizeY,cells).x;
+        result.y = getInterpolatedVelocity(x-0.5,y,sizeX,sizeY,cells).y;
 
         return result;
-
-    }
-
-    float getCellContent(int x,int y){
-        if(x < 0 ||x > sizeX-1 ||   y < 0|| y > sizeY-1  ){
-            x = max(min(x,sizeX-1),0);
-            y = max(min(y,sizeY-1),0);
-        }
-        float content = cells[x][y].content;
-        return content;
-    }
-
-    float getPointContent(float physicalX,float physicalY){
-        float x = physicalX/cellPhysicalSize;
-        float y = physicalY/cellPhysicalSize;
-
-        int x0,x1,y0,y1;
-        float u0,u1,v0,v1;
-
-        if(x-floor(x) > 0.5f){
-            x0 = floor(x);
-        }
-        else{
-            x0 = floor(x)-1;
-        }
-        u0 = 1.5f + x0 - x;
-        x1 = x0+1;
-        u1 = 1.f-u0;
-
-        if(y-floor(y) > 0.5f){
-            y0 = floor(y);
-        }
-        else{
-            y0 = floor(y)-1;
-        }
-        v0 = 1.5f + y0  - y;
-        y1 = y0+1;
-        v1 = 1.f-v0;
-
-        float c00 = getCellContent(x0,y0);
-        float c01 = getCellContent(x0,y1);
-        float c10 = getCellContent(x1,y0);
-        float c11 = getCellContent(x1,y1);
-
-        float result = u0*v0*c00 + u0*v1*c01 + u1*v0*c10 + u1*v1*c11;
-        if(result < 0.5){
-            return CONTENT_AIR;
-        }
-        return CONTENT_FLUID;
-
     }
 
 
-    float2 getPhysicalPos(int x,int y){
+
+
+
+    __device__ __host__
+    static float2 getPhysicalPos(int x,int y,float cellPhysicalSize){
         return make_float2((x+0.5f)*cellPhysicalSize,(y+0.5f)*cellPhysicalSize);
     }
 
 
-    void commitVelocityChanges(){
-        for (int y = 0; y < sizeY+1 ; ++y) {
-            for (int x = 0; x <sizeX+1 ; ++x) {
-                cells[x][y].velocity = cells[x][y].newVelocity;
-            }
-        }
-    }
-
     void commitContentChanges(){
+
+        Cell2D* cellsTemp = copyCellsToHost();
+        //HANDLE_ERROR(cudaMemcpy(cellsTemp,cells[0],(sizeY+1)*(sizeX+1)*sizeof(Cell2D),cudaMemcpyDeviceToHost));
+
         int index = 0;
-        for (int y = 0; y < sizeY+1 ; ++y) {
-            for (int x = 0; x <sizeX+1 ; ++x) {
-                cells[x][y].content=cells[x][y].content_new;
-                if(cells[x][y].content == CONTENT_FLUID){
-                    cells[x][y].index = index;
-                    index++;
-                }
+
+        for(int c = 0;c<(sizeY+1)*(sizeX+1);++c){
+            Cell2D& thisCell = cellsTemp[c];
+            thisCell.content = thisCell.content_new;
+            if(thisCell.content==CONTENT_FLUID){
+                thisCell.index = index;
+                index++;
             }
         }
+
         fluidCount = index;
+        copyCellsToDevice(cellsTemp);
+        delete []cellsTemp;
     }
 
 
 };
 
-#endif //AQUARIUS_MAC_GRID_2D_H
+#endif //AQUARIUS_MAC_GRID_2D_CUH
