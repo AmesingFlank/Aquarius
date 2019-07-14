@@ -207,6 +207,9 @@ inline float random0to1(){
     return (float)rand()/(float)RAND_MAX;
 }
 
-
+uint divUp(uint a,uint b){
+    uint result =  (a % b != 0) ? (a/b + 1) : (a / b);
+    return result;
+}
 
 #endif //AQUARIUS_CUDACOMMONS_H

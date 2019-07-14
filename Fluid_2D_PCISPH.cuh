@@ -430,8 +430,7 @@ public:
         HANDLE_ERROR(cudaDeviceSetLimit(cudaLimitPrintfFifoSize, numBlocks*numThreads*1024));
 
         numThreads = min(1024,particleCount);
-        numBlocks = (particleCount % numThreads != 0) ?
-                    (particleCount / numThreads + 1) : (particleCount / numThreads);
+        numBlocks = divUp(particleCount,numThreads);
 
         //performSpatialHashing();
         //calcDensity<<< numBlocks, numThreads >>>(particles,particleCount,cellStart,cellEnd,gridSizeX,gridSizeY,cellPhysicalSize,restDensity);
