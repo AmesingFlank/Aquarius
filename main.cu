@@ -7,7 +7,7 @@
 
 #include "SPD_Solver.h"
 #include "Quad.h"
-#include "Fluid_2D_SemiLagrange.h"
+#include "Fluid_2D_SemiLagrange.cuh"
 #include "Fluid_2D_PCISPH.cuh"
 #include "CudaCommons.h"
 

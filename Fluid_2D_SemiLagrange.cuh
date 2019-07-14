@@ -2,8 +2,8 @@
 // Created by AmesingFlank on 2019-04-16.
 //
 
-#ifndef AQUARIUS_FLUID_2D_SEMILAGRANGE_H
-#define AQUARIUS_FLUID_2D_SEMILAGRANGE_H
+#ifndef AQUARIUS_FLUID_2D_SEMILAGRANGE_CUH
+#define AQUARIUS_FLUID_2D_SEMILAGRANGE_CUH
 
 #include "MAC_Grid_2D.cuh"
 #include "SPD_Solver.h"
@@ -778,4 +778,4 @@ public:
 
 };
 
-#endif //AQUARIUS_FLUID_2D_SEMILAGRANGE_H
+#endif //AQUARIUS_FLUID_2D_SEMILAGRANGE_CUH
