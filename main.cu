@@ -10,6 +10,8 @@
 #include "Fluid_2D_SemiLagrange.cuh"
 #include "Fluid_2D_PCISPH.cuh"
 #include "CudaCommons.h"
+#include "Fluid_2D_PCISPH_CPU.h"
+#include "Fluid_2D_PoistionBased_CPU.h"
 
 /*
 __global__ void add( int a, int b, int *c ) {
@@ -173,7 +175,7 @@ int main( void ) {
     GLFWwindow* window = createWindowOpenGL(1024,512);
 
 
-    Fluid_2D_SemiLagrange fluid;
+    Fluid_2D_PositionBased_CPU fluid;
     Quad quad;
 
     double framesSinceLast = 0;
