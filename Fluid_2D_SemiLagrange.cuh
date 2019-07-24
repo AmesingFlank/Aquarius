@@ -30,13 +30,21 @@ namespace Fluid_2D_SemiLagrange {
         int y;
     };
 
-/*
-__device__ __host__
-struct Particle2D{
-    float2 position;
-};*/
+    __device__ __host__
+    struct Particle{
+        float2 position;
+        float kind = 0;
+        Particle(){
 
-    using Particle2D = float3;
+        }
+        Particle(float2 pos):position(pos){
+
+        }
+        Particle(float2 pos,float tag):position(pos),kind(tag){
+
+        }
+    };
+
 
     __global__
     void advectVelocityImpl(Cell2D **cells, int sizeX, int sizeY, float timeStep, float gravitationalAcceleration,
@@ -67,31 +75,29 @@ struct Particle2D{
 
     __global__
     void
-    moveParticlesImpl(float timeStep, Cell2D **cells, Particle2D *particles, uint particleCount, int sizeX, int sizeY,
+    moveParticlesImpl(float timeStep, Cell2D **cells, Particle *particles, uint particleCount, int sizeX, int sizeY,
                       float cellPhysicalSize) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= particleCount) return;
 
-        Particle2D &particle3 = particles[index];
-        float2 particle = make_float2(particle3.x, particle3.y);
+        Particle &particle = particles[index];
+        float2 beginPos = particle.position;
 
         float2 thisVelocity =
-                MAC_Grid_2D::getPointVelocity(particle.x, particle.y, cellPhysicalSize, sizeX, sizeY, cells);
-        float2 midPos = particle + thisVelocity * 0.5f * timeStep;
+                MAC_Grid_2D::getPointVelocity(beginPos.x, beginPos.y, cellPhysicalSize, sizeX, sizeY, cells);
+        float2 midPos = beginPos + thisVelocity * 0.5f * timeStep;
         float2 midVelocity =
                 MAC_Grid_2D::getPointVelocity(midPos.x, midPos.y, cellPhysicalSize, sizeX, sizeY, cells);
-        float2 destPos = particle + midVelocity * timeStep;
+        float2 destPos = beginPos + midVelocity * timeStep;
         int destCellX = floor(destPos.x / cellPhysicalSize);
         int destCellY = floor(destPos.y / cellPhysicalSize);
         destCellX = max(min(destCellX, sizeX - 1), 0);
         destCellY = max(min(destCellY, sizeY - 1), 0);
         cells[destCellX][destCellY].content_new = CONTENT_FLUID;
-        particle = destPos;
+        particle.position = destPos;
 
-        particle3.x = particle.x;
-        particle3.y = particle.y;
 
-        if (particle3.z > 0) {
+        if (particle.kind > 0) {
             cells[destCellX][destCellY].fluid1Count += 1;
         } else
             cells[destCellX][destCellY].fluid0Count += 1;
@@ -375,7 +381,7 @@ struct Particle2D{
         const float density = 1;
         MAC_Grid_2D grid = MAC_Grid_2D(sizeX, sizeY, cellPhysicalSize);
 
-        Particle2D *particles;
+        Particle *particles;
         int particleCount;
 
         uint numThreadsParticle, numBlocksParticle;
@@ -430,19 +436,19 @@ struct Particle2D{
 
 
             grid.fluidCount = 0;
-            std::vector <Particle2D> particlesHost;
+            std::vector <Particle> particlesHost;
             createSquareFluid(particlesHost, cellsTemp);
             createSphereFluid(particlesHost, cellsTemp, grid.fluidCount);
             particleCount = particlesHost.size();
 
             grid.copyCellsToDevice(cellsTemp);
 
-            HANDLE_ERROR(cudaMalloc(&particles, particleCount * sizeof(Particle2D)));
-            Particle2D *particlesHostToCopy = new Particle2D[particleCount];
+            HANDLE_ERROR(cudaMalloc(&particles, particleCount * sizeof(Particle)));
+            Particle *particlesHostToCopy = new Particle[particleCount];
             for (int i = 0; i < particleCount; ++i) {
                 particlesHostToCopy[i] = particlesHost[i];
             }
-            HANDLE_ERROR(cudaMemcpy(particles, particlesHostToCopy, particleCount * sizeof(Particle2D),
+            HANDLE_ERROR(cudaMemcpy(particles, particlesHostToCopy, particleCount * sizeof(Particle),
                                     cudaMemcpyHostToDevice));
             delete[] particlesHostToCopy;
 
@@ -744,16 +750,16 @@ struct Particle2D{
 
         }
 
-        void createParticles(std::vector <Particle2D> &particlesHost, float2 centerPos, float tag = 0) {
+        void createParticles(std::vector <Particle> &particlesHost, float2 centerPos, float tag = 0) {
             for (int particle = 0; particle < 8; ++particle) {
                 float xBias = (random0to1() - 0.5f) * cellPhysicalSize;
                 float yBias = (random0to1() - 0.5f) * cellPhysicalSize;
                 float2 particlePos = centerPos + make_float2(xBias, yBias);
-                particlesHost.push_back(make_float3(particlePos.x, particlePos.y, tag));
+                particlesHost.emplace_back(particlePos,tag);
             }
         }
 
-        void createSquareFluid(std::vector <Particle2D> &particlesHost, Cell2D *cellsTemp, int startIndex = 0) {
+        void createSquareFluid(std::vector <Particle> &particlesHost, Cell2D *cellsTemp, int startIndex = 0) {
             int index = startIndex;
             for (int y = 0 * sizeY; y < 0.2 * sizeY; ++y) {
                 for (int x = 0 * sizeX; x < 1 * sizeX; ++x) {
@@ -773,7 +779,7 @@ struct Particle2D{
             grid.fluidCount = index;
         }
 
-        void createSphereFluid(std::vector <Particle2D> &particlesHost, Cell2D *cellsTemp, int startIndex = 0) {
+        void createSphereFluid(std::vector <Particle> &particlesHost, Cell2D *cellsTemp, int startIndex = 0) {
             int index = startIndex;
             for (int y = 0 * sizeY; y < 1 * sizeY; ++y) {
                 for (int x = 0 * sizeX; x < 1 * sizeX; ++x) {
