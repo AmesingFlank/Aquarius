@@ -15,36 +15,38 @@
 
 #define PRINT_INDEX 250
 
-__host__ __device__
-struct Particle{
-    float2 position = make_float2(0,0);
-    float2 velocity = make_float2(0,0);
-    float2 newPosition = make_float2(0,0);
-    float2 newVelocity = make_float2(0,0);
-
-    float2 acceleration = make_float2(0,0);
-    float pressure = 0;
-    float2 pressureForce = make_float2(0,0);
-    float2 otherForces = make_float2(0,0);
-    float density = 0;
+namespace Fluid_2D_PCISPH {
 
     __host__ __device__
-    Particle(){
+    struct Particle{
+        float2 position = make_float2(0,0);
+        float2 velocity = make_float2(0,0);
+        float2 newPosition = make_float2(0,0);
+        float2 newVelocity = make_float2(0,0);
 
-    }
+        float2 acceleration = make_float2(0,0);
+        float pressure = 0;
+        float2 pressureForce = make_float2(0,0);
+        float2 otherForces = make_float2(0,0);
+        float density = 0;
 
-    __host__ __device__
-    Particle(float2 position_):position(position_){
+        __host__ __device__
+        Particle(){
 
-    }
+        }
 
-    int hash = 0;
+        __host__ __device__
+        Particle(float2 position_):position(position_){
 
-    float lambda = 0;
-};
+        }
+
+        int hash = 0;
+
+        float lambda = 0;
+    };
 
 
-namespace Fluid_2D_PCISPH_Impl {
+
 
     __global__
     void calcHashImpl(int *particleHashes,  // output
@@ -308,188 +310,188 @@ namespace Fluid_2D_PCISPH_Impl {
         base[3] = 255;
     }
 
-}
 
 
-class Fluid_2D_PCISPH:public Fluid_2D{
-public:
+    class Fluid:public Fluid_2D{
+    public:
+
+        const float gridBoundaryX = 6.f;
+        const float gridBoundaryY = 3.f;
 
 
-
-    const float gridBoundaryX = 6.f;
-    const float gridBoundaryY = 3.f;
-
-
-    const float restDensity = 100;
-    const float partilceRadius = sqrt(1/restDensity/M_PI);
-    const float SCP = 0.8;
-    const float kernalRadius = sqrt(4.0/(M_PI*restDensity*SCP));
+        const float restDensity = 100;
+        const float partilceRadius = sqrt(1/restDensity/M_PI);
+        const float SCP = 0.8;
+        const float kernalRadius = sqrt(4.0/(M_PI*restDensity*SCP));
 
 
-    const float cellPhysicalSize = kernalRadius;
+        const float cellPhysicalSize = kernalRadius;
 
-    const int gridSizeX = ceil(gridBoundaryX/cellPhysicalSize);
-    const int gridSizeY = ceil(gridBoundaryY/cellPhysicalSize);
-    const int cellCount = gridSizeX*gridSizeY;
-
-
-    int * cellStart;
-    int * cellEnd;
-
-    Particle* particles;
-    int* particleHashes;
-    int particleCount = 0;
+        const int gridSizeX = ceil(gridBoundaryX/cellPhysicalSize);
+        const int gridSizeY = ceil(gridBoundaryY/cellPhysicalSize);
+        const int cellCount = gridSizeX*gridSizeY;
 
 
-    int numThreads, numBlocks;
+        int * cellStart;
+        int * cellEnd;
+
+        Particle* particles;
+        int* particleHashes;
+        int particleCount = 0;
 
 
-    Fluid_2D_PCISPH(){
-        std::cout<<"kernal radius "<<kernalRadius<<std::endl;
-        std::cout<<"particle radius "<<partilceRadius<<std::endl;
+        int numThreads, numBlocks;
 
-        std::cout<<"gridSizeX: "<<gridSizeX<<"     gridSizeY:"<<gridSizeY<<std::endl;
-        std::cout<<"self contributed density: "<<poly6(make_float2(0,0),kernalRadius)<<std::endl;
 
-        initFluid();
-    }
+        Fluid(){
+            std::cout<<"kernal radius "<<kernalRadius<<std::endl;
+            std::cout<<"particle radius "<<partilceRadius<<std::endl;
 
-    void performSpatialHashing(int version = 0){
-        Fluid_2D_PCISPH_Impl::calcHashImpl<<< numBlocks, numThreads >>>(particleHashes,particles,particleCount,cellPhysicalSize,gridSizeX,gridSizeY,version);
+            std::cout<<"gridSizeX: "<<gridSizeX<<"     gridSizeY:"<<gridSizeY<<std::endl;
+            std::cout<<"self contributed density: "<<poly6(make_float2(0,0),kernalRadius)<<std::endl;
 
-        CHECK_CUDA_ERROR("calc hash");
-        thrust::sort_by_key(thrust::device, particleHashes, particleHashes + particleCount, particles);
-
-        /*
-        for (int i = 0; i <particleCount ; ++i) {
-            int thisHash = 0;
-            HANDLE_ERROR(cudaMemcpy(&thisHash, particleHashes+i, sizeof(int), cudaMemcpyDeviceToHost));
-            std::cout<<"hash of "<<i<<" is "<<thisHash<<std::endl;
+            initFluid();
         }
-         */
 
-        HANDLE_ERROR(cudaMemset(cellStart,-1,cellCount*sizeof(*cellStart)));
-        HANDLE_ERROR(cudaMemset(cellEnd,-1,cellCount*sizeof(*cellEnd)));
-        Fluid_2D_PCISPH_Impl::findCellStartEndImpl<<< numBlocks, numThreads >>>(particleHashes,cellStart,cellEnd,particleCount);
-        CHECK_CUDA_ERROR("find cell start end");
+        void performSpatialHashing(int version = 0){
+            calcHashImpl<<< numBlocks, numThreads >>>(particleHashes,particles,particleCount,cellPhysicalSize,gridSizeX,gridSizeY,version);
+
+            CHECK_CUDA_ERROR("calc hash");
+            thrust::sort_by_key(thrust::device, particleHashes, particleHashes + particleCount, particles);
+
+            /*
+            for (int i = 0; i <particleCount ; ++i) {
+                int thisHash = 0;
+                HANDLE_ERROR(cudaMemcpy(&thisHash, particleHashes+i, sizeof(int), cudaMemcpyDeviceToHost));
+                std::cout<<"hash of "<<i<<" is "<<thisHash<<std::endl;
+            }
+             */
+
+            HANDLE_ERROR(cudaMemset(cellStart,-1,cellCount*sizeof(*cellStart)));
+            HANDLE_ERROR(cudaMemset(cellEnd,-1,cellCount*sizeof(*cellEnd)));
+            findCellStartEndImpl<<< numBlocks, numThreads >>>(particleHashes,cellStart,cellEnd,particleCount);
+            CHECK_CUDA_ERROR("find cell start end");
 
 
-        //std::cout<<"finished spatial hashing"<<std::endl;
+            //std::cout<<"finished spatial hashing"<<std::endl;
 
-    }
-
-    void createParticles(std::vector<Particle>& particleList, float2 centerPos){
-        for (int particle = 0; particle < 1 ; ++particle) {
-            float xBias = (random0to1()-0.5f)*partilceRadius;
-            float yBias = (random0to1()-0.5f)*partilceRadius;
-            //xBias = 0;yBias = 0;
-            float2 particlePos = centerPos+make_float2(xBias,yBias);
-            particleList.emplace_back(particlePos);
         }
-    }
 
-    void initFluid(){
-        std::vector<Particle> allParticles;
-
-        for(int x = 0;x<gridBoundaryX/partilceRadius;x+=3){
-            for (int y = 0; y < gridBoundaryY/partilceRadius ; y+=3) {
-                float2 pos = make_float2( (x+0.5f)*partilceRadius, (y+0.5f)*partilceRadius );
-                if(pos.y < gridBoundaryY* 0.93){
-                    createParticles(allParticles,pos);
-                }
-                else if(pow(pos.x- 0.5*gridBoundaryX,2)+pow(pos.y- 0.7*gridBoundaryY ,2) <= pow(0.2*gridBoundaryY,2) ){
-                    //createParticles(allParticles,pos);
-                }
-
+        void createParticles(std::vector<Particle>& particleList, float2 centerPos){
+            for (int particle = 0; particle < 1 ; ++particle) {
+                float xBias = (random0to1()-0.5f)*partilceRadius;
+                float yBias = (random0to1()-0.5f)*partilceRadius;
+                //xBias = 0;yBias = 0;
+                float2 particlePos = centerPos+make_float2(xBias,yBias);
+                particleList.emplace_back(particlePos);
             }
         }
-        particleCount = allParticles.size();
-        std::cout<<"particles:"<<particleCount<<std::endl;
+
+        void initFluid(){
+            std::vector<Particle> allParticles;
+
+            for(int x = 0;x<gridBoundaryX/partilceRadius;x+=3){
+                for (int y = 0; y < gridBoundaryY/partilceRadius ; y+=3) {
+                    float2 pos = make_float2( (x+0.5f)*partilceRadius, (y+0.5f)*partilceRadius );
+                    if(pos.y < gridBoundaryY* 0.93){
+                        createParticles(allParticles,pos);
+                    }
+                    else if(pow(pos.x- 0.5*gridBoundaryX,2)+pow(pos.y- 0.7*gridBoundaryY ,2) <= pow(0.2*gridBoundaryY,2) ){
+                        //createParticles(allParticles,pos);
+                    }
+
+                }
+            }
+            particleCount = allParticles.size();
+            std::cout<<"particles:"<<particleCount<<std::endl;
 
 
-        Particle* newParticles = new Particle[particleCount];
-        for(int i = 0;i<particleCount;++i){
-            newParticles[i] = allParticles[i];
+            Particle* newParticles = new Particle[particleCount];
+            for(int i = 0;i<particleCount;++i){
+                newParticles[i] = allParticles[i];
+            }
+            HANDLE_ERROR(cudaMalloc(&particles, particleCount* sizeof(*particles)));
+            HANDLE_ERROR(cudaMemcpy(particles, newParticles, particleCount* sizeof(Particle), cudaMemcpyHostToDevice));
+            delete []newParticles;
+
+
+            HANDLE_ERROR(cudaMalloc(&cellStart, cellCount* sizeof(*cellStart)));
+            HANDLE_ERROR(cudaMalloc(&cellEnd, cellCount* sizeof(*cellEnd)));
+
+            HANDLE_ERROR(cudaMalloc(&particleHashes, particleCount* sizeof(*particleHashes)));
+
+            HANDLE_ERROR(cudaDeviceSetLimit(cudaLimitPrintfFifoSize, numBlocks*numThreads*1024));
+
+            numThreads = min(1024,particleCount);
+            numBlocks = divUp(particleCount,numThreads);
+
+            //performSpatialHashing();
+            //calcDensity<<< numBlocks, numThreads >>>(particles,particleCount,cellStart,cellEnd,gridSizeX,gridSizeY,cellPhysicalSize,restDensity);
+            //CHECK_CUDA_ERROR("calcDensity 0");
         }
-        HANDLE_ERROR(cudaMalloc(&particles, particleCount* sizeof(*particles)));
-        HANDLE_ERROR(cudaMemcpy(particles, newParticles, particleCount* sizeof(Particle), cudaMemcpyHostToDevice));
-        delete []newParticles;
 
+        void simulationStep(float totalTime){
+            float thisTimeStep = 0.01f;
 
-        HANDLE_ERROR(cudaMalloc(&cellStart, cellCount* sizeof(*cellStart)));
-        HANDLE_ERROR(cudaMalloc(&cellEnd, cellCount* sizeof(*cellEnd)));
+            performSpatialHashing();
+            calcOtherForces<<< numBlocks, numThreads >>>(particles,particleCount);
+            CHECK_CUDA_ERROR("calcOtherForces");
+            for (int i = 0 ; i < 20 ; ++i) {
+                calcPositionVelocity<<< numBlocks, numThreads >>>(particles,particleCount,gridBoundaryX,gridBoundaryY,thisTimeStep,cellPhysicalSize);
+                CHECK_CUDA_ERROR("calcPositionVelocity");
 
-        HANDLE_ERROR(cudaMalloc(&particleHashes, particleCount* sizeof(*particleHashes)));
+                //performSpatialHashing(1);
 
-        HANDLE_ERROR(cudaDeviceSetLimit(cudaLimitPrintfFifoSize, numBlocks*numThreads*1024));
+                calcDensity<<< numBlocks, numThreads >>>(particles,particleCount,cellStart,cellEnd,gridSizeX,gridSizeY,cellPhysicalSize,restDensity,SCP);
+                CHECK_CUDA_ERROR("calcDensity");
 
-        numThreads = min(1024,particleCount);
-        numBlocks = divUp(particleCount,numThreads);
+                calcPressure<<< numBlocks, numThreads >>>(particles,particleCount,cellStart,cellEnd,gridSizeX,gridSizeY,cellPhysicalSize,restDensity,thisTimeStep);
+                CHECK_CUDA_ERROR("calcPressure");
 
-        //performSpatialHashing();
-        //calcDensity<<< numBlocks, numThreads >>>(particles,particleCount,cellStart,cellEnd,gridSizeX,gridSizeY,cellPhysicalSize,restDensity);
-        //CHECK_CUDA_ERROR("calcDensity 0");
-    }
+                calcPressureForce<<< numBlocks, numThreads >>>(particles,particleCount,cellStart,cellEnd,gridSizeX,gridSizeY,cellPhysicalSize,restDensity);
+                CHECK_CUDA_ERROR("calcPressureForce");
 
-    void simulationStep(float totalTime){
-        float thisTimeStep = 0.01f;
-
-        performSpatialHashing();
-        Fluid_2D_PCISPH_Impl::calcOtherForces<<< numBlocks, numThreads >>>(particles,particleCount);
-        CHECK_CUDA_ERROR("calcOtherForces");
-        for (int i = 0 ; i < 20 ; ++i) {
-            Fluid_2D_PCISPH_Impl::calcPositionVelocity<<< numBlocks, numThreads >>>(particles,particleCount,gridBoundaryX,gridBoundaryY,thisTimeStep,cellPhysicalSize);
+            }
+            calcPositionVelocity<<< numBlocks, numThreads >>>(particles,particleCount,gridBoundaryX,gridBoundaryY,thisTimeStep,cellPhysicalSize);
+            commitPositionVelocity<<< numBlocks, numThreads >>>(particles,particleCount,gridBoundaryX,gridBoundaryY);
             CHECK_CUDA_ERROR("calcPositionVelocity");
+            updateTexture();
+            std::cout<<"finished one step"<<std::endl;
+        }
 
-            //performSpatialHashing(1);
 
-            Fluid_2D_PCISPH_Impl:: calcDensity<<< numBlocks, numThreads >>>(particles,particleCount,cellStart,cellEnd,gridSizeX,gridSizeY,cellPhysicalSize,restDensity,SCP);
-            CHECK_CUDA_ERROR("calcDensity");
+        virtual void updateTexture()override {
+            printGLError();
+            glBindTexture(GL_TEXTURE_2D,texture);
+            int texSizeX = 256;
+            int texSizeY = 126;
+            float texCellPhysicalSize = cellPhysicalSize * gridSizeX/texSizeX;
+            size_t imageSize = texSizeX*texSizeY*4* sizeof(unsigned char);
+            unsigned char* image = (unsigned char*) malloc(imageSize);
+            unsigned char* imageGPU = nullptr;
+            HANDLE_ERROR(cudaMalloc(&imageGPU, imageSize ));
+            HANDLE_ERROR(cudaMemset(imageGPU,255,imageSize));
 
-            Fluid_2D_PCISPH_Impl::calcPressure<<< numBlocks, numThreads >>>(particles,particleCount,cellStart,cellEnd,gridSizeX,gridSizeY,cellPhysicalSize,restDensity,thisTimeStep);
-            CHECK_CUDA_ERROR("calcPressure");
 
-            Fluid_2D_PCISPH_Impl::calcPressureForce<<< numBlocks, numThreads >>>(particles,particleCount,cellStart,cellEnd,gridSizeX,gridSizeY,cellPhysicalSize,restDensity);
-            CHECK_CUDA_ERROR("calcPressureForce");
+            updateTextureImpl<<< numBlocks, numThreads >>>(particles,particleCount,texCellPhysicalSize,texSizeX,imageGPU);
+            CHECK_CUDA_ERROR("u t");
+
+            HANDLE_ERROR(cudaMemcpy(image,imageGPU,imageSize, cudaMemcpyDeviceToHost));
+
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texSizeX, texSizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+            glGenerateMipmap(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D,0);
+            free(image);
+            HANDLE_ERROR(cudaFree(imageGPU));
+            printGLError();
 
         }
-        Fluid_2D_PCISPH_Impl::calcPositionVelocity<<< numBlocks, numThreads >>>(particles,particleCount,gridBoundaryX,gridBoundaryY,thisTimeStep,cellPhysicalSize);
-        Fluid_2D_PCISPH_Impl::commitPositionVelocity<<< numBlocks, numThreads >>>(particles,particleCount,gridBoundaryX,gridBoundaryY);
-        CHECK_CUDA_ERROR("calcPositionVelocity");
-        updateTexture();
-        std::cout<<"finished one step"<<std::endl;
-    }
-
-
-    virtual void updateTexture()override {
-        printGLError();
-        glBindTexture(GL_TEXTURE_2D,texture);
-        int texSizeX = 256;
-        int texSizeY = 126;
-        float texCellPhysicalSize = cellPhysicalSize * gridSizeX/texSizeX;
-        size_t imageSize = texSizeX*texSizeY*4* sizeof(unsigned char);
-        unsigned char* image = (unsigned char*) malloc(imageSize);
-        unsigned char* imageGPU = nullptr;
-        HANDLE_ERROR(cudaMalloc(&imageGPU, imageSize ));
-        HANDLE_ERROR(cudaMemset(imageGPU,255,imageSize));
-
-
-        Fluid_2D_PCISPH_Impl::updateTextureImpl<<< numBlocks, numThreads >>>(particles,particleCount,texCellPhysicalSize,texSizeX,imageGPU);
-        CHECK_CUDA_ERROR("u t");
-
-        HANDLE_ERROR(cudaMemcpy(image,imageGPU,imageSize, cudaMemcpyDeviceToHost));
-
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texSizeX, texSizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-        glGenerateMipmap(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D,0);
-        free(image);
-        HANDLE_ERROR(cudaFree(imageGPU));
-        printGLError();
-
-    }
 
 
 
-};
+    };
+
+}
+
 
 #endif //AQUARIUS_FLUID_2D_PCISPH_CUH
