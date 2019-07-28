@@ -20,7 +20,7 @@ struct Cell2D{
     float pressure;
 
     float2 velocity = make_float2(0,0);
-    float2 newVelocity;
+    float2 newVelocity = make_float2(0,0);
 
     //float signedDistance;
     float content;
@@ -31,6 +31,8 @@ struct Cell2D{
 
     float fluid0Count = 0;
     float fluid1Count = 0;
+
+    float2 contribution;
 
 };
 
@@ -195,9 +197,9 @@ public:
 
 
     __device__ __host__
-    static float2 getPointNewVelocity(float physicalX,float physicalY, float cellPhysicalSize,int sizeX,int sizeY,Cell2D** cells){
-        float x = physicalX/cellPhysicalSize;
-        float y = physicalY/cellPhysicalSize;
+    static float2 getPointNewVelocity(float2 physicalPos, float cellPhysicalSize,int sizeX,int sizeY,Cell2D** cells){
+        float x = physicalPos.x/cellPhysicalSize;
+        float y = physicalPos.y/cellPhysicalSize;
 
         float2 result;
 
@@ -235,6 +237,22 @@ public:
         delete []cellsTemp;
     }
 
+    void updateFluidCount(){
+        Cell2D* cellsTemp = copyCellsToHost();
+        int index = 0;
+
+        for(int c = 0;c<(sizeY+1)*(sizeX+1);++c){
+            Cell2D& thisCell = cellsTemp[c];
+            if(thisCell.content==CONTENT_FLUID){
+                thisCell.index = index;
+                index++;
+            }
+        }
+
+        fluidCount = index;
+        copyCellsToDevice(cellsTemp);
+        delete []cellsTemp;
+    }
 
 };
 
