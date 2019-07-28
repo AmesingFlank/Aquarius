@@ -12,6 +12,7 @@
 #include "CudaCommons.h"
 #include "Fluid_2D_PCISPH_CPU.h"
 #include "Fluid_2D_PoistionBased_CPU.h"
+#include "Fluid_2D_FLIP.cuh"
 
 /*
 __global__ void add( int a, int b, int *c ) {
@@ -170,7 +171,6 @@ int main( void ) {
     //pcgTest(); return 0;
 
     //std::this_thread::sleep_for(std::chrono::milliseconds(10000));
-
 
     GLFWwindow* window = createWindowOpenGL(1024,512);
 

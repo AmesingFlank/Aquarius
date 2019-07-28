@@ -3,9 +3,9 @@ project(Aquarius)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(Aquarius main.cu CudaCommons.h MAC_Grid_2D.cuh Fluid_2D_SemiLagrange.cuh SPD_Solver.h Shader.h Quad.h Fluid_2D_PCISPH.cuh WeightKernels.h Fluid_2D.h Fluid_2D_PCISPH_CPU.h Fluid_2D_PoistionBased_CPU.h)
+add_executable(Aquarius main.cu CudaCommons.h MAC_Grid_2D.cuh Fluid_2D_SemiLagrange.cuh SPD_Solver.h Shader.h Quad.h Fluid_2D_PCISPH.cuh WeightKernels.h Fluid_2D.h Fluid_2D_PCISPH_CPU.h Fluid_2D_PoistionBased_CPU.h Fluid_2D_FLIP.cuh)
 
-set(OPTM_LEVEL "-O3")
+set(OPTM_LEVEL "-O0")
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${OPTM_LEVEL}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPTM_LEVEL}")

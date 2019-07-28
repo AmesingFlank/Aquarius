@@ -19,7 +19,7 @@ __host__ __device__
 struct Cell2D{
     float pressure;
 
-    float2 velocity;
+    float2 velocity = make_float2(0,0);
     float2 newVelocity;
 
     //float signedDistance;
@@ -157,6 +157,55 @@ public:
 
 
 
+    __device__ __host__
+    static float2 getInterpolatedNewVelocity(float x, float y,int sizeX,int sizeY,Cell2D** cells){
+        x = max(min(x,sizeX-1.f),0.f);
+        y = max(min(y,sizeY-1.f),0.f);
+        int i = floor(x);
+        int j = floor(y);
+
+        float u[2];
+        float v[2];
+        float weightX[2][2];
+        float weightY[2][2];
+
+
+        u[0] = i + 1.f -x ;
+        u[1] = 1.f - u[0];
+        v[0] = j + 1.f -y ;
+        v[1] = 1.f - v[0];
+
+        for (int a = 0; a < 2 ; ++a) {
+            for (int b = 0; b < 2 ; ++b) {
+                weightX[a][b] = u[a]*v[b];
+                weightY[a][b] = u[a]*v[b];
+            }
+        }
+
+        float uX = weightX[0][0] * cells[i][j].newVelocity.x +
+                   weightX[1][0] * cells[i+1][j].newVelocity.x +
+                   weightX[0][1] * cells[i][j+1].newVelocity.x +
+                   weightX[1][1] * cells[i+1][j+1].newVelocity.x;
+        float uY = weightY[0][0] * cells[i][j].newVelocity.y +
+                   weightY[1][0] * cells[i+1][j].newVelocity.y +
+                   weightY[0][1] * cells[i][j+1].newVelocity.y +
+                   weightY[1][1] * cells[i+1][j+1].newVelocity.y;
+        return make_float2(uX,uY);
+    }
+
+
+    __device__ __host__
+    static float2 getPointNewVelocity(float physicalX,float physicalY, float cellPhysicalSize,int sizeX,int sizeY,Cell2D** cells){
+        float x = physicalX/cellPhysicalSize;
+        float y = physicalY/cellPhysicalSize;
+
+        float2 result;
+
+        result.x = getInterpolatedNewVelocity(x,y-0.5,sizeX,sizeY,cells).x;
+        result.y = getInterpolatedNewVelocity(x-0.5,y,sizeX,sizeY,cells).y;
+
+        return result;
+    }
 
 
     __device__ __host__
