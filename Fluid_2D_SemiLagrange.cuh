@@ -442,6 +442,7 @@ namespace Fluid_2D_SemiLagrange {
             particleCount = particlesHost.size();
 
             grid.copyCellsToDevice(cellsTemp);
+            delete []cellsTemp;
 
             HANDLE_ERROR(cudaMalloc(&particles, particleCount * sizeof(Particle)));
             Particle *particlesHostToCopy = new Particle[particleCount];
@@ -524,7 +525,7 @@ namespace Fluid_2D_SemiLagrange {
 
             bool *hasNonZeroRHS_Device;
             HANDLE_ERROR(cudaMalloc(&hasNonZeroRHS_Device, sizeof(*hasNonZeroRHS_Device)));
-
+            HANDLE_ERROR(cudaMemset(hasNonZeroRHS_Device,0,sizeof(*hasNonZeroRHS_Device)));
 
             constructPressureEquations << < numBlocksCell, numThreadsCell >> >
                                                            (grid.cells, sizeX, sizeY, equationsDevice, temp, hasNonZeroRHS_Device);

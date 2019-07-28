@@ -567,7 +567,7 @@ namespace Fluid_2D_FLIP {
 
             bool *hasNonZeroRHS_Device;
             HANDLE_ERROR(cudaMalloc(&hasNonZeroRHS_Device, sizeof(*hasNonZeroRHS_Device)));
-
+            HANDLE_ERROR(cudaMemset(hasNonZeroRHS_Device,0,sizeof(*hasNonZeroRHS_Device)));
 
             constructPressureEquations << < numBlocksCell, numThreadsCell >> >
                                                            (grid.cells, sizeX, sizeY, equationsDevice, temp, hasNonZeroRHS_Device);
