@@ -58,12 +58,16 @@ namespace Fluid_2D_SemiLagrange {
         if (cells[x][y].content == CONTENT_AIR) return;
         float2 thisVelocity = MAC_Grid_2D::getCellVelocity(x, y, sizeX, sizeY, cells);
         float2 thisPos = MAC_Grid_2D::getPhysicalPos(x, y, cellPhysicalSize);
-        float2 midPos = thisPos - thisVelocity * 0.5f * timeStep;
-        float2 midVelocity =
-                MAC_Grid_2D::getPointVelocity(midPos.x, midPos.y, cellPhysicalSize, sizeX, sizeY, cells);
-        float2 sourcePos = thisPos - midVelocity * timeStep;
+
+        float2 u1 = MAC_Grid_2D::getPointVelocity(thisPos, cellPhysicalSize, sizeX, sizeY, cells);
+        float2 u2 = MAC_Grid_2D::getPointVelocity(thisPos-timeStep*u1/2, cellPhysicalSize, sizeX, sizeY, cells);
+        float2 u3 = MAC_Grid_2D::getPointVelocity(thisPos-timeStep*u2*3/4, cellPhysicalSize, sizeX, sizeY, cells);
+
+        float2 sourcePos = thisPos - timeStep* ( u1*2/9 + u2*3/9 + u3*4/9 );
+
+
         float2 sourceVelocity =
-                MAC_Grid_2D::getPointVelocity(sourcePos.x, sourcePos.y, cellPhysicalSize, sizeX, sizeY, cells);
+                MAC_Grid_2D::getPointVelocity(sourcePos, cellPhysicalSize, sizeX, sizeY, cells);
         cells[x][y].newVelocity = sourceVelocity;
         if (y + 1 <= sizeY && cells[x][y + 1].content == CONTENT_AIR) {
             cells[x][y + 1].newVelocity.y = sourceVelocity.y;
@@ -83,12 +87,15 @@ namespace Fluid_2D_SemiLagrange {
         Particle &particle = particles[index];
         float2 beginPos = particle.position;
 
-        float2 thisVelocity =
-                MAC_Grid_2D::getPointVelocity(beginPos.x, beginPos.y, cellPhysicalSize, sizeX, sizeY, cells);
-        float2 midPos = beginPos + thisVelocity * 0.5f * timeStep;
-        float2 midVelocity =
-                MAC_Grid_2D::getPointVelocity(midPos.x, midPos.y, cellPhysicalSize, sizeX, sizeY, cells);
-        float2 destPos = beginPos + midVelocity * timeStep;
+
+
+        float2 u1 = MAC_Grid_2D::getPointVelocity(beginPos, cellPhysicalSize, sizeX, sizeY, cells);
+        float2 u2 = MAC_Grid_2D::getPointVelocity(beginPos+timeStep*u1/2, cellPhysicalSize, sizeX, sizeY, cells);
+        float2 u3 = MAC_Grid_2D::getPointVelocity(beginPos+timeStep*u2*3/4, cellPhysicalSize, sizeX, sizeY, cells);
+
+        float2 destPos = beginPos + timeStep* ( u1*2/9 + u2*3/9 + u3*4/9 );
+
+
         int destCellX = floor(destPos.x / cellPhysicalSize);
         int destCellY = floor(destPos.y / cellPhysicalSize);
         destCellX = max(min(destCellX, sizeX - 1), 0);

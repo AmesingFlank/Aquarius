@@ -145,9 +145,9 @@ public:
 
 
     __device__ __host__
-    static float2 getPointVelocity(float physicalX,float physicalY, float cellPhysicalSize,int sizeX,int sizeY,Cell2D** cells){
-        float x = physicalX/cellPhysicalSize;
-        float y = physicalY/cellPhysicalSize;
+    static float2 getPointVelocity(float2 physicalPos, float cellPhysicalSize,int sizeX,int sizeY,Cell2D** cells){
+        float x = physicalPos.x/cellPhysicalSize;
+        float y = physicalPos.y/cellPhysicalSize;
 
         float2 result;
 

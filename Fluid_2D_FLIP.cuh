@@ -70,7 +70,7 @@ namespace Fluid_2D_FLIP {
         Particle& particle = particles[index];
         float2 velocityChange =
                 MAC_Grid_2D::getPointNewVelocity(particle.position,cellPhysicalSize,sizeX,sizeY,cells) -
-                MAC_Grid_2D::getPointVelocity(particle.position.x,particle.position.y,cellPhysicalSize,sizeX,sizeY,cells);
+                MAC_Grid_2D::getPointVelocity(particle.position,cellPhysicalSize,sizeX,sizeY,cells);
         particle.velocity += velocityChange;
     }
 
