@@ -169,6 +169,36 @@ float viscosity_laplacian(float2 v,float h){
 
 
 
+__device__ __host__
+float trilinearUnitKernel(float r){
+    r=abs(r);
+    if(r>1) return 0;
+    return 1-r;
+}
+
+__device__ __host__
+float trilinearHatKernel(float2 r,float support){
+    return trilinearUnitKernel(r.x / support) * trilinearUnitKernel(r.y / support);
+}
+
+__device__ __host__
+float quadraticBSplineUnitKernel(float r){
+    if(-3.0/2.0 <= r && r <= -1.0/2.0){
+        return pow(r+3.0/2.0,2)/2;
+    }
+    if(-1.0/2.0 < r && r < 1.0/2.0){
+        return 3.0/4.0 - r*r;
+    }
+    if(1.0/2.0 <= r && r <= 3.0/2.0 ){
+        return pow(-r+3.0/2.0,2)/2;
+    }
+    return 0;
+}
+
+__device__ __host__
+float quadraticBSplineKernel(float2 r,float support){
+    return quadraticBSplineUnitKernel(r.x / support) * quadraticBSplineUnitKernel(r.y / support);
+}
 
 
 #endif //AQUARIUS_WEIGHTKERNELS_H

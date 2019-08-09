@@ -9,6 +9,7 @@
 #include <memory>
 #include "CudaCommons.h"
 #include <cmath>
+#include "WeightKernels.h"
 
 #define CONTENT_AIR  0.0
 #define CONTENT_FLUID  1.0
@@ -208,6 +209,64 @@ public:
 
         return result;
     }
+
+    __device__ __host__
+    static void contributeInterpolatedNewVelocityX(float x, float y,int sizeX,int sizeY,Cell2D** cells, float uX, float cellPhysicalSize){
+        x = max(min(x,sizeX-1.f),0.f);
+        y = max(min(y,sizeY-1.f),0.f);
+        int i = floor(x);
+        int j = floor(y);
+
+        float u[2];
+        float v[2];
+        float weightX[2][2];
+
+
+        u[0] = x - i ;
+        u[1] = i + 1.f - x;
+        v[0] = y - j ;
+        v[1] = j + 1 - y;
+
+        for (int a = 0; a < 2 ; ++a) {
+            for (int b = 0; b < 2 ; ++b) {
+                float weight = u[a]*v[b];
+                weight = trilinearHatKernel(make_float2(u[a],u[b]),1);
+                cells[i+a][j+b].velocity.x += weight*uX;
+                cells[i+a][j+b].contribution.x += weight ;
+            }
+        }
+
+    }
+
+    __device__ __host__
+    static void contributeInterpolatedNewVelocityY(float x, float y,int sizeX,int sizeY,Cell2D** cells, float uY, float cellPhysicalSize){
+        x = max(min(x,sizeX-1.f),0.f);
+        y = max(min(y,sizeY-1.f),0.f);
+        int i = floor(x);
+        int j = floor(y);
+
+        float u[2];
+        float v[2];
+        float weightX[2][2];
+
+
+        u[0] = x - i ;
+        u[1] = i + 1.f - x;
+        v[0] = y - j ;
+        v[1] = j + 1.f - y;
+
+        for (int a = 0; a < 2 ; ++a) {
+            for (int b = 0; b < 2 ; ++b) {
+                float weight = u[a]*v[b];
+                weight = trilinearHatKernel(make_float2(u[a],u[b]),1);
+                cells[i+a][j+b].velocity.y += weight*uY;
+                cells[i+a][j+b].contribution.y += weight ;
+            }
+        }
+
+    }
+
+
 
 
     __device__ __host__

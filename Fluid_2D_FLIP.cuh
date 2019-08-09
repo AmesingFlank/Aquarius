@@ -47,17 +47,7 @@ namespace Fluid_2D_FLIP {
     };
 
 
-    __device__ __host__
-    float trilinearUnitKernel(float r){
-        r=abs(r);
-        if(r>1) return 0;
-        return 1-r;
-    }
 
-    __device__ __host__
-    float trilinearHatKernel(float2 r,float maxDist){
-        return trilinearUnitKernel(r.x/maxDist)*trilinearUnitKernel(r.y/maxDist);
-    }
 
 
     __global__
@@ -68,10 +58,13 @@ namespace Fluid_2D_FLIP {
 
 
         Particle& particle = particles[index];
-        float2 velocityChange =
-                MAC_Grid_2D::getPointNewVelocity(particle.position,cellPhysicalSize,sizeX,sizeY,cells) -
-                MAC_Grid_2D::getPointVelocity(particle.position,cellPhysicalSize,sizeX,sizeY,cells);
-        particle.velocity += velocityChange;
+        float2 newGridVelocity = MAC_Grid_2D::getPointNewVelocity(particle.position,cellPhysicalSize,sizeX,sizeY,cells);
+        float2 oldGridVelocity = MAC_Grid_2D::getPointVelocity(particle.position,cellPhysicalSize,sizeX,sizeY,cells);
+        float2 velocityChange = newGridVelocity-oldGridVelocity;
+        particle.velocity += velocityChange; //FLIP
+
+        //particle.velocity = newGridVelocity; //PIC
+
     }
 
 
@@ -195,12 +188,9 @@ namespace Fluid_2D_FLIP {
 
         float centerCoeff = temp * 4;
 
-        float leftCoeff = getNeibourCoefficient(x - 1, y, temp, thisCell.newVelocity.x, centerCoeff, RHS, cells, sizeX,
-                                                sizeY);
-        float rightCoeff = getNeibourCoefficient(x + 1, y, temp, rightCell.newVelocity.x, centerCoeff, RHS, cells, sizeX,
-                                                 sizeY);
-        float downCoeff = getNeibourCoefficient(x, y - 1, temp, thisCell.newVelocity.y, centerCoeff, RHS, cells, sizeX,
-                                                sizeY);
+        float leftCoeff = getNeibourCoefficient(x - 1, y, temp, thisCell.newVelocity.x, centerCoeff, RHS, cells, sizeX,sizeY);
+        float rightCoeff = getNeibourCoefficient(x + 1, y, temp, rightCell.newVelocity.x, centerCoeff, RHS, cells, sizeX,sizeY);
+        float downCoeff = getNeibourCoefficient(x, y - 1, temp, thisCell.newVelocity.y, centerCoeff, RHS, cells, sizeX,sizeY);
         float upCoeff = getNeibourCoefficient(x, y + 1, temp, upCell.newVelocity.y, centerCoeff, RHS, cells, sizeX, sizeY);
 
         int nnz = 0;
@@ -299,34 +289,79 @@ namespace Fluid_2D_FLIP {
         int x = index - y * sizeX;
 
         Cell2D &thisCell = cells[x][y];
-        float uX = thisCell.newVelocity.x;
-        float uY = thisCell.newVelocity.y;
         const float epsilon = 1e-6;
-        if (x > 0) {
-            Cell2D &leftCell = cells[x - 1][y];
-            if (leftCell.content != CONTENT_FLUID && !leftCell.hasVelocityX && thisCell.hasVelocityX && uX < -epsilon) {
-                leftCell.newVelocity.x = uX;
-                leftCell.hasVelocityX = true;
+        if(!thisCell.hasVelocityX){
+            float sumNeighborX = 0;
+            int neighborXCount = 0;
+            if (x > 0) {
+                Cell2D &leftCell = cells[x - 1][y];
+                if (leftCell.hasVelocityX && leftCell.newVelocity.x > epsilon) {
+                    sumNeighborX += leftCell.newVelocity.x;
+                    neighborXCount++;
+                }
+            }
+            if (y > 0) {
+                Cell2D &downCell = cells[x][y-1];
+                if (downCell.hasVelocityX && downCell.newVelocity.y > epsilon) {
+                    sumNeighborX += downCell.newVelocity.x;
+                    neighborXCount++;
+                }
+            }
+            if (x < sizeX-1) {
+                Cell2D &rightCell = cells[x + 1][y];
+                if (rightCell.hasVelocityX && rightCell.newVelocity.x < -epsilon) {
+                    sumNeighborX += rightCell.newVelocity.x;
+                    neighborXCount++;
+                }
+            }
+            if (y < sizeY-1) {
+                Cell2D &upCell = cells[x][y + 1];
+                if (upCell.hasVelocityX && upCell.newVelocity.y < -epsilon) {
+                    sumNeighborX += upCell.newVelocity.x;
+                    neighborXCount++;
+                }
+            }
+            if (neighborXCount>0){
+                thisCell.newVelocity.x = sumNeighborX/(float)neighborXCount;
+                thisCell.hasVelocityX = true;
             }
         }
-        if (y > 0) {
-            Cell2D &downCell = cells[x][y - 1];
-            if (downCell.content != CONTENT_FLUID && !downCell.hasVelocityY && thisCell.hasVelocityY && uY < -epsilon) {
-                downCell.newVelocity.y = uY;
-                downCell.hasVelocityY = true;
+
+        if(!thisCell.hasVelocityY){
+            float sumNeighborY = 0;
+            int neighborYCount = 0;
+            if (x > 0) {
+                Cell2D &leftCell = cells[x - 1][y];
+                if (leftCell.hasVelocityY && leftCell.newVelocity.x > epsilon) {
+                    sumNeighborY += leftCell.newVelocity.y;
+                    neighborYCount++;
+                }
             }
-        }
-        Cell2D &rightCell = cells[x + 1][y];
-        if (rightCell.content != CONTENT_FLUID && thisCell.content != CONTENT_FLUID && !rightCell.hasVelocityX &&
-            thisCell.hasVelocityX && uX > epsilon) {
-            rightCell.newVelocity.x = thisCell.newVelocity.x;
-            rightCell.hasVelocityX = true;
-        }
-        Cell2D &upCell = cells[x][y + 1];
-        if (upCell.content != CONTENT_FLUID && thisCell.content != CONTENT_FLUID && !upCell.hasVelocityY &&
-            thisCell.hasVelocityY && uY > epsilon) {
-            upCell.newVelocity.y = thisCell.newVelocity.y;
-            upCell.hasVelocityY = true;
+            if (y > 0) {
+                Cell2D &downCell = cells[x][y-1];
+                if (downCell.hasVelocityY && downCell.newVelocity.y > epsilon) {
+                    sumNeighborY += downCell.newVelocity.y;
+                    neighborYCount++;
+                }
+            }
+            if (x < sizeX-1) {
+                Cell2D &rightCell = cells[x + 1][y];
+                if (rightCell.hasVelocityY && rightCell.newVelocity.x < -epsilon) {
+                    sumNeighborY += rightCell.newVelocity.y;
+                    neighborYCount++;
+                }
+            }
+            if (y < sizeY-1) {
+                Cell2D &upCell = cells[x][y + 1];
+                if (upCell.hasVelocityY && upCell.newVelocity.y < -epsilon) {
+                    sumNeighborY += upCell.newVelocity.y;
+                    neighborYCount++;
+                }
+            }
+            if (neighborYCount > 0){
+                thisCell.newVelocity.y = sumNeighborY / (float)neighborYCount;
+                thisCell.hasVelocityY = true;
+            }
         }
     }
 
@@ -349,9 +384,19 @@ namespace Fluid_2D_FLIP {
 
             thisCell.fluid1Count = thisCell.fluid0Count = 0;
         } else {
+//            if(thisCell.hasVelocityY && thisCell.hasVelocityX){
+//                base[0] = 255;
+//                base[1] = 255;
+//                base[2] = 255;
+//            } else{
+//                base[0] = 0;
+//                base[1] = 0;
+//                base[2] = 0;
+//            }
             base[0] = 255;
             base[1] = 255;
             base[2] = 255;
+
         }
         base[3] = 255;
 
@@ -445,6 +490,11 @@ namespace Fluid_2D_FLIP {
             Particle* particlesHost = new Particle[particleCount];
             Cell2D* cells = grid.copyCellsToHost();
 
+            Cell2D** cells2 = new Cell2D*[sizeX+1];
+            for(int x = 0;x<sizeX+1;++x){
+                cells2[x] = cells+ x*(sizeY+1);
+            }
+
             HANDLE_ERROR(cudaMemcpy(particlesHost,particles,particleCount*sizeof(Particle),cudaMemcpyDeviceToHost));
 
             for(int x = 0;x<sizeX;++x){
@@ -460,31 +510,46 @@ namespace Fluid_2D_FLIP {
             for(int index = 0;index<particleCount;++index){
                 Particle& particle = particlesHost[index];
 
+                MAC_Grid_2D::contributeInterpolatedNewVelocityX(particle.position.x/cellPhysicalSize,particle.position.y/cellPhysicalSize - 0.5,
+                        sizeX,sizeY,cells2,particle.velocity.x,cellPhysicalSize);
 
-                int xVelCellX = round (particle.position.x / cellPhysicalSize);
-                int xVelCellY = round ( (particle.position.y - cellPhysicalSize/2) / cellPhysicalSize );
-                int yVelCellX = round ( (particle.position.x - cellPhysicalSize/2) / cellPhysicalSize );
-                int yVelCellY = round (particle.position.y / cellPhysicalSize);
+                MAC_Grid_2D::contributeInterpolatedNewVelocityY(particle.position.x/cellPhysicalSize - 0.5,particle.position.y/cellPhysicalSize ,
+                                                                sizeX,sizeY,cells2,particle.velocity.y,cellPhysicalSize);
 
-                float2 xVelPos = make_float2(xVelCellX * cellPhysicalSize, (xVelCellY+0.5)*cellPhysicalSize);
-                float2 yVelPos = make_float2((yVelCellX+0.5)*cellPhysicalSize, yVelCellY*cellPhysicalSize);
 
-                Cell2D& xVelCell = cells[xVelCellX*(sizeY+1) + xVelCellY];
-                Cell2D& yVelCell = cells[yVelCellX*(sizeY+1) + yVelCellY];
+//                int xVelCellX = round (particle.position.x / cellPhysicalSize);
+//                int xVelCellY = round ( (particle.position.y - cellPhysicalSize/2) / cellPhysicalSize );
+//                int yVelCellX = round ( (particle.position.x - cellPhysicalSize/2) / cellPhysicalSize );
+//                int yVelCellY = round (particle.position.y / cellPhysicalSize);
+//
+//                xVelCellX = particle.position.x / cellPhysicalSize;
+//                xVelCellY = particle.position.y / cellPhysicalSize;
+//                yVelCellX = particle.position.x / cellPhysicalSize;
+//                yVelCellY = particle.position.y / cellPhysicalSize;
+//
+//                float2 xVelPos = make_float2(xVelCellX * cellPhysicalSize, (xVelCellY+0.5)*cellPhysicalSize);
+//                float2 yVelPos = make_float2((yVelCellX+0.5)*cellPhysicalSize, yVelCellY*cellPhysicalSize);
+//
+//                Cell2D& xVelCell = cells[xVelCellX*(sizeY+1) + xVelCellY];
+//                Cell2D& yVelCell = cells[yVelCellX*(sizeY+1) + yVelCellY];
+//
+//                float support = cellPhysicalSize;
+//                float xVelContribution = quadraticBSplineKernel(particle.position-xVelPos,support);
+//                float yVelContribution = quadraticBSplineKernel(particle.position-yVelPos,support);
+//
+//                xVelCell.velocity.x += particle.velocity.x * xVelContribution;
+//                yVelCell.velocity.y += particle.velocity.y * yVelContribution;
+//
+//                xVelCell.contribution.x += xVelContribution;
+//                yVelCell.contribution.y += yVelContribution;
 
-                float xVelContribution = trilinearHatKernel(particle.position-xVelPos,cellPhysicalSize/2);
-                float yVelContribution = trilinearHatKernel(particle.position-yVelPos,cellPhysicalSize/2);
-
-                xVelCell.velocity.x += particle.velocity.x * xVelContribution;
-                yVelCell.velocity.y += particle.velocity.y * yVelContribution;
-
-                xVelCell.contribution.x += xVelContribution;
-                yVelCell.contribution.y += yVelContribution;
 
 
                 int contentCellX = particle.position.x/cellPhysicalSize;
                 int contentCellY = particle.position.y/cellPhysicalSize;
                 Cell2D& contentCell = cells[contentCellX*(sizeY+1)+ contentCellY];
+
+
                 contentCell.content = CONTENT_FLUID;
                 if(particle.kind>0){
                     contentCell.fluid1Count++;
@@ -493,22 +558,31 @@ namespace Fluid_2D_FLIP {
                 }
             }
 
-            for(int i = 0;i<(sizeY+1)*(sizeX+1);++i){
-                Cell2D& thisCell = cells[i];
-                if(thisCell.contribution.x>0){
-                    cells[i].velocity.x /= cells[i].contribution.x;
-                }
-                if(thisCell.contribution.y>0){
-                    cells[i].velocity.y /= cells[i].contribution.y;
-                }
+            for(int x = 0;x<sizeX;++x){
+                for (int y = 0; y < sizeY ; ++y) {
+                    Cell2D& thisCell = cells[x*(sizeY+1)+y];
+                    if(thisCell.contribution.x>0){
+                        //std::cout<<x<<" "<<y<<"      contribX:"<<thisCell.contribution.x<<std::endl;
+                        thisCell.velocity.x/=thisCell.contribution.x;
+                    }
+                    if(thisCell.contribution.y>0){
+                        //std::cout<<x<<" "<<y<<"      contribY:"<<thisCell.contribution.y<<std::endl;
+                        thisCell.velocity.y/=thisCell.contribution.y;
+                    }
 
+                    thisCell.newVelocity = thisCell.velocity;
 
-                cells[i].newVelocity = cells[i].velocity;
+                }
             }
+
+
+
 
             grid.copyCellsToDevice(cells);
             delete []cells;
             delete[] particlesHost;
+
+            delete[] cells2;
         }
 
         void transferToParticles(){
@@ -766,6 +840,8 @@ namespace Fluid_2D_FLIP {
             delete[] cellsTemp;
 
             float maxDist = (maxSpeed * timeStep + 1) / cellPhysicalSize;
+            //maxDist=4;
+            //std::cout<<"maxDist "<<maxDist<<std::endl;
 
             for (int distance = 0; distance < maxDist; ++distance) {
                 extrapolateVelocityByOne << < numBlocksCell, numThreadsCell >> > (grid.cells, sizeX, sizeY);
@@ -803,6 +879,7 @@ namespace Fluid_2D_FLIP {
                 float xBias = (random0to1() - 0.5f) * cellPhysicalSize;
                 float yBias = (random0to1() - 0.5f) * cellPhysicalSize;
                 float2 particlePos = centerPos + make_float2(xBias, yBias);
+                //xBias = 0;yBias=0;
                 particlesHost.emplace_back(particlePos,tag);
             }
         }

@@ -308,35 +308,83 @@ namespace Fluid_2D_SemiLagrange {
         int x = index - y * sizeX;
 
         Cell2D &thisCell = cells[x][y];
-        float uX = thisCell.velocity.x;
-        float uY = thisCell.velocity.y;
         const float epsilon = 1e-6;
-        if (x > 0) {
-            Cell2D &leftCell = cells[x - 1][y];
-            if (leftCell.content != CONTENT_FLUID && !leftCell.hasVelocityX && thisCell.hasVelocityX && uX < -epsilon) {
-                leftCell.velocity.x = uX;
-                leftCell.hasVelocityX = true;
+
+        if(!thisCell.hasVelocityX){
+            float sumNeighborX = 0;
+            int neighborXCount = 0;
+            if (x > 0) {
+                Cell2D &leftCell = cells[x - 1][y];
+                if (leftCell.hasVelocityX && leftCell.velocity.x > epsilon) {
+                    sumNeighborX += leftCell.velocity.x;
+                    neighborXCount++;
+                }
+            }
+            if (y > 0) {
+                Cell2D &downCell = cells[x][y-1];
+                if (downCell.hasVelocityX && downCell.velocity.y > epsilon) {
+                    sumNeighborX += downCell.velocity.x;
+                    neighborXCount++;
+                }
+            }
+            if (x < sizeX-1) {
+                Cell2D &rightCell = cells[x + 1][y];
+                if (rightCell.hasVelocityX && rightCell.velocity.x < -epsilon) {
+                    sumNeighborX += rightCell.velocity.x;
+                    neighborXCount++;
+                }
+            }
+            if (y < sizeY-1) {
+                Cell2D &upCell = cells[x][y + 1];
+                if (upCell.hasVelocityX && upCell.velocity.y < -epsilon) {
+                    sumNeighborX += upCell.velocity.x;
+                    neighborXCount++;
+                }
+            }
+            if (neighborXCount>0){
+                thisCell.velocity.x = sumNeighborX/(float)neighborXCount;
+                thisCell.hasVelocityX = true;
             }
         }
-        if (y > 0) {
-            Cell2D &downCell = cells[x][y - 1];
-            if (downCell.content != CONTENT_FLUID && !downCell.hasVelocityY && thisCell.hasVelocityY && uY < -epsilon) {
-                downCell.velocity.y = uY;
-                downCell.hasVelocityY = true;
+
+        if(!thisCell.hasVelocityY){
+            float sumNeighborY = 0;
+            int neighborYCount = 0;
+            if (x > 0) {
+                Cell2D &leftCell = cells[x - 1][y];
+                if (leftCell.hasVelocityY && leftCell.velocity.x > epsilon) {
+                    sumNeighborY += leftCell.velocity.y;
+                    neighborYCount++;
+                }
+            }
+            if (y > 0) {
+                Cell2D &downCell = cells[x][y-1];
+                if (downCell.hasVelocityY && downCell.velocity.y > epsilon) {
+                    sumNeighborY += downCell.velocity.y;
+                    neighborYCount++;
+                }
+            }
+            if (x < sizeX-1) {
+                Cell2D &rightCell = cells[x + 1][y];
+                if (rightCell.hasVelocityY && rightCell.velocity.x < -epsilon) {
+                    sumNeighborY += rightCell.velocity.y;
+                    neighborYCount++;
+                }
+            }
+            if (y < sizeY-1) {
+                Cell2D &upCell = cells[x][y + 1];
+                if (upCell.hasVelocityY && upCell.velocity.y < -epsilon) {
+                    sumNeighborY += upCell.velocity.y;
+                    neighborYCount++;
+                }
+            }
+            if (neighborYCount > 0){
+                thisCell.velocity.y = sumNeighborY / (float)neighborYCount;
+                thisCell.hasVelocityY = true;
             }
         }
-        Cell2D &rightCell = cells[x + 1][y];
-        if (rightCell.content != CONTENT_FLUID && thisCell.content != CONTENT_FLUID && !rightCell.hasVelocityX &&
-            thisCell.hasVelocityX && uX > epsilon) {
-            rightCell.velocity.x = thisCell.velocity.x;
-            rightCell.hasVelocityX = true;
-        }
-        Cell2D &upCell = cells[x][y + 1];
-        if (upCell.content != CONTENT_FLUID && thisCell.content != CONTENT_FLUID && !upCell.hasVelocityY &&
-            thisCell.hasVelocityY && uY > epsilon) {
-            upCell.velocity.y = thisCell.velocity.y;
-            upCell.hasVelocityY = true;
-        }
+
+
     }
 
     __global__
@@ -358,6 +406,15 @@ namespace Fluid_2D_SemiLagrange {
 
             thisCell.fluid1Count = thisCell.fluid0Count = 0;
         } else {
+            //            if(thisCell.hasVelocityY && thisCell.hasVelocityX){
+//                base[0] = 255;
+//                base[1] = 255;
+//                base[2] = 255;
+//            } else{
+//                base[0] = 0;
+//                base[1] = 0;
+//                base[2] = 0;
+//            }
             base[0] = 255;
             base[1] = 255;
             base[2] = 255;
