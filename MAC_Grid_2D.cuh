@@ -131,13 +131,13 @@ public:
     }
 
     Cell2D* copyCellsToHost(){
-        Cell2D* cellsTemp = new Cell2D[(sizeX+1)*(sizeY+1)];
-        HANDLE_ERROR(cudaMemcpy(cellsTemp,cellsData,(sizeX+1)*(sizeY+1)*sizeof(Cell2D),cudaMemcpyDeviceToHost));
+        Cell2D* cellsTemp = new Cell2D[cellCount];
+        HANDLE_ERROR(cudaMemcpy(cellsTemp,cellsData,cellCount*sizeof(Cell2D),cudaMemcpyDeviceToHost));
         return cellsTemp;
     }
 
     void copyCellsToDevice(Cell2D* cellsTemp){
-        HANDLE_ERROR(cudaMemcpy(cellsData,cellsTemp,(sizeX+1)*(sizeY+1)*sizeof(Cell2D),cudaMemcpyHostToDevice));
+        HANDLE_ERROR(cudaMemcpy(cellsData,cellsTemp,cellCount*sizeof(Cell2D),cudaMemcpyHostToDevice));
     }
 
     void createCells(){
@@ -295,7 +295,7 @@ public:
         Cell2D* cellsTemp = copyCellsToHost();
         int index = 0;
 
-        for(int c = 0;c<(sizeY+1)*(sizeX+1);++c){
+        for(int c = 0;c<cellCount;++c){
             Cell2D& thisCell = cellsTemp[c];
             if(thisCell.content==CONTENT_FLUID){
                 thisCell.fluidIndex = index;
