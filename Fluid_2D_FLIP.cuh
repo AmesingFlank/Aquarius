@@ -12,6 +12,9 @@
 #include "CudaCommons.h"
 #include "Fluid_2D.h"
 #include <unordered_map>
+#include <thrust/functional.h>
+#include <thrust/reduce.h>
+
 
 
 namespace Fluid_2D_FLIP {
@@ -35,6 +38,8 @@ namespace Fluid_2D_FLIP {
         float2 position = make_float2(0,0);
         float kind = 0;
         float2 velocity = make_float2(0,0);
+
+        __device__ __host__
         Particle(){
 
         }
@@ -47,6 +52,46 @@ namespace Fluid_2D_FLIP {
     };
 
 
+    __global__
+    void calcHashImpl(int *particleHashes,  // output
+                      Particle *particles,               // input: positions
+                      int particleCount,
+                      float cellPhysicalSize, int sizeX, int sizeY) {
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (index >= particleCount) return;
+
+        Particle &p = particles[index];
+
+        float2 pos = p.position;
+
+        int x = pos.x / cellPhysicalSize;
+        int y = pos.y / cellPhysicalSize;
+        int hash = x * (sizeY+1) + y;
+
+        particleHashes[index] = hash;
+    }
+
+
+    __global__
+    void findCellStartEndImpl(int *particleHashes,
+                              int *cellStart, int *cellEnd,
+                              int particleCount) {
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+        if (index >= particleCount) return;
+
+        int thisHash = particleHashes[index];
+
+
+        if (index == 0 || particleHashes[index - 1] < thisHash) {
+            cellStart[thisHash] = index;
+        }
+
+        if (index == particleCount - 1 || particleHashes[index + 1] > thisHash) {
+            cellEnd[thisHash] = index;
+        }
+    }
 
 
 
@@ -96,14 +141,90 @@ namespace Fluid_2D_FLIP {
     }
 
     __global__
-    void setAllContent(Cell2D **cells, int sizeX, int sizeY, float content) {
+    void resetAllCells(Cell2D **cells, int sizeX, int sizeY, float content) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= sizeX * sizeY) return;
 
         int y = index / sizeX;
         int x = index - y * sizeX;
-        cells[x][y].content = content;
+
+        Cell2D& thisCell = cells[x][y];
+
+        thisCell.content = content;
+        thisCell.velocity = make_float2(0,0);
+        thisCell.newVelocity = make_float2(0,0);
+        thisCell.fluid0Count = 0;
+        thisCell.fluid1Count = 0;
+
     }
+
+    __global__
+    void transferToCell(Cell2D **cells, int sizeX, int sizeY, float cellPhysicalSize, int* cellStart, int* cellEnd, const Particle* particles,int particleCount) {
+        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        if (index >= sizeX * sizeY) return;
+
+        int y = index / sizeX;
+        int x = index - y * sizeX;
+
+        int cellID = x*(sizeY+1) + y;
+        Cell2D& thisCell = cells[x][y];
+
+        int cellsToCheck[9];
+        for (int r = 0; r < 3; ++r) {
+            for (int c = 0; c < 3; ++c) {
+                cellsToCheck[c * 3 + r] = cellID + (r - 1) + (c - 1) * (sizeY+1);
+            }
+        }
+
+        int cellCount = (sizeX+1)*(sizeY+1) ;
+
+        float2 xVelocityPos = make_float2(x*cellPhysicalSize,(y+0.5)*cellPhysicalSize);
+        float2 yVelocityPos = make_float2((x+0.5)*cellPhysicalSize,y*cellPhysicalSize);
+
+        float totalWeightX = 0;
+        float totalWeightY = 0;
+
+
+        for (int cell : cellsToCheck) {
+            if (cell >= 0 && cell < cellCount) {
+                for (int j = cellStart[cell]; j <= cellEnd[cell]; ++j) {
+                    if (j >= 0 && j < particleCount ) {
+                        const Particle& p = particles[j];
+                        float thisWeightX = trilinearHatKernel(p.position - xVelocityPos,cellPhysicalSize);
+                        float thisWeightY = trilinearHatKernel(p.position - yVelocityPos,cellPhysicalSize);
+
+                        thisCell.velocity.x += thisWeightX * p.velocity.x;
+                        thisCell.velocity.y += thisWeightY * p.velocity.y;
+
+                        totalWeightX += thisWeightX;
+                        totalWeightY += thisWeightY;
+                    }
+                }
+            }
+        }
+
+        if(totalWeightX>0)
+            thisCell.velocity.x /= totalWeightX;
+        if(totalWeightY>0)
+            thisCell.velocity.y /= totalWeightY;
+        thisCell.newVelocity = thisCell.velocity;
+
+        for (int j = cellStart[cellID]; j <= cellEnd[cellID]; ++j) {
+            if (j >= 0 && j < particleCount ) {
+                thisCell.content = CONTENT_FLUID;
+
+                const Particle& p = particles[j];
+
+
+                if(p.kind>0){
+                    thisCell.fluid1Count++;
+                } else{
+                    thisCell.fluid0Count++;
+                }
+            }
+        }
+    }
+
 
     __global__
     void applyForcesImpl(Cell2D **cells, int sizeX, int sizeY, float timeStep, float gravitationalAcceleration) {
@@ -197,29 +318,29 @@ namespace Fluid_2D_FLIP {
 
         if (downCoeff) {
             Cell2D &downCell = cells[x][y - 1];
-            thisEquation.termsIndex[thisEquation.termCount] = downCell.index;
+            thisEquation.termsIndex[thisEquation.termCount] = downCell.fluidIndex;
             thisEquation.termsCoeff[thisEquation.termCount] = downCoeff;
             ++thisEquation.termCount;
             ++nnz;
         }
         if (leftCoeff) {
             Cell2D &leftCell = cells[x - 1][y];
-            thisEquation.termsIndex[thisEquation.termCount] = leftCell.index;
+            thisEquation.termsIndex[thisEquation.termCount] = leftCell.fluidIndex;
             thisEquation.termsCoeff[thisEquation.termCount] = leftCoeff;
             ++thisEquation.termCount;
             ++nnz;
         }
-        thisEquation.termsIndex[thisEquation.termCount] = thisCell.index;
+        thisEquation.termsIndex[thisEquation.termCount] = thisCell.fluidIndex;
         thisEquation.termsCoeff[thisEquation.termCount] = centerCoeff;
         ++thisEquation.termCount;
         if (rightCoeff) {
-            thisEquation.termsIndex[thisEquation.termCount] = rightCell.index;
+            thisEquation.termsIndex[thisEquation.termCount] = rightCell.fluidIndex;
             thisEquation.termsCoeff[thisEquation.termCount] = rightCoeff;
             ++thisEquation.termCount;
             ++nnz;
         }
         if (upCoeff) {
-            thisEquation.termsIndex[thisEquation.termCount] = upCell.index;
+            thisEquation.termsIndex[thisEquation.termCount] = upCell.fluidIndex;
             thisEquation.termsCoeff[thisEquation.termCount] = upCoeff;
             ++thisEquation.termCount;
             ++nnz;
@@ -231,7 +352,7 @@ namespace Fluid_2D_FLIP {
         }
         thisEquation.x = x;
         thisEquation.y = y;
-        equations[thisCell.index] = thisEquation;
+        equations[thisCell.fluidIndex] = thisEquation;
 
     }
 
@@ -246,7 +367,7 @@ namespace Fluid_2D_FLIP {
         if (cells[x][y].content != CONTENT_FLUID)
             return;
 
-        cells[x][y].pressure = pressureResult[cells[x][y].index];
+        cells[x][y].pressure = pressureResult[cells[x][y].fluidIndex];
     }
 
     __global__
@@ -366,7 +487,7 @@ namespace Fluid_2D_FLIP {
     }
 
     __global__
-    void updateTextureImpl(Cell2D **cells, int sizeX, int sizeY, unsigned char *image) {
+    void updateTextureImpl(Cell2D **cells, int sizeX, int sizeY, unsigned char *image,int* cellStart, int* cellEnd) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= sizeX * sizeY) return;
 
@@ -375,7 +496,11 @@ namespace Fluid_2D_FLIP {
 
         Cell2D &thisCell = cells[x][y];
         unsigned char *base = image + 4 * (sizeX * y + x);
+
+        int cellID = x*(sizeY+1) + y;
+
         if (thisCell.content == CONTENT_FLUID) {
+        //if(cellStart[cellID]!=-1){
             float fluid1percentage = thisCell.fluid1Count / (thisCell.fluid1Count + thisCell.fluid0Count);
             //fluid1percentage = 0;
             base[0] = 255 * fluid1percentage;
@@ -408,6 +533,8 @@ namespace Fluid_2D_FLIP {
     public:
         const int sizeX = 256;
         const int sizeY = 128;
+        const int cellCount = (sizeX+1)*(sizeY+1);
+
         const float cellPhysicalSize = 10.f / (float) sizeY;
         const float gravitationalAcceleration = 9.8;
         const float density = 1;
@@ -421,25 +548,12 @@ namespace Fluid_2D_FLIP {
 
         int particlesPerCell = 8;
 
+        int* particleHashes;
+        int * cellStart;
+        int * cellEnd;
+
         Fluid() {
             init();
-        }
-
-        void simulationStep(float totalTime) {
-            float thisTimeStep = 0.05f;
-
-            transferToGrid();
-            grid.updateFluidCount();
-
-            applyForces(thisTimeStep);
-            fixBoundary();
-
-            solvePressure(thisTimeStep);
-            extrapolateVelocity(thisTimeStep);
-
-            transferToParticles();
-
-            moveParticles(thisTimeStep);
         }
 
         void init() {
@@ -468,6 +582,10 @@ namespace Fluid_2D_FLIP {
                                     cudaMemcpyHostToDevice));
             delete[] particlesHostToCopy;
 
+            HANDLE_ERROR(cudaMalloc(&particleHashes, particleCount* sizeof(*particleHashes)));
+            HANDLE_ERROR(cudaMalloc(&cellStart, cellCount* sizeof(*cellStart)));
+            HANDLE_ERROR(cudaMalloc(&cellEnd, cellCount* sizeof(*cellEnd)));
+
             numThreadsParticle = min(1024, particleCount);
             numBlocksParticle = divUp(particleCount, numThreadsParticle);
 
@@ -480,109 +598,48 @@ namespace Fluid_2D_FLIP {
 
         }
 
+        void performSpatialHashing(){
+            calcHashImpl<<< numBlocksParticle, numThreadsParticle >>>(particleHashes,particles,particleCount,cellPhysicalSize,sizeX,sizeY);
+            CHECK_CUDA_ERROR("calc hash");
+
+            thrust::sort_by_key(thrust::device, particleHashes, particleHashes + particleCount, particles);
+
+            HANDLE_ERROR(cudaMemset(cellStart,255,cellCount*sizeof(*cellStart)));
+            HANDLE_ERROR(cudaMemset(cellEnd,255,cellCount*sizeof(*cellEnd)));
+            findCellStartEndImpl<<< numBlocksParticle, numThreadsParticle >>>(particleHashes,cellStart,cellEnd,particleCount);
+            CHECK_CUDA_ERROR("find cell start end");
+
+        }
+
+        void simulationStep(float totalTime) {
+            float thisTimeStep = 0.05f;
+
+            transferToGrid();
+            grid.updateFluidCount();
+
+            applyForces(thisTimeStep);
+            fixBoundary();
+
+            solvePressure(thisTimeStep);
+            extrapolateVelocity(thisTimeStep);
+
+            transferToParticles();
+
+            moveParticles(thisTimeStep);
+        }
+
 
         void transferToGrid(){
 
-            setAllContent <<< numBlocksCell, numThreadsCell >>> (grid.cells, sizeX, sizeY, CONTENT_AIR);
+            performSpatialHashing();
+
+            resetAllCells << < numBlocksCell, numThreadsCell >> > (grid.cells, sizeX, sizeY, CONTENT_AIR);
             cudaDeviceSynchronize();
-            CHECK_CUDA_ERROR("set all to air");
+            CHECK_CUDA_ERROR("reset all cells");
 
-            Particle* particlesHost = new Particle[particleCount];
-            Cell2D* cells = grid.copyCellsToHost();
-
-            Cell2D** cells2 = new Cell2D*[sizeX+1];
-            for(int x = 0;x<sizeX+1;++x){
-                cells2[x] = cells+ x*(sizeY+1);
-            }
-
-            HANDLE_ERROR(cudaMemcpy(particlesHost,particles,particleCount*sizeof(Particle),cudaMemcpyDeviceToHost));
-
-            for(int x = 0;x<sizeX;++x){
-                for (int y = 0; y < sizeY ; ++y) {
-                    Cell2D& thisCell = cells[x*(sizeY+1)+y];
-                    thisCell.velocity = make_float2(0,0);
-                    thisCell.contribution = make_float2(0,0);
-                    thisCell.fluid0Count = 0;
-                    thisCell.fluid1Count = 0;
-                }
-            }
-
-            for(int index = 0;index<particleCount;++index){
-                Particle& particle = particlesHost[index];
-
-                MAC_Grid_2D::contributeInterpolatedNewVelocityX(particle.position.x/cellPhysicalSize,particle.position.y/cellPhysicalSize - 0.5,
-                        sizeX,sizeY,cells2,particle.velocity.x,cellPhysicalSize);
-
-                MAC_Grid_2D::contributeInterpolatedNewVelocityY(particle.position.x/cellPhysicalSize - 0.5,particle.position.y/cellPhysicalSize ,
-                                                                sizeX,sizeY,cells2,particle.velocity.y,cellPhysicalSize);
+            transferToCell<< < numBlocksCell, numThreadsCell >> >(grid.cells,sizeX,sizeY,cellPhysicalSize,cellStart,cellEnd,particles,particleCount);
 
 
-//                int xVelCellX = round (particle.position.x / cellPhysicalSize);
-//                int xVelCellY = round ( (particle.position.y - cellPhysicalSize/2) / cellPhysicalSize );
-//                int yVelCellX = round ( (particle.position.x - cellPhysicalSize/2) / cellPhysicalSize );
-//                int yVelCellY = round (particle.position.y / cellPhysicalSize);
-//
-//                xVelCellX = particle.position.x / cellPhysicalSize;
-//                xVelCellY = particle.position.y / cellPhysicalSize;
-//                yVelCellX = particle.position.x / cellPhysicalSize;
-//                yVelCellY = particle.position.y / cellPhysicalSize;
-//
-//                float2 xVelPos = make_float2(xVelCellX * cellPhysicalSize, (xVelCellY+0.5)*cellPhysicalSize);
-//                float2 yVelPos = make_float2((yVelCellX+0.5)*cellPhysicalSize, yVelCellY*cellPhysicalSize);
-//
-//                Cell2D& xVelCell = cells[xVelCellX*(sizeY+1) + xVelCellY];
-//                Cell2D& yVelCell = cells[yVelCellX*(sizeY+1) + yVelCellY];
-//
-//                float support = cellPhysicalSize;
-//                float xVelContribution = quadraticBSplineKernel(particle.position-xVelPos,support);
-//                float yVelContribution = quadraticBSplineKernel(particle.position-yVelPos,support);
-//
-//                xVelCell.velocity.x += particle.velocity.x * xVelContribution;
-//                yVelCell.velocity.y += particle.velocity.y * yVelContribution;
-//
-//                xVelCell.contribution.x += xVelContribution;
-//                yVelCell.contribution.y += yVelContribution;
-
-
-
-                int contentCellX = particle.position.x/cellPhysicalSize;
-                int contentCellY = particle.position.y/cellPhysicalSize;
-                Cell2D& contentCell = cells[contentCellX*(sizeY+1)+ contentCellY];
-
-
-                contentCell.content = CONTENT_FLUID;
-                if(particle.kind>0){
-                    contentCell.fluid1Count++;
-                } else{
-                    contentCell.fluid0Count++;
-                }
-            }
-
-            for(int x = 0;x<sizeX;++x){
-                for (int y = 0; y < sizeY ; ++y) {
-                    Cell2D& thisCell = cells[x*(sizeY+1)+y];
-                    if(thisCell.contribution.x>0){
-                        //std::cout<<x<<" "<<y<<"      contribX:"<<thisCell.contribution.x<<std::endl;
-                        thisCell.velocity.x/=thisCell.contribution.x;
-                    }
-                    if(thisCell.contribution.y>0){
-                        //std::cout<<x<<" "<<y<<"      contribY:"<<thisCell.contribution.y<<std::endl;
-                        thisCell.velocity.y/=thisCell.contribution.y;
-                    }
-
-                    thisCell.newVelocity = thisCell.velocity;
-
-                }
-            }
-
-
-
-
-            grid.copyCellsToDevice(cells);
-            delete []cells;
-            delete[] particlesHost;
-
-            delete[] cells2;
         }
 
         void transferToParticles(){
@@ -823,21 +880,7 @@ namespace Fluid_2D_FLIP {
         void extrapolateVelocity(float timeStep) {
 
             //used to decide how far to extrapolate
-            float maxSpeed = 0;
-
-            Cell2D *cellsTemp = grid.copyCellsToHost();
-
-            for (int c = 0; c < (sizeY + 1) * (sizeX + 1); ++c) {
-                Cell2D &thisCell = cellsTemp[c];
-
-                if (thisCell.hasVelocityX) {
-                    maxSpeed = max(maxSpeed, 2 * abs(thisCell.newVelocity.x));
-                }
-                if (thisCell.hasVelocityY) {
-                    maxSpeed = max(maxSpeed, 2 * abs(thisCell.newVelocity.y));
-                }
-            }
-            delete[] cellsTemp;
+            float maxSpeed = grid.getMaxSpeed();
 
             float maxDist = (maxSpeed * timeStep + 1) / cellPhysicalSize;
             //maxDist=4;
@@ -859,7 +902,7 @@ namespace Fluid_2D_FLIP {
             unsigned char *imageDevice;
             HANDLE_ERROR(cudaMalloc(&imageDevice, imageMemorySize));
 
-            updateTextureImpl << < numBlocksCell, numThreadsCell >> > (grid.cells, sizeX, sizeY, imageDevice);
+            updateTextureImpl << < numBlocksCell, numThreadsCell >> > (grid.cells, sizeX, sizeY, imageDevice,cellStart,cellEnd);
             cudaDeviceSynchronize();
             CHECK_CUDA_ERROR("update tex");
 
@@ -895,7 +938,7 @@ namespace Fluid_2D_FLIP {
                     thisCell.velocity.y = 0;
                     thisCell.newVelocity = make_float2(0,0);
                     thisCell.content = CONTENT_FLUID;
-                    thisCell.index = index;
+                    thisCell.fluidIndex = index;
                     ++index;
                     float2 thisPos = MAC_Grid_2D::getPhysicalPos(x, y, cellPhysicalSize);
                     createParticles(particlesHost, thisPos, 0);
@@ -917,7 +960,7 @@ namespace Fluid_2D_FLIP {
                         thisCell.velocity.y = 0;
                         thisCell.newVelocity = make_float2(0,0);
                         thisCell.content = CONTENT_FLUID;
-                        thisCell.index = index;
+                        thisCell.fluidIndex = index;
                         ++index;
 
                         float2 thisPos = MAC_Grid_2D::getPhysicalPos(x, y, cellPhysicalSize);

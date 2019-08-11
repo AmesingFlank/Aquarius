@@ -216,29 +216,29 @@ namespace Fluid_2D_SemiLagrange {
 
         if (downCoeff) {
             Cell2D &downCell = cells[x][y - 1];
-            thisEquation.termsIndex[thisEquation.termCount] = downCell.index;
+            thisEquation.termsIndex[thisEquation.termCount] = downCell.fluidIndex;
             thisEquation.termsCoeff[thisEquation.termCount] = downCoeff;
             ++thisEquation.termCount;
             ++nnz;
         }
         if (leftCoeff) {
             Cell2D &leftCell = cells[x - 1][y];
-            thisEquation.termsIndex[thisEquation.termCount] = leftCell.index;
+            thisEquation.termsIndex[thisEquation.termCount] = leftCell.fluidIndex;
             thisEquation.termsCoeff[thisEquation.termCount] = leftCoeff;
             ++thisEquation.termCount;
             ++nnz;
         }
-        thisEquation.termsIndex[thisEquation.termCount] = thisCell.index;
+        thisEquation.termsIndex[thisEquation.termCount] = thisCell.fluidIndex;
         thisEquation.termsCoeff[thisEquation.termCount] = centerCoeff;
         ++thisEquation.termCount;
         if (rightCoeff) {
-            thisEquation.termsIndex[thisEquation.termCount] = rightCell.index;
+            thisEquation.termsIndex[thisEquation.termCount] = rightCell.fluidIndex;
             thisEquation.termsCoeff[thisEquation.termCount] = rightCoeff;
             ++thisEquation.termCount;
             ++nnz;
         }
         if (upCoeff) {
-            thisEquation.termsIndex[thisEquation.termCount] = upCell.index;
+            thisEquation.termsIndex[thisEquation.termCount] = upCell.fluidIndex;
             thisEquation.termsCoeff[thisEquation.termCount] = upCoeff;
             ++thisEquation.termCount;
             ++nnz;
@@ -250,7 +250,7 @@ namespace Fluid_2D_SemiLagrange {
         }
         thisEquation.x = x;
         thisEquation.y = y;
-        equations[thisCell.index] = thisEquation;
+        equations[thisCell.fluidIndex] = thisEquation;
 
     }
 
@@ -265,7 +265,7 @@ namespace Fluid_2D_SemiLagrange {
         if (cells[x][y].content != CONTENT_FLUID)
             return;
 
-        cells[x][y].pressure = pressureResult[cells[x][y].index];
+        cells[x][y].pressure = pressureResult[cells[x][y].fluidIndex];
     }
 
     __global__
@@ -767,20 +767,7 @@ namespace Fluid_2D_SemiLagrange {
         void extrapolateVelocity(float timeStep) {
 
             //used to decide how far to extrapolate
-            float maxSpeed = 0;
-
-            Cell2D *cellsTemp = grid.copyCellsToHost();
-
-            for (int c = 0; c < (sizeY + 1) * (sizeX + 1); ++c) {
-                Cell2D &thisCell = cellsTemp[c];
-                if (thisCell.hasVelocityX) {
-                    maxSpeed = max(maxSpeed, 2 * abs(thisCell.velocity.x));
-                }
-                if (thisCell.hasVelocityY) {
-                    maxSpeed = max(maxSpeed, 2 * abs(thisCell.velocity.y));
-                }
-            }
-            delete[] cellsTemp;
+            float maxSpeed = grid.getMaxSpeed();
 
             float maxDist = (maxSpeed * timeStep + 1) / cellPhysicalSize;
 
@@ -834,7 +821,7 @@ namespace Fluid_2D_SemiLagrange {
                     thisCell.velocity.x = 0;
                     thisCell.velocity.y = 0;
                     thisCell.content = CONTENT_FLUID;
-                    thisCell.index = index;
+                    thisCell.fluidIndex = index;
                     ++index;
                     float2 thisPos = MAC_Grid_2D::getPhysicalPos(x, y, cellPhysicalSize);
                     createParticles(particlesHost, thisPos, 0);
@@ -855,7 +842,7 @@ namespace Fluid_2D_SemiLagrange {
                         thisCell.velocity.x = 0;
                         thisCell.velocity.y = 0;
                         thisCell.content = CONTENT_FLUID;
-                        thisCell.index = index;
+                        thisCell.fluidIndex = index;
                         ++index;
 
                         float2 thisPos = MAC_Grid_2D::getPhysicalPos(x, y, cellPhysicalSize);

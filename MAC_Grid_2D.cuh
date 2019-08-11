@@ -10,6 +10,8 @@
 #include "CudaCommons.h"
 #include <cmath>
 #include "WeightKernels.h"
+#include <thrust/functional.h>
+
 
 #define CONTENT_AIR  0.0
 #define CONTENT_FLUID  1.0
@@ -26,17 +28,92 @@ struct Cell2D{
     //float signedDistance;
     float content;
     float content_new;
-    int index;
+    int fluidIndex;
     bool hasVelocityX = false;
     bool hasVelocityY = false;
 
     float fluid0Count = 0;
     float fluid1Count = 0;
 
-    float2 contribution;
 
 };
 
+
+namespace MAC_Grid_2D_Utils{
+
+    __global__
+    void writeContentsAndIndices(Cell2D *cellsData, int sizeX, int sizeY,
+            int* contentCopy0, int* contentCopy1, int* indices) {
+        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        if (index >= (sizeX+1) * (sizeY+1) ) return;
+
+
+        if(cellsData[index].content==CONTENT_FLUID){
+            contentCopy0[index] = 0;
+            contentCopy1[index] = 0;
+        } else{
+            contentCopy0[index] = 1;
+            contentCopy1[index] = 1;
+        }
+
+        indices[index]=index;
+    }
+
+    __global__
+    void setFluidIndex(Cell2D *cellsData, int sizeX, int sizeY,int* fluidCount) {
+        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        if (index >= (sizeX+1) * (sizeY+1) ) return;
+
+
+        if(cellsData[index].content==CONTENT_FLUID){
+            cellsData[index].fluidIndex = index;
+            if(index+1 < (sizeX+1) * (sizeY+1) && cellsData[index+1].content!=CONTENT_FLUID){
+                *fluidCount = index+1;
+            }
+        }
+    }
+
+    __global__
+    void setContentToNewContent(Cell2D *cellsData, int sizeX, int sizeY) {
+        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        if (index >= (sizeX+1) * (sizeY+1) ) return;
+
+        cellsData[index].content=cellsData[index].content_new;
+    }
+
+    /*
+    __host__ __device__
+    struct GreaterCellSpeed : public thrust::binary_function<float,float,float>
+    {
+        __host__ __device__
+        float operator()(const Cell2D& a, const Cell2D& b) {
+            float ax = abs(a.velocity.x);
+            float ay = abs(a.velocity.y);
+            float bx = abs(b.velocity.x);
+            float by = abs(b.velocity.y);
+            float maxA = max(ax,ay);
+            float maxB = max(bx,by);
+            return max(maxA,maxB);
+        }
+    };
+     */
+    __global__
+    void writeSpeedX(Cell2D *cellsData, int sizeX, int sizeY, float* speedX) {
+        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        if (index >= (sizeX+1) * (sizeY+1) ) return;
+
+        speedX[index] = abs(cellsData[index].velocity.x);
+    }
+
+    __global__
+    void writeSpeedY(Cell2D *cellsData, int sizeX, int sizeY, float* speedY) {
+        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        if (index >= (sizeX+1) * (sizeY+1) ) return;
+
+        speedY[index] = abs(cellsData[index].velocity.y);
+    }
+
+}
 
 
 
@@ -45,10 +122,14 @@ class MAC_Grid_2D{
 public:
     const int sizeX;
     const int sizeY;
+    const int cellCount;
 
     const float cellPhysicalSize;
     const float physicalSizeX;
     const float physicalSizeY;
+
+    int numThreadsCell;
+    int numBlocksCell;
 
     int fluidCount = 0;
 
@@ -56,10 +137,12 @@ public:
     Cell2D* cellsData;
 
     MAC_Grid_2D(int X,int Y,float cellPhysicalSize_):
-            sizeX(X),sizeY(Y),cellPhysicalSize(cellPhysicalSize_),
+            sizeX(X),sizeY(Y),cellCount((X+1)*(Y+1)),cellPhysicalSize(cellPhysicalSize_),
             physicalSizeX(X*cellPhysicalSize),physicalSizeY(Y*cellPhysicalSize)
     {
-        cells = createCells();
+        numThreadsCell = min(1024, cellCount);
+        numBlocksCell = divUp(cellCount, numThreadsCell);
+        createCells();
     }
 
     Cell2D* copyCellsToHost(){
@@ -72,16 +155,15 @@ public:
         HANDLE_ERROR(cudaMemcpy(cellsData,cellsTemp,(sizeX+1)*(sizeY+1)*sizeof(Cell2D),cudaMemcpyHostToDevice));
     }
 
-    Cell2D** createCells(){
-        int cellsCount = (sizeX+1)*(sizeY+1);
-        int memorySize = sizeof(Cell2D)*cellsCount;
+    void createCells(){
+
+        int memorySize = sizeof(Cell2D)*cellCount;
         std::cout<<"malloc size "<<memorySize<<std::endl;
 
         HANDLE_ERROR(cudaMalloc (&cellsData,memorySize));
         HANDLE_ERROR(cudaMemset(cellsData,0,memorySize));
 
-        Cell2D** result;
-        HANDLE_ERROR(cudaMalloc (&result,(sizeX+1)*sizeof(Cell2D*)  ));
+        HANDLE_ERROR(cudaMalloc (&cells,(sizeX+1)*sizeof(Cell2D*)  ));
 
         Cell2D** resultHost = new Cell2D*[sizeX+1];
 
@@ -90,11 +172,10 @@ public:
             resultHost[x] = cellsData + offset;
         }
 
-        HANDLE_ERROR(cudaMemcpy(result,resultHost,(sizeX+1)*sizeof(Cell2D*),cudaMemcpyHostToDevice));
+        HANDLE_ERROR(cudaMemcpy(cells,resultHost,(sizeX+1)*sizeof(Cell2D*),cudaMemcpyHostToDevice));
 
         delete []resultHost;
 
-        return result;
     }
 
     __device__ __host__
@@ -210,62 +291,6 @@ public:
         return result;
     }
 
-    __device__ __host__
-    static void contributeInterpolatedNewVelocityX(float x, float y,int sizeX,int sizeY,Cell2D** cells, float uX, float cellPhysicalSize){
-        x = max(min(x,sizeX-1.f),0.f);
-        y = max(min(y,sizeY-1.f),0.f);
-        int i = floor(x);
-        int j = floor(y);
-
-        float u[2];
-        float v[2];
-        float weightX[2][2];
-
-
-        u[0] = x - i ;
-        u[1] = i + 1.f - x;
-        v[0] = y - j ;
-        v[1] = j + 1 - y;
-
-        for (int a = 0; a < 2 ; ++a) {
-            for (int b = 0; b < 2 ; ++b) {
-                float weight = u[a]*v[b];
-                weight = trilinearHatKernel(make_float2(u[a],u[b]),1);
-                cells[i+a][j+b].velocity.x += weight*uX;
-                cells[i+a][j+b].contribution.x += weight ;
-            }
-        }
-
-    }
-
-    __device__ __host__
-    static void contributeInterpolatedNewVelocityY(float x, float y,int sizeX,int sizeY,Cell2D** cells, float uY, float cellPhysicalSize){
-        x = max(min(x,sizeX-1.f),0.f);
-        y = max(min(y,sizeY-1.f),0.f);
-        int i = floor(x);
-        int j = floor(y);
-
-        float u[2];
-        float v[2];
-        float weightX[2][2];
-
-
-        u[0] = x - i ;
-        u[1] = i + 1.f - x;
-        v[0] = y - j ;
-        v[1] = j + 1.f - y;
-
-        for (int a = 0; a < 2 ; ++a) {
-            for (int b = 0; b < 2 ; ++b) {
-                float weight = u[a]*v[b];
-                weight = trilinearHatKernel(make_float2(u[a],u[b]),1);
-                cells[i+a][j+b].velocity.y += weight*uY;
-                cells[i+a][j+b].contribution.y += weight ;
-            }
-        }
-
-    }
-
 
 
 
@@ -277,16 +302,18 @@ public:
 
     void commitContentChanges(){
 
-        Cell2D* cellsTemp = copyCellsToHost();
-        //HANDLE_ERROR(cudaMemcpy(cellsTemp,cells[0],(sizeY+1)*(sizeX+1)*sizeof(Cell2D),cudaMemcpyDeviceToHost));
+        MAC_Grid_2D_Utils::setContentToNewContent<<<numBlocksCell,numThreadsCell>>>(cellsData,sizeX,sizeY);
+        updateFluidCount();
+    }
 
+    void updateFluidCount2(){
+        Cell2D* cellsTemp = copyCellsToHost();
         int index = 0;
 
         for(int c = 0;c<(sizeY+1)*(sizeX+1);++c){
             Cell2D& thisCell = cellsTemp[c];
-            thisCell.content = thisCell.content_new;
             if(thisCell.content==CONTENT_FLUID){
-                thisCell.index = index;
+                thisCell.fluidIndex = index;
                 index++;
             }
         }
@@ -297,20 +324,87 @@ public:
     }
 
     void updateFluidCount(){
-        Cell2D* cellsTemp = copyCellsToHost();
-        int index = 0;
+        int* contentCopy0;
+        int* contentCopy1;
+        int* indices;
+        HANDLE_ERROR(cudaMalloc (&contentCopy0,cellCount*sizeof(*contentCopy0)));
+        HANDLE_ERROR(cudaMalloc (&contentCopy1,cellCount*sizeof(*contentCopy1)));
+        HANDLE_ERROR(cudaMalloc (&indices,cellCount*sizeof(*indices)));
 
-        for(int c = 0;c<(sizeY+1)*(sizeX+1);++c){
-            Cell2D& thisCell = cellsTemp[c];
-            if(thisCell.content==CONTENT_FLUID){
-                thisCell.index = index;
-                index++;
+        int numThreadsCell = min(1024, cellCount);
+        int numBlocksCell = divUp(cellCount, numThreadsCell);
+
+        MAC_Grid_2D_Utils::writeContentsAndIndices<<<numBlocksCell,numThreadsCell>>>(cellsData,sizeX,sizeY,contentCopy0,contentCopy1,indices);
+        CHECK_CUDA_ERROR("write contents and indices");
+
+        thrust::stable_sort_by_key(thrust::device, contentCopy0, contentCopy0 + cellCount, cellsData);
+        thrust::stable_sort_by_key(thrust::device, contentCopy1, contentCopy1 + cellCount, indices);
+
+        fluidCount = cellCount;
+
+        int* fluidCountDevice;
+        HANDLE_ERROR(cudaMalloc (&fluidCountDevice,sizeof(*fluidCountDevice)));
+
+        MAC_Grid_2D_Utils::setFluidIndex<<<numBlocksCell,numThreadsCell>>>(cellsData,sizeX,sizeY,fluidCountDevice);
+        CHECK_CUDA_ERROR("set fluid index");
+
+        HANDLE_ERROR(cudaMemcpy(&fluidCount,fluidCountDevice,sizeof(fluidCount),cudaMemcpyDeviceToHost));
+
+        thrust::stable_sort_by_key(thrust::device, indices, indices + cellCount, cellsData);
+
+        HANDLE_ERROR(cudaFree(fluidCountDevice));
+        HANDLE_ERROR(cudaFree(contentCopy0));
+        HANDLE_ERROR(cudaFree(contentCopy1));
+        HANDLE_ERROR(cudaFree(indices));
+
+    }
+
+
+    float getMaxSpeed2(){
+        float maxSpeed = 0;
+
+        Cell2D *cellsTemp = copyCellsToHost();
+
+        for (int c = 0; c < (sizeY + 1) * (sizeX + 1); ++c) {
+            Cell2D &thisCell = cellsTemp[c];
+
+            if (thisCell.hasVelocityX) {
+                maxSpeed = max(maxSpeed,  abs(thisCell.newVelocity.x));
+            }
+            if (thisCell.hasVelocityY) {
+                maxSpeed = max(maxSpeed, abs(thisCell.newVelocity.y));
             }
         }
+        delete[] cellsTemp;
 
-        fluidCount = index;
-        copyCellsToDevice(cellsTemp);
-        delete []cellsTemp;
+        //maxSpeed = thrust::reduce(grid.cellsData, grid.cellsData+grid.cellCount,0,MAC_Grid_2D_Utils::GreaterCellSpeed());
+
+        maxSpeed = maxSpeed*sqrt(2);
+        return maxSpeed;
+    }
+
+    float getMaxSpeed(){
+        float * speedX;
+        float * speedY;
+
+        HANDLE_ERROR(cudaMalloc (&speedX,cellCount*sizeof(*speedX)));
+        HANDLE_ERROR(cudaMalloc (&speedY,cellCount*sizeof(*speedY)));
+
+        MAC_Grid_2D_Utils::writeSpeedX<<<numBlocksCell,numThreadsCell>>>(cellsData,sizeX,sizeY,speedX);
+        CHECK_CUDA_ERROR("write vX");
+        MAC_Grid_2D_Utils::writeSpeedY<<<numBlocksCell,numThreadsCell>>>(cellsData,sizeX,sizeY,speedY);
+        CHECK_CUDA_ERROR("write vY");
+
+        float maxX = thrust::reduce(thrust::device,speedX, speedX+cellCount,0,thrust::maximum<float>());
+        float maxY = thrust::reduce(thrust::device,speedY, speedY+cellCount,0,thrust::maximum<float>());
+
+        float maxSpeed = max(maxX,maxY) *sqrt(2);
+
+        HANDLE_ERROR(cudaFree (speedX));
+        HANDLE_ERROR(cudaFree (speedY));
+
+
+        return maxSpeed;
     }
 
 };
