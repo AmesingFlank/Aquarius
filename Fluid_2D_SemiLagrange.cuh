@@ -47,15 +47,15 @@ namespace Fluid_2D_SemiLagrange {
 
 
     __global__
-    void advectVelocityImpl(Cell2D **cells, int sizeX, int sizeY, float timeStep, float gravitationalAcceleration,
+    void advectVelocityImpl(Cell2D *cells, int sizeX, int sizeY, float timeStep, float gravitationalAcceleration,
                             float cellPhysicalSize) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
-        if (index >= sizeX * sizeY) return;
+        if (index >= (sizeX+1) * (sizeY+1)) return;
 
-        int y = index / sizeX;
-        int x = index - y * sizeX;
+        int x = index / (sizeY+1);
+        int y = index - x * (sizeY+1);
 
-        if (cells[x][y].content == CONTENT_AIR) return;
+        if (get2D(cells,x,y).content == CONTENT_AIR) return;
         float2 thisVelocity = MAC_Grid_2D::getCellVelocity(x, y, sizeX, sizeY, cells);
         float2 thisPos = MAC_Grid_2D::getPhysicalPos(x, y, cellPhysicalSize);
 
@@ -68,18 +68,18 @@ namespace Fluid_2D_SemiLagrange {
 
         float2 sourceVelocity =
                 MAC_Grid_2D::getPointVelocity(sourcePos, cellPhysicalSize, sizeX, sizeY, cells);
-        cells[x][y].newVelocity = sourceVelocity;
-        if (y + 1 <= sizeY && cells[x][y + 1].content == CONTENT_AIR) {
-            cells[x][y + 1].newVelocity.y = sourceVelocity.y;
+        get2D(cells,x,y).newVelocity = sourceVelocity;
+        if (y + 1 <= sizeY && get2D(cells,x,y + 1).content == CONTENT_AIR) {
+            get2D(cells,x,y + 1).newVelocity.y = sourceVelocity.y;
         }
-        if (x + 1 <= sizeX && cells[x + 1][y].content == CONTENT_AIR) {
-            cells[x + 1][y].newVelocity.x = sourceVelocity.x;
+        if (x + 1 <= sizeX && get2D(cells,x + 1,y).content == CONTENT_AIR) {
+            get2D(cells,x + 1,y).newVelocity.x = sourceVelocity.x;
         }
     }
 
     __global__
     void
-    moveParticlesImpl(float timeStep, Cell2D **cells, Particle *particles, uint particleCount, int sizeX, int sizeY,
+    moveParticlesImpl(float timeStep, Cell2D *cells, Particle *particles, uint particleCount, int sizeX, int sizeY,
                       float cellPhysicalSize) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= particleCount) return;
@@ -100,104 +100,104 @@ namespace Fluid_2D_SemiLagrange {
         int destCellY = floor(destPos.y / cellPhysicalSize);
         destCellX = max(min(destCellX, sizeX - 1), 0);
         destCellY = max(min(destCellY, sizeY - 1), 0);
-        cells[destCellX][destCellY].content_new = CONTENT_FLUID;
+        get2D(cells,destCellX,destCellY).content_new = CONTENT_FLUID;
         particle.position = destPos;
 
 
         if (particle.kind > 0) {
-            cells[destCellX][destCellY].fluid1Count += 1;
+            get2D(cells,destCellX,destCellY).fluid1Count += 1;
         } else
-            cells[destCellX][destCellY].fluid0Count += 1;
+            get2D(cells,destCellX,destCellY).fluid0Count += 1;
     }
 
     __global__
-    void setAllContent(Cell2D **cells, int sizeX, int sizeY, float content) {
+    void setAllContent(Cell2D *cells, int sizeX, int sizeY, float content) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
-        if (index >= sizeX * sizeY) return;
+        if (index >= (sizeX+1) * (sizeY+1)) return;
 
-        int y = index / sizeX;
-        int x = index - y * sizeX;
-        cells[x][y].content_new = content;
+        int x = index / (sizeY+1);
+        int y = index - x * (sizeY+1);
+        get2D(cells,x,y).content_new = content;
     }
 
     __global__
-    void applyForcesImpl(Cell2D **cells, int sizeX, int sizeY, float timeStep, float gravitationalAcceleration) {
+    void applyForcesImpl(Cell2D *cells, int sizeX, int sizeY, float timeStep, float gravitationalAcceleration) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
-        if (index >= sizeX * sizeY) return;
+        if (index >= (sizeX+1) * (sizeY+1)) return;
 
-        int y = index / sizeX;
-        int x = index - y * sizeX;
+        int x = index / (sizeY+1);
+        int y = index - x * (sizeY+1);
 
-        if (cells[x][y].content == CONTENT_FLUID) {
-            cells[x][y].velocity.y -= gravitationalAcceleration * timeStep;
-            if (cells[x][y + 1].content == CONTENT_AIR)
-                cells[x][y + 1].velocity.y -= gravitationalAcceleration * timeStep;
-        } else if (cells[x][y].content == CONTENT_AIR) {
-            //if( x-1 >0 && grid.cells[x-1][y].content == CONTENT_AIR) grid.cells[x][y].velocity.x = 0;
-            //if( y-1 >0 && grid.cells[x][y-1].content == CONTENT_AIR) grid.cells[x][y].velocity.y = 0;
+        if (get2D(cells,x,y).content == CONTENT_FLUID) {
+            get2D(cells,x,y).velocity.y -= gravitationalAcceleration * timeStep;
+            if (get2D(cells,x,y + 1).content == CONTENT_AIR)
+                get2D(cells,x,y + 1).velocity.y -= gravitationalAcceleration * timeStep;
+        } else if (get2D(cells,x,y).content == CONTENT_AIR) {
+            //if( x-1 >0 && grid.get2D(cells,x-1,y).content == CONTENT_AIR) grid.get2D(cells,x,y).velocity.x = 0;
+            //if( y-1 >0 && grid.get2D(cells,x,y-1).content == CONTENT_AIR) grid.get2D(cells,x,y).velocity.y = 0;
         }
 
     }
 
     __global__
-    void fixBoundaryX(Cell2D **cells, int sizeX, int sizeY) {
+    void fixBoundaryX(Cell2D *cells, int sizeX, int sizeY) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index > sizeY) return;
         int y = index;
 
-        cells[0][y].velocity.x = 0;
-        cells[sizeX][y].velocity.x = 0;
-        cells[0][y].hasVelocityX = true;
-        cells[sizeX][y].hasVelocityX = true;
-        cells[sizeX][y].content = CONTENT_SOLID;
+        get2D(cells,0,y).velocity.x = 0;
+        get2D(cells,sizeX,y).velocity.x = 0;
+        get2D(cells,0,y).hasVelocityX = true;
+        get2D(cells,sizeX,y).hasVelocityX = true;
+        get2D(cells,sizeX,y).content = CONTENT_SOLID;
     }
 
     __global__
-    void fixBoundaryY(Cell2D **cells, int sizeX, int sizeY) {
+    void fixBoundaryY(Cell2D *cells, int sizeX, int sizeY) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index > sizeX) return;
         int x = index;
 
-        cells[x][0].velocity.y = 0;
-        //cells[x][sizeY].velocity.y = 0;
-        cells[x][0].hasVelocityY = true;
-        cells[x][sizeY].hasVelocityY = true;
-        cells[x][sizeY].content = CONTENT_AIR;
+        get2D(cells,x,0).velocity.y = 0;
+        //get2D(cells,x,sizeY).velocity.y = 0;
+        get2D(cells,x,0).hasVelocityY = true;
+        get2D(cells,x,sizeY).hasVelocityY = true;
+        get2D(cells,x,sizeY).content = CONTENT_AIR;
     }
 
     __device__ __host__
 
-    float getNeibourCoefficient(int x, int y, float temp, float u, float &centerCoefficient, float &RHS, Cell2D **cells,
+    float getNeibourCoefficient(int x, int y, float temp, float u, float &centerCoefficient, float &RHS, Cell2D *cells,
                                 int sizeX, int sizeY) {
-        if (x >= 0 && x < sizeX && y >= 0 && y < sizeY && cells[x][y].content == CONTENT_FLUID) {
+        if (x >= 0 && x < sizeX && y >= 0 && y < sizeY && get2D(cells,x,y).content == CONTENT_FLUID) {
             return temp * -1;
         } else {
-            if (x < 0 || y < 0 || x >= sizeX || cells[x][y].content == CONTENT_SOLID) {
+            if (x < 0 || y < 0 || x >= sizeX || get2D(cells,x,y).content == CONTENT_SOLID) {
                 centerCoefficient -= temp;
                 RHS += u;
                 return 0;
-            } else if (y >= sizeY || cells[x][y].content == CONTENT_AIR) {
+            } else if (y >= sizeY || get2D(cells,x,y).content == CONTENT_AIR) {
                 return 0;
             }
         }
     }
 
     __global__
-    void constructPressureEquations(Cell2D **cells, int sizeX, int sizeY, PressureEquation2D *equations, float temp,
+    void constructPressureEquations(Cell2D *cells, int sizeX, int sizeY, PressureEquation2D *equations, float temp,
                                     bool *hasNonZeroRHS) {
 
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
-        if (index >= sizeX * sizeY) return;
+        if (index >= (sizeX+1) * (sizeY+1)) return;
 
-        int y = index / sizeX;
-        int x = index - y * sizeX;
+        int x = index / (sizeY+1);
+        int y = index - x * (sizeY+1);
 
-        cells[x][y].pressure = 0;
-        if (cells[x][y].content != CONTENT_FLUID)
+        get2D(cells,x,y).pressure = 0;
+        if (get2D(cells,x,y).content != CONTENT_FLUID)
             return;
-        Cell2D &thisCell = cells[x][y];
-        Cell2D &rightCell = cells[x + 1][y];
-        Cell2D &upCell = cells[x][y + 1];
+        Cell2D &thisCell = get2D(cells,x,y);
+        Cell2D &rightCell = get2D(cells,x + 1,y);
+        Cell2D &upCell = get2D(cells,x,y + 1);
 
         PressureEquation2D thisEquation;
         float RHS = (thisCell.velocity.y - upCell.velocity.y + thisCell.velocity.x - rightCell.velocity.x);
@@ -215,14 +215,14 @@ namespace Fluid_2D_SemiLagrange {
         int nnz = 0;
 
         if (downCoeff) {
-            Cell2D &downCell = cells[x][y - 1];
+            Cell2D &downCell = get2D(cells,x,y - 1);
             thisEquation.termsIndex[thisEquation.termCount] = downCell.fluidIndex;
             thisEquation.termsCoeff[thisEquation.termCount] = downCoeff;
             ++thisEquation.termCount;
             ++nnz;
         }
         if (leftCoeff) {
-            Cell2D &leftCell = cells[x - 1][y];
+            Cell2D &leftCell = get2D(cells,x - 1,y);
             thisEquation.termsIndex[thisEquation.termCount] = leftCell.fluidIndex;
             thisEquation.termsCoeff[thisEquation.termCount] = leftCoeff;
             ++thisEquation.termCount;
@@ -255,34 +255,34 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __global__
-    void setPressure(Cell2D **cells, int sizeX, int sizeY, double *pressureResult) {
+    void setPressure(Cell2D *cells, int sizeX, int sizeY, double *pressureResult) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
-        if (index >= sizeX * sizeY) return;
+        if (index >= (sizeX+1) * (sizeY+1)) return;
 
-        int y = index / sizeX;
-        int x = index - y * sizeX;
+        int x = index / (sizeY+1);
+        int y = index - x * (sizeY+1);
 
-        if (cells[x][y].content != CONTENT_FLUID)
+        if (get2D(cells,x,y).content != CONTENT_FLUID)
             return;
 
-        cells[x][y].pressure = pressureResult[cells[x][y].fluidIndex];
+        get2D(cells,x,y).pressure = pressureResult[get2D(cells,x,y).fluidIndex];
     }
 
     __global__
-    void updateVelocityWithPressure(Cell2D **cells, int sizeX, int sizeY, float temp) {
+    void updateVelocityWithPressure(Cell2D *cells, int sizeX, int sizeY, float temp) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
-        if (index >= sizeX * sizeY) return;
+        if (index >= (sizeX+1) * (sizeY+1)) return;
 
-        int y = index / sizeX;
-        int x = index - y * sizeX;
+        int x = index / (sizeY+1);
+        int y = index - x * (sizeY+1);
 
-        Cell2D &thisCell = cells[x][y];
+        Cell2D &thisCell = get2D(cells,x,y);
 
         thisCell.hasVelocityX = false;
         thisCell.hasVelocityY = false;
 
         if (x > 0) {
-            Cell2D &leftCell = cells[x - 1][y];
+            Cell2D &leftCell = get2D(cells,x - 1,y);
             if (thisCell.content == CONTENT_FLUID || leftCell.content == CONTENT_FLUID) {
                 float uX = thisCell.velocity.x - temp * (thisCell.pressure - leftCell.pressure);
                 thisCell.velocity.x = uX;
@@ -290,7 +290,7 @@ namespace Fluid_2D_SemiLagrange {
             }
         }
         if (y > 0) {
-            Cell2D &downCell = cells[x][y - 1];
+            Cell2D &downCell = get2D(cells,x,y - 1);
             if (thisCell.content == CONTENT_FLUID || downCell.content == CONTENT_FLUID) {
                 float uY = thisCell.velocity.y - temp * (thisCell.pressure - downCell.pressure);
                 thisCell.velocity.y = uY;
@@ -300,42 +300,42 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __global__
-    void extrapolateVelocityByOne(Cell2D **cells, int sizeX, int sizeY) {
+    void extrapolateVelocityByOne(Cell2D *cells, int sizeX, int sizeY) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
-        if (index >= sizeX * sizeY) return;
+        if (index >= (sizeX+1) * (sizeY+1)) return;
 
-        int y = index / sizeX;
-        int x = index - y * sizeX;
+        int x = index / (sizeY+1);
+        int y = index - x * (sizeY+1);
 
-        Cell2D &thisCell = cells[x][y];
+        Cell2D &thisCell = get2D(cells,x,y);
         const float epsilon = 1e-6;
 
         if(!thisCell.hasVelocityX){
             float sumNeighborX = 0;
             int neighborXCount = 0;
             if (x > 0) {
-                Cell2D &leftCell = cells[x - 1][y];
+                Cell2D &leftCell = get2D(cells,x - 1,y);
                 if (leftCell.hasVelocityX && leftCell.velocity.x > epsilon) {
                     sumNeighborX += leftCell.velocity.x;
                     neighborXCount++;
                 }
             }
             if (y > 0) {
-                Cell2D &downCell = cells[x][y-1];
+                Cell2D &downCell = get2D(cells,x,y-1);
                 if (downCell.hasVelocityX && downCell.velocity.y > epsilon) {
                     sumNeighborX += downCell.velocity.x;
                     neighborXCount++;
                 }
             }
             if (x < sizeX-1) {
-                Cell2D &rightCell = cells[x + 1][y];
+                Cell2D &rightCell = get2D(cells,x + 1,y);
                 if (rightCell.hasVelocityX && rightCell.velocity.x < -epsilon) {
                     sumNeighborX += rightCell.velocity.x;
                     neighborXCount++;
                 }
             }
             if (y < sizeY-1) {
-                Cell2D &upCell = cells[x][y + 1];
+                Cell2D &upCell = get2D(cells,x,y + 1);
                 if (upCell.hasVelocityX && upCell.velocity.y < -epsilon) {
                     sumNeighborX += upCell.velocity.x;
                     neighborXCount++;
@@ -351,28 +351,28 @@ namespace Fluid_2D_SemiLagrange {
             float sumNeighborY = 0;
             int neighborYCount = 0;
             if (x > 0) {
-                Cell2D &leftCell = cells[x - 1][y];
+                Cell2D &leftCell = get2D(cells,x - 1,y);
                 if (leftCell.hasVelocityY && leftCell.velocity.x > epsilon) {
                     sumNeighborY += leftCell.velocity.y;
                     neighborYCount++;
                 }
             }
             if (y > 0) {
-                Cell2D &downCell = cells[x][y-1];
+                Cell2D &downCell = get2D(cells,x,y-1);
                 if (downCell.hasVelocityY && downCell.velocity.y > epsilon) {
                     sumNeighborY += downCell.velocity.y;
                     neighborYCount++;
                 }
             }
             if (x < sizeX-1) {
-                Cell2D &rightCell = cells[x + 1][y];
+                Cell2D &rightCell = get2D(cells,x + 1,y);
                 if (rightCell.hasVelocityY && rightCell.velocity.x < -epsilon) {
                     sumNeighborY += rightCell.velocity.y;
                     neighborYCount++;
                 }
             }
             if (y < sizeY-1) {
-                Cell2D &upCell = cells[x][y + 1];
+                Cell2D &upCell = get2D(cells,x,y + 1);
                 if (upCell.hasVelocityY && upCell.velocity.y < -epsilon) {
                     sumNeighborY += upCell.velocity.y;
                     neighborYCount++;
@@ -388,14 +388,14 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __global__
-    void updateTextureImpl(Cell2D **cells, int sizeX, int sizeY, unsigned char *image) {
+    void updateTextureImpl(Cell2D *cells, int sizeX, int sizeY, unsigned char *image) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= sizeX * sizeY) return;
 
         int y = index / sizeX;
         int x = index - y * sizeX;
 
-        Cell2D &thisCell = cells[x][y];
+        Cell2D &thisCell = get2D(cells,x,y);
         unsigned char *base = image + 4 * (sizeX * y + x);
         if (thisCell.content == CONTENT_FLUID) {
             float fluid1percentage = thisCell.fluid1Count / (thisCell.fluid1Count + thisCell.fluid0Count);
@@ -425,14 +425,14 @@ namespace Fluid_2D_SemiLagrange {
 
 
     __global__
-    void commitVelocityChanges(Cell2D **cells, int sizeX, int sizeY) {
+    void commitVelocityChanges(Cell2D *cells, int sizeX, int sizeY) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= sizeX * sizeY) return;
 
         int y = index / sizeX;
         int x = index - y * sizeX;
 
-        Cell2D &thisCell = cells[x][y];
+        Cell2D &thisCell = get2D(cells,x,y);
         thisCell.velocity = thisCell.newVelocity;
     }
 
@@ -440,6 +440,7 @@ namespace Fluid_2D_SemiLagrange {
     public:
         const int sizeX = 256;
         const int sizeY = 128;
+        const int cellCount = (sizeX+1)*(sizeY+1);
         const float cellPhysicalSize = 10.f / (float) sizeY;
         const float gravitationalAcceleration = 9.8;
         const float density = 1;
@@ -474,11 +475,11 @@ namespace Fluid_2D_SemiLagrange {
             /*
             for (int y = 0; y < sizeY; ++y) {
                 for (int x = 0; x < sizeX; ++x) {
-                    if (grid.cells[x][y].content != CONTENT_FLUID)
+                    if (grid.get2D(cells,x,y).content != CONTENT_FLUID)
                         continue;
-                    Cell2D thisCell = grid.cells[x][y];
-                    Cell2D rightCell = grid.cells[x+1][y];
-                    Cell2D upCell = grid.cells[x][y+1];
+                    Cell2D thisCell = grid.get2D(cells,x,y);
+                    Cell2D rightCell = grid.get2D(cells,x+1,y);
+                    Cell2D upCell = grid.get2D(cells,x,y+1);
                     float div = (thisCell.velocity.y - upCell.velocity.y + thisCell.velocity.x - rightCell.velocity.x);
                     if(abs(div)>0.01)
                         std::cout<<x<<" "<<y<<"     divergence: "<<div<<std::endl;
@@ -520,8 +521,8 @@ namespace Fluid_2D_SemiLagrange {
             numThreadsParticle = min(1024, particleCount);
             numBlocksParticle = divUp(particleCount, numThreadsParticle);
 
-            numThreadsCell = min(1024, sizeX * sizeY);
-            numBlocksCell = divUp(sizeX * sizeY, numThreadsCell);
+            numThreadsCell = min(1024, cellCount);
+            numBlocksCell = divUp(cellCount, numThreadsCell);
 
             std::cout << numThreadsCell << std::endl << numBlocksCell << std::endl;
 
