@@ -14,6 +14,7 @@
 #include "Fluid_2D_PoistionBased_CPU.h"
 #include "Fluid_2D_FLIP.cuh"
 
+#include "MAC_Grid_3D.cuh"
 /*
 __global__ void add( int a, int b, int *c ) {
     int result = a+b;
