@@ -170,8 +170,7 @@ public:
 
         float u[2];
         float v[2];
-        float weightX[2][2];
-        float weightY[2][2];
+        float weight[2][2];
 
 
         u[0] = i + 1.f -x ;
@@ -181,20 +180,16 @@ public:
 
         for (int a = 0; a < 2 ; ++a) {
             for (int b = 0; b < 2 ; ++b) {
-                weightX[a][b] = u[a]*v[b];
-                weightY[a][b] = u[a]*v[b];
+                weight[a][b] = u[a]*v[b];
             }
         }
 
-        float uX = weightX[0][0] * get2D(cells,i,j).velocity.x +
-                   weightX[1][0] * get2D(cells,i+1,j).velocity.x +
-                   weightX[0][1] * get2D(cells,i,j+1).velocity.x +
-                   weightX[1][1] * get2D(cells,i+1,j+1).velocity.x;
-        float uY = weightY[0][0] * get2D(cells,i,j).velocity.y +
-                   weightY[1][0] * get2D(cells,i+1,j).velocity.y +
-                   weightY[0][1] * get2D(cells,i,j+1).velocity.y +
-                   weightY[1][1] * get2D(cells,i+1,j+1).velocity.y;
-        return make_float2(uX,uY);
+        float2 result = weight[0][0] * get2D(cells,i,j).velocity +
+                   weight[1][0] * get2D(cells,i+1,j).velocity +
+                   weight[0][1] * get2D(cells,i,j+1).velocity +
+                   weight[1][1] * get2D(cells,i+1,j+1).velocity;
+
+        return result;
     }
 
 
@@ -222,8 +217,7 @@ public:
 
         float u[2];
         float v[2];
-        float weightX[2][2];
-        float weightY[2][2];
+        float weight[2][2];
 
 
         u[0] = i + 1.f -x ;
@@ -233,20 +227,15 @@ public:
 
         for (int a = 0; a < 2 ; ++a) {
             for (int b = 0; b < 2 ; ++b) {
-                weightX[a][b] = u[a]*v[b];
-                weightY[a][b] = u[a]*v[b];
+                weight[a][b] = u[a]*v[b];
             }
         }
 
-        float uX = weightX[0][0] * get2D(cells,i,j).newVelocity.x +
-                   weightX[1][0] * get2D(cells,i+1,j).newVelocity.x +
-                   weightX[0][1] * get2D(cells,i,j+1).newVelocity.x +
-                   weightX[1][1] * get2D(cells,i+1,j+1).newVelocity.x;
-        float uY = weightY[0][0] * get2D(cells,i,j).newVelocity.y +
-                   weightY[1][0] * get2D(cells,i+1,j).newVelocity.y +
-                   weightY[0][1] * get2D(cells,i,j+1).newVelocity.y +
-                   weightY[1][1] * get2D(cells,i+1,j+1).newVelocity.y;
-        return make_float2(uX,uY);
+        float2 result = weight[0][0] * get2D(cells,i,j).newVelocity +
+                   weight[1][0] * get2D(cells,i+1,j).newVelocity +
+                   weight[0][1] * get2D(cells,i,j+1).newVelocity +
+                   weight[1][1] * get2D(cells,i+1,j+1).newVelocity;
+        return result;
     }
 
 
