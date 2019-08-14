@@ -3,7 +3,8 @@ project(Aquarius)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(Aquarius main.cu CudaCommons.h MAC_Grid_2D.cuh Fluid_2D_SemiLagrange.cuh SPD_Solver.h Shader.h Quad.h Fluid_2D_PCISPH.cuh WeightKernels.h Fluid_2D.h Fluid_2D_PCISPH_CPU.h Fluid_2D_PoistionBased_CPU.h Fluid_2D_FLIP.cuh MAC_Grid_3D.cuh)
+add_executable(Aquarius
+        main.cu GpuCommons.h MAC_Grid_2D.cuh Fluid_2D_SemiLagrange.cuh SPD_Solver.h Rendering/Shader.h Rendering/Quad.h Fluid_2D_PCISPH.cuh WeightKernels.h Fluid_2D.h Fluid_2D_PCISPH_CPU.h Fluid_2D_PoistionBased_CPU.h Fluid_2D_FLIP.cuh MAC_Grid_3D.cuh Rendering/Renderer3D/Renderer3D.h Rendering/Renderer3D/Skybox.h Rendering/Renderer3D/camera.h InputHandler.h )
 
 set(OPTM_LEVEL "-O0")
 
@@ -41,4 +42,6 @@ target_link_libraries(Aquarius /Users/AmesingFlank/Downloads/AMGX-master/built/b
 target_link_libraries(Aquarius /Users/AmesingFlank/Downloads/AMGX-master/built/template_plugin/libamgx_template_plugin.a)
 target_link_libraries(Aquarius /Users/AmesingFlank/Downloads/AMGX-master/built/eigensolvers/libamgx_eigensolvers.a)
 
-
+add_custom_command(TARGET Aquarius PRE_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/resources/ $<TARGET_FILE_DIR:Aquarius>/resources)

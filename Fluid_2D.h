@@ -7,7 +7,7 @@
 
 #include <vector>
 #include <utility>
-#include "CudaCommons.h"
+#include "GpuCommons.h"
 #include <unordered_map>
 
 

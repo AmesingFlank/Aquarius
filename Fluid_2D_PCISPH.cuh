@@ -5,7 +5,7 @@
 #ifndef AQUARIUS_FLUID_2D_PCISPH_CUH
 #define AQUARIUS_FLUID_2D_PCISPH_CUH
 
-#include "CudaCommons.h"
+#include "GpuCommons.h"
 #include <vector>
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
@@ -49,6 +49,7 @@ namespace Fluid_2D_PCISPH {
 
 
     __global__
+    inline
     void calcHashImpl(int *particleHashes,  // output
                       Particle *particles,               // input: positions
                       int particleCount,
@@ -74,6 +75,7 @@ namespace Fluid_2D_PCISPH {
     }
 
     __global__
+    inline
     void findCellStartEndImpl(int *particleHashes,
                               int *cellStart, int *cellEnd,
                               int particleCount) {
@@ -95,6 +97,7 @@ namespace Fluid_2D_PCISPH {
 
 
     __global__
+    inline
     void calcOtherForces(Particle *particles, int particleCount) {
         int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= particleCount) return;
@@ -109,6 +112,7 @@ namespace Fluid_2D_PCISPH {
 
 
     __global__
+    inline
     void calcPositionVelocity(Particle *particles, int particleCount,
                               float gridBoundaryX, float gridBoundaryY, float timeStep, float cellPhysicalSize) {
         int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -142,6 +146,7 @@ namespace Fluid_2D_PCISPH {
     }
 
     __global__
+    inline
     void commitPositionVelocity(Particle *particles, int particleCount, float gridBoundaryX, float gridBoundaryY) {
         int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= particleCount) return;
@@ -155,6 +160,7 @@ namespace Fluid_2D_PCISPH {
     }
 
     __global__
+    inline
     void calcDensity(Particle *particles, int particleCount, int *cellStart, int *cellEnd,
                      int gridSizeX, int gridSizeY, float cellPhysicalSize, float restDensity, float SCP) {
         int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -210,6 +216,7 @@ namespace Fluid_2D_PCISPH {
     }
 
     __global__
+    inline
     void calcPressure(Particle *particles, int particleCount, int *cellStart, int *cellEnd,
                       int gridSizeX, int gridSizeY, float cellPhysicalSize,
                       float restDensity, float timeStep) {
@@ -236,6 +243,7 @@ namespace Fluid_2D_PCISPH {
 
 
     __global__
+    inline
     void calcPressureForce(Particle *particles, int particleCount, int *cellStart, int *cellEnd,
                            int gridSizeX, int gridSizeY, float cellPhysicalSize, float restDensity) {
         int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -294,6 +302,7 @@ namespace Fluid_2D_PCISPH {
 
 
     __global__
+    inline
     void updateTextureImpl(Particle *particles, int particleCount, float texCellPhysicalSize,
                            int texSizeX, unsigned char *result) {
         int index = blockIdx.x * blockDim.x + threadIdx.x;

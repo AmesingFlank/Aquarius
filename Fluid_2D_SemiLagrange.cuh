@@ -9,7 +9,7 @@
 #include "SPD_Solver.h"
 #include <vector>
 #include <utility>
-#include "CudaCommons.h"
+#include "GpuCommons.h"
 #include "Fluid_2D.h"
 #include <unordered_map>
 
@@ -47,7 +47,7 @@ namespace Fluid_2D_SemiLagrange {
 
 
     __global__
-    void advectVelocityImpl(Cell2D *cells, int sizeX, int sizeY, float timeStep, float gravitationalAcceleration,
+    inline void advectVelocityImpl(Cell2D *cells, int sizeX, int sizeY, float timeStep, float gravitationalAcceleration,
                             float cellPhysicalSize) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= (sizeX+1) * (sizeY+1)) return;
@@ -78,8 +78,7 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __global__
-    void
-    moveParticlesImpl(float timeStep, Cell2D *cells, Particle *particles, uint particleCount, int sizeX, int sizeY,
+    inline  void moveParticlesImpl(float timeStep, Cell2D *cells, Particle *particles, uint particleCount, int sizeX, int sizeY,
                       float cellPhysicalSize) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= particleCount) return;
@@ -111,7 +110,7 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __global__
-    void setAllContent(Cell2D *cells, int sizeX, int sizeY, float content) {
+    inline  void setAllContent(Cell2D *cells, int sizeX, int sizeY, float content) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= (sizeX+1) * (sizeY+1)) return;
 
@@ -121,7 +120,7 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __global__
-    void applyForcesImpl(Cell2D *cells, int sizeX, int sizeY, float timeStep, float gravitationalAcceleration) {
+    inline void applyForcesImpl(Cell2D *cells, int sizeX, int sizeY, float timeStep, float gravitationalAcceleration) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= (sizeX+1) * (sizeY+1)) return;
 
@@ -140,7 +139,7 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __global__
-    void fixBoundaryX(Cell2D *cells, int sizeX, int sizeY) {
+    inline void fixBoundaryX(Cell2D *cells, int sizeX, int sizeY) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index > sizeY) return;
         int y = index;
@@ -153,7 +152,7 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __global__
-    void fixBoundaryY(Cell2D *cells, int sizeX, int sizeY) {
+    inline void fixBoundaryY(Cell2D *cells, int sizeX, int sizeY) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index > sizeX) return;
         int x = index;
@@ -166,8 +165,7 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __device__ __host__
-
-    float getNeibourCoefficient(int x, int y, float temp, float u, float &centerCoefficient, float &RHS, Cell2D *cells,
+    inline float getNeibourCoefficient(int x, int y, float temp, float u, float &centerCoefficient, float &RHS, Cell2D *cells,
                                 int sizeX, int sizeY) {
         if (x >= 0 && x < sizeX && y >= 0 && y < sizeY && get2D(cells,x,y).content == CONTENT_FLUID) {
             return temp * -1;
@@ -183,7 +181,7 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __global__
-    void constructPressureEquations(Cell2D *cells, int sizeX, int sizeY, PressureEquation2D *equations, float temp,
+    inline void constructPressureEquations(Cell2D *cells, int sizeX, int sizeY, PressureEquation2D *equations, float temp,
                                     bool *hasNonZeroRHS) {
 
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -255,7 +253,7 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __global__
-    void setPressure(Cell2D *cells, int sizeX, int sizeY, double *pressureResult) {
+    inline void setPressure(Cell2D *cells, int sizeX, int sizeY, double *pressureResult) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= (sizeX+1) * (sizeY+1)) return;
 
@@ -269,7 +267,7 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __global__
-    void updateVelocityWithPressure(Cell2D *cells, int sizeX, int sizeY, float temp) {
+    inline void updateVelocityWithPressure(Cell2D *cells, int sizeX, int sizeY, float temp) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= (sizeX+1) * (sizeY+1)) return;
 
@@ -300,7 +298,7 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __global__
-    void extrapolateVelocityByOne(Cell2D *cells, int sizeX, int sizeY) {
+    inline void extrapolateVelocityByOne(Cell2D *cells, int sizeX, int sizeY) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= (sizeX+1) * (sizeY+1)) return;
 
@@ -388,7 +386,7 @@ namespace Fluid_2D_SemiLagrange {
     }
 
     __global__
-    void updateTextureImpl(Cell2D *cells, int sizeX, int sizeY, unsigned char *image) {
+    inline void updateTextureImpl(Cell2D *cells, int sizeX, int sizeY, unsigned char *image) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= sizeX * sizeY) return;
 
@@ -425,7 +423,7 @@ namespace Fluid_2D_SemiLagrange {
 
 
     __global__
-    void commitVelocityChanges(Cell2D *cells, int sizeX, int sizeY) {
+    inline void commitVelocityChanges(Cell2D *cells, int sizeX, int sizeY) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= sizeX * sizeY) return;
 

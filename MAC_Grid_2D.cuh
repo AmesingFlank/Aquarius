@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 #include <memory>
-#include "CudaCommons.h"
+#include "GpuCommons.h"
 #include <cmath>
 #include "WeightKernels.h"
 #include <thrust/functional.h>
@@ -43,6 +43,7 @@ struct Cell2D{
 namespace MAC_Grid_2D_Utils{
 
     __global__
+    inline
     void writeContentsAndIndices(Cell2D *cells, int cellCount,
             int* contentCopy0, int* contentCopy1, int* indices) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -61,6 +62,7 @@ namespace MAC_Grid_2D_Utils{
     }
 
     __global__
+    inline
     void setFluidIndex(Cell2D *cells,int cellCount,  int* fluidCount) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
@@ -75,6 +77,7 @@ namespace MAC_Grid_2D_Utils{
     }
 
     __global__
+    inline
     void setContentToNewContent(Cell2D *cells, int cellCount) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
@@ -84,6 +87,7 @@ namespace MAC_Grid_2D_Utils{
 
 
     __global__
+    inline
     void writeSpeedX(Cell2D *cells, int cellCount, float* speedX) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
@@ -92,6 +96,7 @@ namespace MAC_Grid_2D_Utils{
     }
 
     __global__
+    inline
     void writeSpeedY(Cell2D *cells, int cellCount, float* speedY) {
         uint index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
@@ -151,7 +156,7 @@ public:
     }
 
     __device__ __host__
-    static float2 getCellVelocity(int x,int y,int sizeX, int sizeY, Cell2D* cells){
+    static inline float2 getCellVelocity(int x,int y,int sizeX, int sizeY, Cell2D* cells){
         if(x < 0 ||x > sizeX-1 ||   y < 0|| y > sizeY-1  ){
             x = max(min(x,sizeX-1),0);
             y = max(min(y,sizeY-1),0);
@@ -162,7 +167,7 @@ public:
     }
 
     __device__ __host__
-    static float2 getInterpolatedVelocity(float x, float y,int sizeX,int sizeY,Cell2D* cells){
+    static inline float2 getInterpolatedVelocity(float x, float y,int sizeX,int sizeY,Cell2D* cells){
         x = max(min(x,sizeX-1.f),0.f);
         y = max(min(y,sizeY-1.f),0.f);
         int i = floor(x);
@@ -194,7 +199,7 @@ public:
 
 
     __device__ __host__
-    static float2 getPointVelocity(float2 physicalPos, float cellPhysicalSize,int sizeX,int sizeY,Cell2D* cells){
+    static inline float2 getPointVelocity(float2 physicalPos, float cellPhysicalSize,int sizeX,int sizeY,Cell2D* cells){
         float x = physicalPos.x/cellPhysicalSize;
         float y = physicalPos.y/cellPhysicalSize;
 
@@ -209,7 +214,7 @@ public:
 
 
     __device__ __host__
-    static float2 getInterpolatedNewVelocity(float x, float y,int sizeX,int sizeY,Cell2D* cells){
+    static inline float2 getInterpolatedNewVelocity(float x, float y,int sizeX,int sizeY,Cell2D* cells){
         x = max(min(x,sizeX-1.f),0.f);
         y = max(min(y,sizeY-1.f),0.f);
         int i = floor(x);
@@ -240,7 +245,7 @@ public:
 
 
     __device__ __host__
-    static float2 getPointNewVelocity(float2 physicalPos, float cellPhysicalSize,int sizeX,int sizeY,Cell2D* cells){
+    static inline float2 getPointNewVelocity(float2 physicalPos, float cellPhysicalSize,int sizeX,int sizeY,Cell2D* cells){
         float x = physicalPos.x/cellPhysicalSize;
         float y = physicalPos.y/cellPhysicalSize;
 
@@ -256,7 +261,7 @@ public:
 
 
     __device__ __host__
-    static float2 getPhysicalPos(int x,int y,float cellPhysicalSize){
+    static inline float2 getPhysicalPos(int x,int y,float cellPhysicalSize){
         return make_float2((x+0.5f)*cellPhysicalSize,(y+0.5f)*cellPhysicalSize);
     }
 

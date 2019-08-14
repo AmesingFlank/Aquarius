@@ -5,7 +5,7 @@
 #ifndef AQUARIUS_SPD_SOLVER_H
 #define AQUARIUS_SPD_SOLVER_H
 
-#include "CudaCommons.h"
+#include "GpuCommons.h"
 #include <iostream>
 
 struct SparseMatrixCSR{
@@ -28,6 +28,8 @@ struct SparseMatrixCSR{
 };
 
 inline SparseMatrixCSR createSparse(double* valA,int rows,int cols){
+
+    const cusparseHandle_t cusparseHandle = CudaHandlesKeeper::instance().cusparseHandle;
     //create device array and copy host to it
     double *d_A_dense;
     HANDLE_ERROR(cudaMalloc(&d_A_dense, rows * cols * sizeof(*d_A_dense)));
@@ -85,11 +87,14 @@ inline SparseMatrixCSR createSparse(double* valA,int rows,int cols){
 
 }
 
-AMGX_config_handle solver_config;
-AMGX_solver_handle solver;
-bool has_solver_config = false;
+
 
 inline double* solveSPD4(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_host,int n){
+
+    AMGX_resources_handle amgxResource = CudaHandlesKeeper::instance().amgxResource;
+    AMGX_config_handle SPD_solver_config = CudaHandlesKeeper::instance().SPD_solver_config;
+    AMGX_solver_handle SPD_solver = CudaHandlesKeeper::instance().SPD_solver;
+
     double* f;
     HANDLE_ERROR(cudaMalloc(&f, n * sizeof(*f)));
     HANDLE_ERROR(cudaMemcpy(f, f_dense_host, n * sizeof(*f), cudaMemcpyHostToDevice));
@@ -102,12 +107,6 @@ inline double* solveSPD4(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_h
     AMGX_vector_handle soln;
 
 
-    if(!has_solver_config){
-        AMGX_config_create_from_file(&solver_config, "/Users/AmesingFlank/Downloads/AMGX-master/core/configs/PCG_V.json");
-        has_solver_config = true;
-        AMGX_solver_create(&solver, amgxResource, AMGX_mode_dDDI, solver_config);
-    }
-
     AMGX_matrix_create(&matrix, amgxResource, AMGX_mode_dDDI);
     AMGX_vector_create(&rhs, amgxResource, AMGX_mode_dDDI);
     AMGX_vector_create(&soln, amgxResource, AMGX_mode_dDDI);
@@ -116,8 +115,8 @@ inline double* solveSPD4(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_h
     AMGX_vector_upload(rhs, n,1,f);
     AMGX_vector_set_zero(soln, n,1);
 
-    AMGX_solver_setup(solver, matrix);
-    AMGX_solver_solve_with_0_initial_guess(solver, rhs, soln);
+    AMGX_solver_setup(SPD_solver, matrix);
+    AMGX_solver_solve_with_0_initial_guess(SPD_solver, rhs, soln);
 
     AMGX_vector_download(soln, x);
 
@@ -138,6 +137,8 @@ inline double* solveSPD4(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_h
 //cusparse plain CG
 inline double* solveSPD3(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_host,int n){
 
+    const cusparseHandle_t cusparseHandle = CudaHandlesKeeper::instance().cusparseHandle;
+    const cublasHandle_t cublasHandle = CudaHandlesKeeper::instance().cublasHandle;
     /***** CG Code *****/
 /* ASSUMPTIONS:
    1. The cuSPARSE and cuBLAS libraries have been initialized.
@@ -265,6 +266,12 @@ inline double* solveSPD3(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_h
 
 //using cusolver (IC0PCG)
 inline double* solveSPD2(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_host,int n){
+
+
+    const cusparseHandle_t cusparseHandle = CudaHandlesKeeper::instance().cusparseHandle;
+    const cublasHandle_t cublasHandle = CudaHandlesKeeper::instance().cublasHandle;
+    cusolverSpHandle_t cusolverSpHandle = CudaHandlesKeeper::instance().cusolverSpHandle;
+
     double* valA = A.val;
     int* csrRowPtrA = A.csrRowPtr;
     int* csrColIndA = A.csrColInd;
@@ -287,6 +294,9 @@ inline double* solveSPD2(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_h
 
 inline double* solveSPD(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_host,int n){
 
+
+    const cusparseHandle_t cusparseHandle = CudaHandlesKeeper::instance().cusparseHandle;
+    const cublasHandle_t cublasHandle = CudaHandlesKeeper::instance().cublasHandle;
     /***** CG Code *****/
 /* ASSUMPTIONS:
    1. The cuSPARSE and cuBLAS libraries have been initialized.

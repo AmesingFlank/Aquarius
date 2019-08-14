@@ -2,8 +2,8 @@
 // Created by AmesingFlank on 2019-04-17.
 //
 
-#ifndef AQUARIUS_CUDACOMMONS_H
-#define AQUARIUS_CUDACOMMONS_H
+#ifndef AQUARIUS_GPUCOMMONS_H
+#define AQUARIUS_GPUCOMMONS_H
 
 #include <stdio.h>
 #include <helper_math.h>
@@ -73,20 +73,20 @@ inline static void HandleError( cudaError_t err,const char *file,int line ) {
     }
 }
 
-static void HandleError( cublasStatus_t err,const char *file,int line ) {
+inline static void HandleError( cublasStatus_t err,const char *file,int line ) {
     if (err != CUBLAS_STATUS_SUCCESS) {
         printf( "CUBLAS error: %s in %s at line %d\n", cublasGetErrorString( err ), file, line );
         exit( EXIT_FAILURE );
     }
 }
 
-static void HandleError( cusparseStatus_t err,const char *file,int line ) {
+inline static void HandleError( cusparseStatus_t err,const char *file,int line ) {
     if (err != CUSPARSE_STATUS_SUCCESS) {
         printf( "CUSPARSE error: %s in %s at line %d\n", cusparseGetErrorString( err ), file, line );
         exit( EXIT_FAILURE );
     }
 }
-static void HandleError( cusolverStatus_t  err,const char *file,int line ) {
+inline static void HandleError( cusolverStatus_t  err,const char *file,int line ) {
     if (err != CUSPARSE_STATUS_SUCCESS) {
         printf( "CUSOLVER error: %s in %s at line %d\n", cusolverGetErrorString( err ), file, line );
         exit( EXIT_FAILURE );
@@ -119,31 +119,54 @@ inline void __getLastCudaError(const char *errorMessage, const char *file, const
                             exit( EXIT_FAILURE );}}
 
 
-extern cublasHandle_t cublasHandle;
-extern cusparseHandle_t cusparseHandle;
-extern cusolverSpHandle_t cusolverSpHandle;
-extern AMGX_resources_handle amgxResource;
 
 
-inline void initCuda(){
-    HANDLE_ERROR(cublasCreate (& cublasHandle ));
-    HANDLE_ERROR(cusparseCreate (& cusparseHandle ));
-    HANDLE_ERROR(cusolverSpCreate(&cusolverSpHandle));
 
-    AMGX_initialize();
+class CudaHandlesKeeper
+{
+public:
+    static CudaHandlesKeeper& instance()
+    {
+        static CudaHandlesKeeper    instance; // Guaranteed to be destroyed.
+        return instance;
+    }
 
-    AMGX_initialize_plugins();
-    AMGX_register_print_callback([](const char *msg, int length){
-        std::cout<<msg<<std::endl;
-    });
+    cublasHandle_t cublasHandle;
+    cusparseHandle_t cusparseHandle;
+    cusolverSpHandle_t cusolverSpHandle;
 
-    AMGX_install_signal_handler();
+    AMGX_resources_handle amgxResource;
+    AMGX_config_handle SPD_solver_config;
+    AMGX_solver_handle SPD_solver;
 
-    AMGX_config_handle rsrc_config;
-    AMGX_config_create(&rsrc_config, "");
-    AMGX_resources_create_simple(&amgxResource, rsrc_config);
+public:
+    CudaHandlesKeeper(CudaHandlesKeeper const&)               = delete;
+    void operator=(CudaHandlesKeeper const&)  = delete;
 
-}
+private:
+    CudaHandlesKeeper() {
+        HANDLE_ERROR(cublasCreate (& cublasHandle ));
+        HANDLE_ERROR(cusparseCreate (& cusparseHandle ));
+        HANDLE_ERROR(cusolverSpCreate(&cusolverSpHandle));
+
+        AMGX_initialize();
+
+        AMGX_initialize_plugins();
+        AMGX_register_print_callback([](const char *msg, int length){
+            //std::cout<<msg<<std::endl;
+        });
+
+        AMGX_install_signal_handler();
+
+        AMGX_config_handle rsrc_config;
+        AMGX_config_create(&rsrc_config, "");
+        AMGX_resources_create_simple(&amgxResource, rsrc_config);
+
+        AMGX_config_create_from_file(&SPD_solver_config, "./resources/AMGX-configs/PCG_V.json");
+        AMGX_solver_create(&SPD_solver, amgxResource, AMGX_mode_dDDI, SPD_solver_config);
+    }
+};
+
 
 
 
@@ -207,9 +230,9 @@ inline float random0to1(){
     return (float)rand()/(float)RAND_MAX;
 }
 
-uint divUp(uint a,uint b){
+inline uint divUp(uint a,uint b){
     uint result =  (a % b != 0) ? (a/b + 1) : (a / b);
     return result;
 }
 
-#endif //AQUARIUS_CUDACOMMONS_H
+#endif //AQUARIUS_GPUCOMMONS_H
