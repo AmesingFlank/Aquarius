@@ -27,10 +27,14 @@
 
 int main( void ) {
 
-    const int screenWidth = 1024;
-    const int screenHeight = 512;
+	initOpenGL();
 
-    GLFWwindow* window = createWindowOpenGL(1024,512);
+    int screenWidth;
+    int screenHeight;
+
+	getScreenDimensions(screenWidth, screenHeight);
+
+    GLFWwindow* window = createWindowOpenGL(screenWidth/2,screenWidth/2/2);
 
     glfwSetKeyCallback(window, InputHandler::key_callback);
     glfwSetCursorPosCallback(window, InputHandler::mouse_callback);

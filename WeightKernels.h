@@ -5,6 +5,7 @@
 #ifndef AQUARIUS_WEIGHTKERNELS_H
 #define AQUARIUS_WEIGHTKERNELS_H
 
+#define _USE_MATH_DEFINES
 #include <math.h>
 
 __host__ __device__  

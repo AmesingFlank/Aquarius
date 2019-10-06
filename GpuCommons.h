@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <helper_math.h>
+
 #include <cublas_v2.h>
 #include <cusparse_v2.h>
 #include <cusolverSp.h>
@@ -188,11 +189,25 @@ inline void printGLError(){
 }
 
 
+inline void initOpenGL() {
+	glfwInit();
+	if (!glfwInit())
+		exit(EXIT_FAILURE);
+}
+
+
+inline void getScreenDimensions(int& width, int& height) {
+	GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+	const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+
+	width = mode->width;
+	height = mode->height;
+}
+
+
 inline GLFWwindow* createWindowOpenGL(int screenWidth,int screenHeight){
     GLFWwindow* window;
-    glfwInit();
-    if (!glfwInit() )
-        exit(EXIT_FAILURE);
+    
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -230,8 +245,8 @@ inline float random0to1(){
     return (float)rand()/(float)RAND_MAX;
 }
 
-inline uint divUp(uint a,uint b){
-    uint result =  (a % b != 0) ? (a/b + 1) : (a / b);
+inline int divUp(int a,int b){
+    int result =  (a % b != 0) ? (a/b + 1) : (a / b);
     return result;
 }
 

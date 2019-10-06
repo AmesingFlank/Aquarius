@@ -47,7 +47,7 @@ namespace MAC_Grid_3D_Utils{
     inline
     void writeContentsAndIndices(Cell3D *cells, int cellCount,
             int* contentCopy0, int* contentCopy1, int* indices) {
-        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
 
 
@@ -65,7 +65,7 @@ namespace MAC_Grid_3D_Utils{
     __global__
     inline
     void setFluidIndex(Cell3D *cells,int cellCount,  int* fluidCount) {
-        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
 
 
@@ -80,7 +80,7 @@ namespace MAC_Grid_3D_Utils{
     __global__
     inline
     void setContentToNewContent(Cell3D *cells, int cellCount) {
-        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
 
         cells[index].content=cells[index].content_new;
@@ -90,7 +90,7 @@ namespace MAC_Grid_3D_Utils{
     __global__
     inline
     void writeSpeedX(Cell3D *cells, int cellCount, float* speedX) {
-        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
 
         speedX[index] = abs(cells[index].velocity.x);
@@ -99,7 +99,7 @@ namespace MAC_Grid_3D_Utils{
     __global__
     inline
     void writeSpeedY(Cell3D *cells, int cellCount, float* speedY) {
-        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
 
         speedY[index] = abs(cells[index].velocity.y);
@@ -108,7 +108,7 @@ namespace MAC_Grid_3D_Utils{
     __global__
     inline
     void writeSpeedZ(Cell3D *cells, int cellCount, float* speedZ) {
-        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
 
         speedZ[index] = abs(cells[index].velocity.z);

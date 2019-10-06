@@ -46,7 +46,7 @@ namespace MAC_Grid_2D_Utils{
     inline
     void writeContentsAndIndices(Cell2D *cells, int cellCount,
             int* contentCopy0, int* contentCopy1, int* indices) {
-        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
 
 
@@ -64,7 +64,7 @@ namespace MAC_Grid_2D_Utils{
     __global__
     inline
     void setFluidIndex(Cell2D *cells,int cellCount,  int* fluidCount) {
-        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
 
 
@@ -79,7 +79,7 @@ namespace MAC_Grid_2D_Utils{
     __global__
     inline
     void setContentToNewContent(Cell2D *cells, int cellCount) {
-        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
 
         cells[index].content=cells[index].content_new;
@@ -89,7 +89,7 @@ namespace MAC_Grid_2D_Utils{
     __global__
     inline
     void writeSpeedX(Cell2D *cells, int cellCount, float* speedX) {
-        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
 
         speedX[index] = abs(cells[index].velocity.x);
@@ -98,7 +98,7 @@ namespace MAC_Grid_2D_Utils{
     __global__
     inline
     void writeSpeedY(Cell2D *cells, int cellCount, float* speedY) {
-        uint index = blockIdx.x * blockDim.x + threadIdx.x;
+        int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= cellCount ) return;
 
         speedY[index] = abs(cells[index].velocity.y);
