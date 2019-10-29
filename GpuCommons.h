@@ -18,6 +18,10 @@
 #include <curand.h>
 #include <curand_kernel.h>
 
+#include "cuda_gl_interop.h"
+
+#include <stdarg.h>
+
 inline const char* cublasGetErrorString(cublasStatus_t status)
 {
     switch(status)
@@ -138,7 +142,9 @@ public:
 
     AMGX_resources_handle amgxResource;
     AMGX_config_handle SPD_solver_config;
-    AMGX_solver_handle SPD_solver;
+    AMGX_solver_handle SPD_solver_double;
+	AMGX_solver_handle SPD_solver_single;
+
 
 public:
     CudaHandlesKeeper(CudaHandlesKeeper const&)               = delete;
@@ -163,11 +169,12 @@ private:
         AMGX_config_create(&rsrc_config, "");
         AMGX_resources_create_simple(&amgxResource, rsrc_config);
 
-        AMGX_config_create_from_file(&SPD_solver_config, "./resources/AMGX-configs/PCG_V.json");
-        AMGX_solver_create(&SPD_solver, amgxResource, AMGX_mode_dDDI, SPD_solver_config);
+        AMGX_config_create_from_file(&SPD_solver_config, "./resources/AMGX-configs/AMG_FRANK.json");
+        AMGX_solver_create(&SPD_solver_double, amgxResource, AMGX_mode_dDDI, SPD_solver_config);
+		AMGX_solver_create(&SPD_solver_single, amgxResource, AMGX_mode_dFFI, SPD_solver_config);
+
     }
 };
-
 
 
 
@@ -190,9 +197,32 @@ inline void printGLError(){
 
 
 inline void initOpenGL() {
+
 	glfwInit();
 	if (!glfwInit())
 		exit(EXIT_FAILURE);
+
+	// weird behavior under VS2019
+	// if strspn && vsscanf is not used anywhere in the code
+	// there will be a link error...
+	// so they are used here
+
+
+
+	char strtext[] = "129th";
+	char cset[] = "1234567890";
+	strspn(strtext, cset);
+
+	auto GetMatches = [](const char* str, const char* format, ...) {
+		va_list args;
+		va_start(args, format);
+		vsscanf(str, format, args);
+		va_end(args);
+	};
+
+	int val;
+	char buf[100];
+	GetMatches("99 bottles of beer on the wall", " %d %s ", &val, buf);
 }
 
 

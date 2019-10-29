@@ -40,8 +40,10 @@ namespace InputHandler{
 
         if(action == GLFW_PRESS)
             keys[key] = true;
-        else if(action == GLFW_RELEASE)
-            keys[key] = false;
+		else if (action == GLFW_RELEASE) {
+			keys[key] = false;
+			camera->lastProcessKeyboardTime = -1;
+		}
     }
 
     inline void mouse_callback(GLFWwindow* window, double xpos, double ypos)

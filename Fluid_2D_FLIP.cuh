@@ -561,7 +561,7 @@ namespace Fluid_2D_FLIP {
         int numThreadsParticle, numBlocksParticle;
         int numThreadsCell, numBlocksCell;
 
-        int particlesPerCell = 8;
+        int particlesPerCell = 16;
 
         int* particleHashes;
         int * cellStart;
@@ -862,7 +862,7 @@ namespace Fluid_2D_FLIP {
             }
 
             //solve the pressure equation
-            double *result_device = solveSPD2(A, R, f_host, numVariables);
+            double *result_device = solveSPD4(A, R, f_host, numVariables);
 
             double *result_host = new double[numVariables];
             HANDLE_ERROR(cudaMemcpy(result_host, result_device, numVariables * sizeof(*result_host),
@@ -872,7 +872,6 @@ namespace Fluid_2D_FLIP {
             setPressure << < numBlocksCell, numThreadsCell >> > (grid.cells, sizeX, sizeY, result_device);
             cudaDeviceSynchronize();
             CHECK_CUDA_ERROR("set pressure");
-
 
             //update velocity
 

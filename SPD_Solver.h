@@ -8,6 +8,7 @@
 #include "GpuCommons.h"
 #include <iostream>
 
+
 struct SparseMatrixCSR{
     int rows;
     int cols;
@@ -88,12 +89,93 @@ inline SparseMatrixCSR createSparse(double* valA,int rows,int cols){
 }
 
 
+struct DoubleToSingleCast : public thrust::unary_function<double, float>
+{
+	__host__ __device__
+		float operator()(double x) { return x; }
+};
+
+struct SingleToDoubleCast : public thrust::unary_function<float,double>
+{
+	__host__ __device__
+		double operator()(float x) { return x; }
+};
+
+
+inline double* solveSPD5(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_host, int n) {
+
+	AMGX_resources_handle amgxResource = CudaHandlesKeeper::instance().amgxResource;
+	AMGX_config_handle SPD_solver_config = CudaHandlesKeeper::instance().SPD_solver_config;
+	AMGX_solver_handle SPD_solver = CudaHandlesKeeper::instance().SPD_solver_single;
+
+	double* fDouble;
+	HANDLE_ERROR(cudaMalloc(&fDouble, n * sizeof(*fDouble)));
+	HANDLE_ERROR(cudaMemcpy(fDouble, f_dense_host, n * sizeof(*fDouble), cudaMemcpyHostToDevice));
+
+	float* xSingle;
+	HANDLE_ERROR(cudaMalloc(&xSingle, n * sizeof(*xSingle)));
+
+	double* xDouble;
+	HANDLE_ERROR(cudaMalloc(&xDouble, n * sizeof(*xDouble)));
+
+	DoubleToSingleCast doubleToSingle;
+
+	float* AValSingle;
+	HANDLE_ERROR(cudaMalloc(&AValSingle, A.nnz * sizeof(*AValSingle)));
+	thrust::transform(thrust::device, A.val, A.val + A.nnz, AValSingle, doubleToSingle);
+
+	float* fSingle;
+	HANDLE_ERROR(cudaMalloc(&fSingle, n * sizeof(*fSingle)));
+	thrust::transform(thrust::device, fDouble, fDouble+n, fSingle, doubleToSingle);
+
+
+	AMGX_matrix_handle matrix;
+	AMGX_vector_handle rhs;
+	AMGX_vector_handle soln;
+
+
+	AMGX_matrix_create(&matrix, amgxResource, AMGX_mode_dFFI);
+	AMGX_vector_create(&rhs, amgxResource, AMGX_mode_dFFI);
+	AMGX_vector_create(&soln, amgxResource, AMGX_mode_dFFI);
+
+	AMGX_matrix_upload_all(matrix, n, A.nnz, 1, 1, A.csrRowPtr, A.csrColInd, AValSingle, nullptr);
+	AMGX_vector_upload(rhs, n, 1, fSingle);
+	AMGX_vector_set_zero(soln, n, 1);
+
+	AMGX_solver_setup(SPD_solver, matrix);
+	AMGX_solver_solve_with_0_initial_guess(SPD_solver, rhs, soln);
+
+	AMGX_vector_download(soln, xSingle);
+
+
+	AMGX_matrix_destroy(matrix);
+	AMGX_vector_destroy(rhs);
+	AMGX_vector_destroy(soln);
+
+	//AMGX_config_destroy(solver_config);
+	//AMGX_solver_destroy(solver);
+
+	SingleToDoubleCast singleToDouble;
+	thrust::transform(thrust::device, xSingle, xSingle+n, xDouble,singleToDouble);
+
+
+	HANDLE_ERROR(cudaFree(fDouble));
+	HANDLE_ERROR(cudaFree(fSingle));
+	HANDLE_ERROR(cudaFree(AValSingle));
+	HANDLE_ERROR(cudaFree(xSingle));
+
+
+
+	return xDouble;
+}
+
+
 
 inline double* solveSPD4(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_host,int n){
 
     AMGX_resources_handle amgxResource = CudaHandlesKeeper::instance().amgxResource;
     AMGX_config_handle SPD_solver_config = CudaHandlesKeeper::instance().SPD_solver_config;
-    AMGX_solver_handle SPD_solver = CudaHandlesKeeper::instance().SPD_solver;
+    AMGX_solver_handle SPD_solver = CudaHandlesKeeper::instance().SPD_solver_double;
 
     double* f;
     HANDLE_ERROR(cudaMalloc(&f, n * sizeof(*f)));

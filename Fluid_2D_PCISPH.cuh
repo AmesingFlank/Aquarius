@@ -203,16 +203,11 @@ namespace Fluid_2D_PCISPH {
                     }
                 }
             }
-        }
-
-        if (index == PRINT_INDEX)
-            printf("neibours : %d\n", nb);
+        }  
 
 
         particle.density = density;
-        if (density == 0) {
-            printf("shit density is 0 %d\n");
-        }
+
 
     }
 
@@ -232,13 +227,14 @@ namespace Fluid_2D_PCISPH {
 
         float deltaDensity = particle.density - restDensity;
 
-        if (index == PRINT_INDEX) printf("delta density %f\n", deltaDensity);
-
         float coeff = 0;
 
         coeff = 1;
         particle.pressure += coeff * deltaDensity;
-        //printf("%f\n",coeff);
+		if (index == PRINT_INDEX) {
+			//printf("rho: %f\n", particle.density);
+		}
+        //
 
     }
 
@@ -288,8 +284,6 @@ namespace Fluid_2D_PCISPH {
             }
         }
 
-        if (index == PRINT_INDEX) printf("                                    Fp: x: %f ,    y: %f \n", Fp.x, Fp.y);
-
         particle.pressureForce = Fp;
 
         if (particle.newPosition.x == 0 && particle.pressureForce.x <= 0) {
@@ -330,10 +324,38 @@ namespace Fluid_2D_PCISPH {
 
 
         const float restDensity = 100;
-        const float partilceRadius = sqrt(1/restDensity/M_PI);
-        const float SCP = 0.8;
+        const float particleRadius = sqrt(1/restDensity/M_PI);
+        const float SCP = 0.7;
         const float kernalRadius = sqrt(4.0/(M_PI*restDensity*SCP));
 
+		float particleSeperation;
+
+		void calculateParticleSeperation() {
+			int neighboursPerSide = 1;
+			int sides = 4;
+			double l = 0;
+			double r = kernalRadius;
+			while ((r - l) / kernalRadius > 1e-6) {
+				double m = (r + l) / 2;
+				float contributionPerSide = 0;
+				for (int i = 1; i <= neighboursPerSide; ++i) {
+					contributionPerSide += poly6(make_float2(m*i, 0), kernalRadius);
+				}
+				float density = poly6(make_float2(0, 0), kernalRadius) + contributionPerSide*sides;
+				if (density == restDensity) {
+					break;
+				}
+				if (density > restDensity) {
+					l = m;
+				}
+				else {
+					r = m;
+				}
+			}
+			particleSeperation = (r + l) / 2;
+			std::cout << "found sep! : " << particleSeperation<< std::endl;
+
+		}
 
         const float cellPhysicalSize = kernalRadius;
 
@@ -355,7 +377,7 @@ namespace Fluid_2D_PCISPH {
 
         Fluid(){
             std::cout<<"kernal radius "<<kernalRadius<<std::endl;
-            std::cout<<"particle radius "<<partilceRadius<<std::endl;
+            std::cout<<"particle radius "<<particleRadius<<std::endl;
 
             std::cout<<"gridSizeX: "<<gridSizeX<<"     gridSizeY:"<<gridSizeY<<std::endl;
             std::cout<<"self contributed density: "<<poly6(make_float2(0,0),kernalRadius)<<std::endl;
@@ -389,9 +411,9 @@ namespace Fluid_2D_PCISPH {
 
         void createParticles(std::vector<Particle>& particleList, float2 centerPos){
             for (int particle = 0; particle < 1 ; ++particle) {
-                float xBias = (random0to1()-0.5f)*partilceRadius;
-                float yBias = (random0to1()-0.5f)*partilceRadius;
-                //xBias = 0;yBias = 0;
+                float xBias = (random0to1()-0.5f)*particleRadius;
+                float yBias = (random0to1()-0.5f)*particleRadius;
+                xBias = 0;yBias = 0;
                 float2 particlePos = centerPos+make_float2(xBias,yBias);
                 particleList.emplace_back(particlePos);
             }
@@ -400,14 +422,16 @@ namespace Fluid_2D_PCISPH {
         void initFluid(){
             std::vector<Particle> allParticles;
 
-            for(int x = 0;x<gridBoundaryX/partilceRadius;x+=3){
-                for (int y = 0; y < gridBoundaryY/partilceRadius ; y+=3) {
-                    float2 pos = make_float2( (x+0.5f)*partilceRadius, (y+0.5f)*partilceRadius );
-                    if(pos.y < gridBoundaryY* 0.93){
+			calculateParticleSeperation();
+
+            for(float x = 0;x<gridBoundaryX/particleSeperation;x+=1){
+                for (float y = 0; y < gridBoundaryY/ particleSeperation; y+=1) {
+                    float2 pos = make_float2( (x+0.5f)* particleSeperation, (y+0.5f)* particleSeperation);
+                    if(pos.y < gridBoundaryY* 0.33){
                         createParticles(allParticles,pos);
                     }
                     else if(pow(pos.x- 0.5*gridBoundaryX,2)+pow(pos.y- 0.7*gridBoundaryY ,2) <= pow(0.2*gridBoundaryY,2) ){
-                        //createParticles(allParticles,pos);
+                        createParticles(allParticles,pos);
                     }
 
                 }
@@ -466,7 +490,8 @@ namespace Fluid_2D_PCISPH {
             commitPositionVelocity<<< numBlocks, numThreads >>>(particles,particleCount,gridBoundaryX,gridBoundaryY);
             CHECK_CUDA_ERROR("calcPositionVelocity");
             updateTexture();
-            std::cout<<"finished one step"<<std::endl;
+
+            //std::cout<<"finished one step"<<std::endl<<std::endl;
         }
 
 

@@ -19,6 +19,9 @@
 #include "Rendering/Renderer3D/Renderer3D.h"
 #include "Rendering/Renderer3D/camera.h"
 #include "InputHandler.h"
+#include "Rendering/Renderer3D/PointSprites.h"
+#include "Fluid_3D_SPH.cuh"
+#include "Fluid_3D_PCISPH.cuh"
 
 
 
@@ -34,12 +37,15 @@ int main( void ) {
 
 	getScreenDimensions(screenWidth, screenHeight);
 
-    GLFWwindow* window = createWindowOpenGL(screenWidth/2,screenWidth/2/2);
+	float windowWidth = screenWidth / 2;
+	float windowHeight = windowWidth / 2;
+
+    GLFWwindow* window = createWindowOpenGL(windowWidth,windowHeight);
 
     glfwSetKeyCallback(window, InputHandler::key_callback);
     glfwSetCursorPosCallback(window, InputHandler::mouse_callback);
 
-    std::shared_ptr<Camera> camera = std::make_shared<Camera>(glm::vec3(0.0f, 0.0f, 3.0f));
+    std::shared_ptr<Camera> camera = std::make_shared<Camera>(glm::vec3(5,10,20));
     InputHandler::camera = camera;
 
     Fluid_2D_FLIP::Fluid fluid;
@@ -47,9 +53,13 @@ int main( void ) {
 
     Skybox skybox("./resources/Park2/",".jpg");
 
-    double framesSinceLast = 0;
-    double lastSecond=glfwGetTime();
-    double lastFrameTime = glfwGetTime();
+    
+	//Fluid_3D_PCISPH::Fluid fluid;
+
+
+	double framesSinceLast = 0;
+	double lastSecond = glfwGetTime();
+	double lastFrameTime = glfwGetTime();
 
     while(!glfwWindowShouldClose(window)){
 
@@ -62,7 +72,7 @@ int main( void ) {
         InputHandler::Do_Movement();
 
         glm::mat4 view = camera->GetViewMatrix();
-        glm::mat4 projection = glm::perspective(camera->Zoom, (float)screenWidth/(float)screenHeight, 0.1f, 10000.0f);
+        glm::mat4 projection = glm::perspective(camera->Zoom, (float)windowWidth/(float)windowHeight, 0.1f, 10000.0f);
 
 
         double currentTime = glfwGetTime();
@@ -72,6 +82,8 @@ int main( void ) {
         quad.draw(fluid.texture);
 
         //skybox.draw(view,projection);
+		//fluid.simulationStep();
+		//fluid.draw(view,projection,camera->Position,windowWidth,windowHeight);
 
         ++framesSinceLast;
 

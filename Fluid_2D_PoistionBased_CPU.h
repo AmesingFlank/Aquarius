@@ -46,7 +46,7 @@ namespace Fluid_2D_PositionBased_CPU {
 
         float precomputedSpacing;
 
-        const float timeStep = 0.001;
+        const float timeStep = 0.01;
 
 
         void computeSpacing() {
@@ -108,11 +108,12 @@ namespace Fluid_2D_PositionBased_CPU {
                 for (float y = 0; y < gridBoundaryY; y += precomputedSpacing) {
 
                     float2 pos = make_float2(x, y);
-                    if (pos.y < gridBoundaryY * 0.53 && pos.x < gridBoundaryX * 1.5) {
+                    if (pos.y < gridBoundaryY * 0.33 && pos.x < gridBoundaryX * 1.5) {
                         particles.emplace_back(pos);
-                    } else if (pow(pos.x - 0.5 * gridBoundaryX, 2) + pow(pos.y - 0.7 * gridBoundaryY, 2) <=
+                    } 
+					else if (pow(pos.x - 0.5 * gridBoundaryX, 2) + pow(pos.y - 0.7 * gridBoundaryY, 2) <=
                                pow(0.2 * gridBoundaryY, 2)) {
-                        //particles.emplace_back(pos);
+                       particles.emplace_back(pos);
                     }
                 }
             }
@@ -146,7 +147,7 @@ namespace Fluid_2D_PositionBased_CPU {
             commitPositionVelocity();
 
             updateTexture();
-            std::cout << "\n --------------------finished one step---------------- \n" << std::endl;
+            //std::cout << "\n --------------------finished one step---------------- \n" << std::endl;
         }
 
 
@@ -335,7 +336,7 @@ namespace Fluid_2D_PositionBased_CPU {
                 float Ci = particle.density / restDensity - 1;
 
                 if (index == PRINT_INDEX) {
-                    std::cout << "Ci: " << Ci << std::endl;
+                    //std::cout << "Ci: " << Ci << std::endl;
                 }
 
                 float denominator = (sum_dot_grad_pj_Ci + dot(grad_pi_Ci, grad_pi_Ci) + 0.00001) / restDensity;

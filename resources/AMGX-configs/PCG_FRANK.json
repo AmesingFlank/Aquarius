@@ -2,29 +2,17 @@
     "config_version": 2, 
     "solver": {
         "preconditioner": {
-            "print_grid_stats": 1, 
-            "print_vis_data": 0, 
-            "solver": "AMG", 
-            
-
-            "print_solve_stats": 0, 
-            "presweeps": 1, 
-            "max_iters": 1, 
-            "monitor_residual": 0, 
-            "store_res_history": 0, 
             "scope": "amg", 
-            "max_levels": 100, 
-            "cycle": "W", 
-            "postsweeps": 1
+            "solver": "NOSOLVER"
         }, 
+        "use_scalar_norm": 1, 
         "solver": "PCG", 
         "print_solve_stats": 1, 
         "obtain_timings": 1, 
-        "max_iters": 100, 
         "monitor_residual": 1, 
-        "convergence": "ABSOLUTE", 
+        "convergence": "RELATIVE_INI_CORE", 
         "scope": "main", 
-        "tolerance": 1e-06, 
+        "tolerance": 1e-6, 
         "norm": "L2"
     }
 }
