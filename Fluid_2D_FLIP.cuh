@@ -281,14 +281,14 @@ namespace Fluid_2D_FLIP {
     }
 
     __device__ __host__
-    inline float getNeibourCoefficient(int x, int y, float temp, float u, float &centerCoefficient, float &RHS, Cell2D *cells,
+    inline float getNeibourCoefficient(int x, int y, float dt_div_rho_div_dx, float u, float &centerCoefficient, float &RHS, Cell2D *cells,
                                 int sizeX, int sizeY) {
         if (x >= 0 && x < sizeX && y >= 0 && y < sizeY && get2D(cells,x,y).content == CONTENT_FLUID) {
-            return temp * -1;
+            return dt_div_rho_div_dx * -1;
         } else {
             if (x < 0 || y < 0 || x >= sizeX || get2D(cells,x,y).content == CONTENT_SOLID) {
-                centerCoefficient -= temp;
-                RHS += u;
+                centerCoefficient -= dt_div_rho_div_dx;
+                //RHS += u;
                 return 0;
             } else if (y >= sizeY || get2D(cells,x,y).content == CONTENT_AIR) {
                 return 0;
@@ -298,7 +298,7 @@ namespace Fluid_2D_FLIP {
 
     __global__
     inline
-    void constructPressureEquations(Cell2D *cells, int sizeX, int sizeY, PressureEquation2D *equations, float temp,
+    void constructPressureEquations(Cell2D *cells, int sizeX, int sizeY, PressureEquation2D *equations, float dt_div_rho_div_dx,
                                     bool *hasNonZeroRHS) {
 
         int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -317,12 +317,12 @@ namespace Fluid_2D_FLIP {
         PressureEquation2D thisEquation;
         float RHS = (thisCell.newVelocity.y - upCell.newVelocity.y + thisCell.newVelocity.x - rightCell.newVelocity.x);
 
-        float centerCoeff = temp * 4;
+        float centerCoeff = dt_div_rho_div_dx * 4;
 
-        float leftCoeff = getNeibourCoefficient(x - 1, y, temp, thisCell.newVelocity.x, centerCoeff, RHS, cells, sizeX,sizeY);
-        float rightCoeff = getNeibourCoefficient(x + 1, y, temp, rightCell.newVelocity.x, centerCoeff, RHS, cells, sizeX,sizeY);
-        float downCoeff = getNeibourCoefficient(x, y - 1, temp, thisCell.newVelocity.y, centerCoeff, RHS, cells, sizeX,sizeY);
-        float upCoeff = getNeibourCoefficient(x, y + 1, temp, upCell.newVelocity.y, centerCoeff, RHS, cells, sizeX, sizeY);
+        float leftCoeff = getNeibourCoefficient(x - 1, y, dt_div_rho_div_dx, thisCell.newVelocity.x, centerCoeff, RHS, cells, sizeX,sizeY);
+        float rightCoeff = getNeibourCoefficient(x + 1, y, dt_div_rho_div_dx, rightCell.newVelocity.x, centerCoeff, RHS, cells, sizeX,sizeY);
+        float downCoeff = getNeibourCoefficient(x, y - 1, dt_div_rho_div_dx, thisCell.newVelocity.y, centerCoeff, RHS, cells, sizeX,sizeY);
+        float upCoeff = getNeibourCoefficient(x, y + 1, dt_div_rho_div_dx, upCell.newVelocity.y, centerCoeff, RHS, cells, sizeX, sizeY);
 
         int nnz = 0;
 
@@ -381,9 +381,7 @@ namespace Fluid_2D_FLIP {
         get2D(cells,x,y).pressure = pressureResult[get2D(cells,x,y).fluidIndex];
     }
 
-    __global__
-    inline
-    void updateVelocityWithPressure(Cell2D *cells, int sizeX, int sizeY, float temp) {
+	__global__ inline void updateVelocityWithPressureImpl (Cell2D* cells, int sizeX, int sizeY, float dt_div_rho_div_dx) {
         int index = blockIdx.x * blockDim.x + threadIdx.x;
         if (index >= sizeX * sizeY) return;
 
@@ -398,7 +396,7 @@ namespace Fluid_2D_FLIP {
         if (x > 0) {
             Cell2D &leftCell = get2D(cells,x - 1,y);
             if (thisCell.content == CONTENT_FLUID || leftCell.content == CONTENT_FLUID) {
-                float uX = thisCell.newVelocity.x - temp * (thisCell.pressure - leftCell.pressure);
+                float uX = thisCell.newVelocity.x - dt_div_rho_div_dx * (thisCell.pressure - leftCell.pressure);
                 thisCell.newVelocity.x = uX;
                 thisCell.hasVelocityX = true;
             }
@@ -406,7 +404,7 @@ namespace Fluid_2D_FLIP {
         if (y > 0) {
             Cell2D &downCell = get2D(cells,x,y - 1);
             if (thisCell.content == CONTENT_FLUID || downCell.content == CONTENT_FLUID) {
-                float uY = thisCell.newVelocity.y - temp * (thisCell.pressure - downCell.pressure);
+                float uY = thisCell.newVelocity.y - dt_div_rho_div_dx * (thisCell.pressure - downCell.pressure);
                 thisCell.newVelocity.y = uY;
                 thisCell.hasVelocityY = true;
             }
@@ -541,12 +539,135 @@ namespace Fluid_2D_FLIP {
 
     }
 
+	__global__ inline void drawParticleImpl(int sizeX, int sizeY, float cellPhysicalSize, Particle* particles, int particleCount, 
+		unsigned char* image,int imageSizeX,int imageSizeY) {
+
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		if (index >= particleCount) return;
+
+		Particle& particle = particles[index];
+
+		float gridSizeX = sizeX * cellPhysicalSize;
+		float gridSizeY = sizeY * cellPhysicalSize;
+
+		int x = (float)imageSizeX * particle.position.x / gridSizeX;
+		int y = (float)imageSizeY * particle.position.y / gridSizeY;
+		unsigned char* base = image + (y * imageSizeX + x) * 4;
+
+		if (particle.kind == 0) {
+			base[0] = 0 ;
+			base[1] = 0;
+			base[2] = 255;
+		}
+		else {
+			base[0] = 255;
+			base[1] = 0;
+			base[2] = 0;
+		}
+		base[3] = 255;
+
+	}
+
+
+	__global__ inline void computeDivergenceImpl(Cell2D* cells, int sizeX, int sizeY, float cellPhysicalSize) {
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		if (index >= sizeX * sizeY) return;
+
+		int y = index / sizeX;
+		int x = index - y * sizeX;
+
+		Cell2D& thisCell = get2D(cells, x, y);
+		Cell2D& upCell = get2D(cells, x, y+1);
+		Cell2D& rightCell = get2D(cells, x+1, y);
+
+		float div = (upCell.newVelocity.y - thisCell.newVelocity.y + rightCell.newVelocity.x - thisCell.newVelocity.x) / cellPhysicalSize;
+		thisCell.divergence = div;
+
+	}
+
+	__global__ inline void resetPressureImpl(Cell2D* cells, int sizeX, int sizeY) {
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		if (index >= sizeX * sizeY) return;
+
+		int y = index / sizeX;
+		int x = index - y * sizeX;
+
+		Cell2D& thisCell = get2D(cells, x, y);
+		thisCell.pressure = 0;
+
+	}
+
+	__global__ inline void jacobiImpl(Cell2D* cells, int sizeX, int sizeY,  float dt_div_rho_div_dx,float cellPhysicalSize) {
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		if (index >= sizeX * sizeY) return;
+
+		int y = index / sizeX;
+		int x = index - y * sizeX;
+
+		Cell2D& thisCell = get2D(cells, x, y);
+		Cell2D& rightCell = get2D(cells, x + 1, y);
+		Cell2D& upCell = get2D(cells, x, y + 1);
+
+		if (thisCell.content == CONTENT_AIR) {
+			thisCell.pressure = 0;
+			return;
+		}
+
+		float RHS = -thisCell.divergence * cellPhysicalSize;
+
+		float newPressure = 0;
+
+		float centerCoeff = dt_div_rho_div_dx * 4 ;
+
+		if (x > 0) 
+			newPressure += get2D(cells, x - 1,y).pressure * dt_div_rho_div_dx;
+		else{
+			centerCoeff -= dt_div_rho_div_dx;
+		}
+
+		if (x < sizeX-1)
+			newPressure += get2D(cells, x + 1, y).pressure * dt_div_rho_div_dx;
+		else {
+			centerCoeff -= dt_div_rho_div_dx;
+		}
+
+		if (y > 0)
+			newPressure += get2D(cells, x, y-1).pressure * dt_div_rho_div_dx;
+		else {
+			centerCoeff -= dt_div_rho_div_dx;
+		}
+
+		if (y < sizeY - 1)
+			newPressure += get2D(cells, x ,y+1).pressure * dt_div_rho_div_dx;
+		else {
+			centerCoeff -= dt_div_rho_div_dx;
+		}
+
+
+		newPressure += RHS;
+		newPressure /= centerCoeff;
+
+		
+		/*if (y==0 && x==100) {
+
+			printf("np: %f \n", newPressure);
+			printf("yup: %f \n", upCell.newVelocity.y);
+			printf("ythis: %f \n", thisCell.newVelocity.y);
+
+			printf("div: %f \n\n", thisCell.divergence);
+
+		}*/
+
+
+
+		thisCell.pressure = newPressure;
+	}
 
 
     class Fluid : public Fluid_2D {
     public:
-        const int sizeX = 256;
-        const int sizeY = 128;
+        const int sizeX = 40;
+        const int sizeY = 20;
         const int cellCount = (sizeX+1)*(sizeY+1);
 
 
@@ -627,7 +748,7 @@ namespace Fluid_2D_FLIP {
         }
 
         void simulationStep(float totalTime) {
-            float thisTimeStep = 0.05f;
+            float thisTimeStep = 0.01f;
 
             transferToGrid();
             grid.updateFluidCount();
@@ -635,7 +756,13 @@ namespace Fluid_2D_FLIP {
             applyForces(thisTimeStep);
             fixBoundary();
 
-            solvePressure(thisTimeStep);
+            //solvePressure(thisTimeStep);
+
+			solvePressureJacobi(thisTimeStep);
+
+
+			updateVelocityWithPressure(thisTimeStep);
+
             extrapolateVelocity(thisTimeStep);
 
             transferToParticles();
@@ -700,6 +827,18 @@ namespace Fluid_2D_FLIP {
 
         }
 
+		void solvePressureJacobi(float timeStep) {
+			computeDivergenceImpl << < numBlocksCell, numThreadsCell >> > (grid.cells, sizeX, sizeY, cellPhysicalSize);
+			resetPressureImpl << < numBlocksCell, numThreadsCell >> > (grid.cells, sizeX, sizeY);
+
+
+			float dt_div_rho_div_dx = 1;
+
+			for (int i = 0; i < 50; ++i) {
+				jacobiImpl << < numBlocksCell, numThreadsCell >> > (grid.cells, sizeX, sizeY, dt_div_rho_div_dx, cellPhysicalSize);
+			}
+
+		}
 
         void solvePressure(float timeStep) {
 
@@ -707,7 +846,7 @@ namespace Fluid_2D_FLIP {
             PressureEquation2D *equations = new PressureEquation2D[grid.fluidCount];
             int nnz = 0;
             bool hasNonZeroRHS = false;
-            float temp = timeStep / (density * cellPhysicalSize);
+            float dt_div_rho_div_dx = 1;
 
 
             PressureEquation2D *equationsDevice;
@@ -718,7 +857,7 @@ namespace Fluid_2D_FLIP {
             HANDLE_ERROR(cudaMemset(hasNonZeroRHS_Device,0,sizeof(*hasNonZeroRHS_Device)));
 
             constructPressureEquations << < numBlocksCell, numThreadsCell >> >
-                                                           (grid.cells, sizeX, sizeY, equationsDevice, temp, hasNonZeroRHS_Device);
+                                                           (grid.cells, sizeX, sizeY, equationsDevice, dt_div_rho_div_dx, hasNonZeroRHS_Device);
             cudaDeviceSynchronize();
             CHECK_CUDA_ERROR("construct eqns");
 
@@ -873,11 +1012,6 @@ namespace Fluid_2D_FLIP {
             cudaDeviceSynchronize();
             CHECK_CUDA_ERROR("set pressure");
 
-            //update velocity
-
-            updateVelocityWithPressure << < numBlocksCell, numThreadsCell >> > (grid.cells, sizeX, sizeY, temp);
-            cudaDeviceSynchronize();
-            CHECK_CUDA_ERROR("update velocity with pressure");
 
 
             A.free();
@@ -889,6 +1023,13 @@ namespace Fluid_2D_FLIP {
             delete[] equations;
 
         }
+
+		void updateVelocityWithPressure(float timeStep) {
+			float dt_div_rho_div_dx = 1;
+			updateVelocityWithPressureImpl << < numBlocksCell, numThreadsCell >> > (grid.cells, sizeX, sizeY, dt_div_rho_div_dx);
+			cudaDeviceSynchronize();
+			CHECK_CUDA_ERROR("update velocity with pressure");
+		}
 
 
         void extrapolateVelocity(float timeStep) {
@@ -909,26 +1050,53 @@ namespace Fluid_2D_FLIP {
 
 
         virtual void updateTexture() override {
-            printGLError();
-            glBindTexture(GL_TEXTURE_2D, texture);
-            int imageMemorySize = sizeX * sizeY * 4;
-            unsigned char *image = (unsigned char *) malloc(imageMemorySize);
-            unsigned char *imageDevice;
-            HANDLE_ERROR(cudaMalloc(&imageDevice, imageMemorySize));
+			bool drawParticlesInsteadOfGrid = true;
+			if (drawParticlesInsteadOfGrid) {
+				printGLError();
+				glBindTexture(GL_TEXTURE_2D, texture);
+				int imageSizeX = 512;
+				int imageSizeY = 256;
+				int imageMemorySize = imageSizeX * imageSizeY * 4;
+				unsigned char* image = (unsigned char*)malloc(imageMemorySize);
+				unsigned char* imageDevice;
+				HANDLE_ERROR(cudaMalloc(&imageDevice, imageMemorySize));
+				HANDLE_ERROR(cudaMemset(imageDevice, 255, imageMemorySize));
 
-            updateTextureImpl << < numBlocksCell, numThreadsCell >> > (grid.cells, sizeX, sizeY, imageDevice,cellStart,cellEnd);
-            cudaDeviceSynchronize();
-            CHECK_CUDA_ERROR("update tex");
 
-            HANDLE_ERROR(cudaMemcpy(image, imageDevice, imageMemorySize, cudaMemcpyDeviceToHost));
-            HANDLE_ERROR(cudaFree(imageDevice));
+				drawParticleImpl<<<numBlocksParticle,numThreadsParticle>>>(sizeX, sizeY, cellPhysicalSize, particles, particleCount, imageDevice, imageSizeX, imageSizeY);
+				cudaDeviceSynchronize();
+				CHECK_CUDA_ERROR("update tex");
 
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sizeX, sizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-            glGenerateMipmap(GL_TEXTURE_2D);
-            glBindTexture(GL_TEXTURE_2D, 0);
-            free(image);
-            printGLError();
+				HANDLE_ERROR(cudaMemcpy(image, imageDevice, imageMemorySize, cudaMemcpyDeviceToHost));
+				HANDLE_ERROR(cudaFree(imageDevice));
 
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageSizeX,imageSizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+				glGenerateMipmap(GL_TEXTURE_2D);
+				glBindTexture(GL_TEXTURE_2D, 0);
+				free(image);
+				printGLError();
+			}
+			else {
+				printGLError();
+				glBindTexture(GL_TEXTURE_2D, texture);
+				int imageMemorySize = sizeX * sizeY * 4;
+				unsigned char* image = (unsigned char*)malloc(imageMemorySize);
+				unsigned char* imageDevice;
+				HANDLE_ERROR(cudaMalloc(&imageDevice, imageMemorySize));
+
+				updateTextureImpl << < numBlocksCell, numThreadsCell >> > (grid.cells, sizeX, sizeY, imageDevice, cellStart, cellEnd);
+				cudaDeviceSynchronize();
+				CHECK_CUDA_ERROR("update tex");
+
+				HANDLE_ERROR(cudaMemcpy(image, imageDevice, imageMemorySize, cudaMemcpyDeviceToHost));
+				HANDLE_ERROR(cudaFree(imageDevice));
+
+				glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, sizeX, sizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+				glGenerateMipmap(GL_TEXTURE_2D);
+				glBindTexture(GL_TEXTURE_2D, 0);
+				free(image);
+				printGLError();
+			}
         }
 
         void createParticles(std::vector <Particle> &particlesHost, float2 centerPos, float tag = 0) {
@@ -989,4 +1157,4 @@ namespace Fluid_2D_FLIP {
     };
 }
 
-#endif //AQUARIUS_FLUID_2D_SEMILAGRANGE_CUH
+#endif //AQUARIUS_FLUID_2D_Full_CUH

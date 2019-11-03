@@ -734,7 +734,7 @@ namespace Fluid_2D_SemiLagrange {
             }
 
             //solve the pressure equation
-            double *result_device = solveSPD3(A, R, f_host, numVariables);
+            double *result_device = solveSPD4(A, R, f_host, numVariables);
 
             double *result_host = new double[numVariables];
             HANDLE_ERROR(cudaMemcpy(result_host, result_device, numVariables * sizeof(*result_host),

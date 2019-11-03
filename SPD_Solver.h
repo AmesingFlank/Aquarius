@@ -369,8 +369,9 @@ inline double* solveSPD2(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_h
 
     int singularity = 0;
 
-    cusolverSpDcsrlsvchol(cusolverSpHandle,n,A.nnz,descrA,valA,csrRowPtrA,csrColIndA,f,1e-5,0,x,&singularity);
-    HANDLE_ERROR(cudaFree(f));
+    cusolverSpDcsrlsvchol(cusolverSpHandle,n,A.nnz,descrA,valA,csrRowPtrA,csrColIndA,f,1e-6,0,x,&singularity);
+
+	HANDLE_ERROR(cudaFree(f));
     return x;
 }
 

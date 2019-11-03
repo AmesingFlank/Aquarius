@@ -117,6 +117,7 @@
   <ItemGroup>
     <ClInclude Include="Fluid_2D.h" />
     <ClInclude Include="Fluid_2D_FLIP.cuh" />
+    <ClInclude Include="Fluid_2D_Full.cuh" />
     <ClInclude Include="Fluid_2D_PCISPH.cuh" />
     <ClInclude Include="Fluid_2D_PCISPH_CPU.h" />
     <ClInclude Include="Fluid_2D_PoistionBased_CPU.h" />

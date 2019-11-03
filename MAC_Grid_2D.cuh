@@ -36,6 +36,7 @@ struct Cell2D{
     float fluid0Count = 0;
     float fluid1Count = 0;
 
+	float divergence = 0;
 
 };
 

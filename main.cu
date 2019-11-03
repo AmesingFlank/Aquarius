@@ -13,6 +13,7 @@
 #include "Fluid_2D_PCISPH_CPU.h"
 #include "Fluid_2D_PoistionBased_CPU.h"
 #include "Fluid_2D_FLIP.cuh"
+#include "Fluid_2D_Full.cuh"
 
 #include "MAC_Grid_3D.cuh"
 
