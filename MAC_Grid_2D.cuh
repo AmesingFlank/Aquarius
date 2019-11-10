@@ -11,6 +11,8 @@
 #include <cmath>
 #include "WeightKernels.h"
 #include <thrust/functional.h>
+#include <thrust/reduce.h>
+
 
 
 #define CONTENT_AIR  0.0

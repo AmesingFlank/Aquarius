@@ -5,15 +5,20 @@
 #ifndef AQUARIUS_GPUCOMMONS_H
 #define AQUARIUS_GPUCOMMONS_H
 
+#include <string>
+#include <iostream>
+#include <stdexcept>
 #include <stdio.h>
+#include <vcruntime_exception.h>
 #include <helper_math.h>
+#include <device_launch_parameters.h>
 
 #include <cublas_v2.h>
 #include <cusparse_v2.h>
 #include <cusolverSp.h>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <amgx_c.h>
+#include <amgx/amgx_c.h>
 
 #include <curand.h>
 #include <curand_kernel.h>

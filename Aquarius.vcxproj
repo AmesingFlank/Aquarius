@@ -41,11 +41,11 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>C:\Users\Dunfan\Code\Libraries\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.1\common\inc;C:\Users\Dunfan\Code\Libraries\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Dunfan\Code\Libraries\vc2019;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>C:\Users\Dunfan\Code\Libraries\include;$(IncludePath)</IncludePath>
+    <IncludePath>C:\ProgramData\NVIDIA Corporation\CUDA Samples\v10.1\common\inc;C:\Users\Dunfan\Code\Libraries\include;$(IncludePath)</IncludePath>
     <LibraryPath>C:\Users\Dunfan\Code\Libraries\vc2019;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -112,22 +112,27 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CudaCompile Include="Fluid\Fluid_2D_kernels.cuh" />
     <CudaCompile Include="main.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Fluid_2D.h" />
-    <ClInclude Include="Fluid_2D_FLIP.cuh" />
-    <ClInclude Include="Fluid_2D_Full.cuh" />
-    <ClInclude Include="Fluid_2D_PCISPH.cuh" />
-    <ClInclude Include="Fluid_2D_PCISPH_CPU.h" />
-    <ClInclude Include="Fluid_2D_PoistionBased_CPU.h" />
-    <ClInclude Include="Fluid_2D_SemiLagrange.cuh" />
-    <ClInclude Include="Fluid_3D_PCISPH.cuh" />
-    <ClInclude Include="Fluid_3D_SPH.cuh" />
+    <ClInclude Include="Fluid\Fluid.h" />
+    <ClInclude Include="Fluid\Fluid_2D.h" />
+    <ClInclude Include="Fluid\Fluid_2D_FLIP.cuh" />
+    <ClInclude Include="Fluid\Fluid_2D_Full.cuh" />
+    <ClInclude Include="Fluid\Fluid_2D_common.cuh" />
+    <ClInclude Include="Fluid\Fluid_2D_PCISPH.cuh" />
+    <ClInclude Include="Fluid\Fluid_2D_PCISPH_CPU.h" />
+    <ClInclude Include="Fluid\Fluid_2D_PoistionBased_CPU.h" />
+    <ClInclude Include="Fluid\Fluid_2D_SemiLagrange.cuh" />
+    <ClInclude Include="Fluid\Fluid_3D_PCISPH.cuh" />
+    <ClInclude Include="Fluid\Fluid_3D_SPH.cuh" />
+    <ClInclude Include="Fluid\PressureEquation2D.cuh" />
     <ClInclude Include="GpuCommons.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="MAC_Grid_2D.cuh" />
     <ClInclude Include="MAC_Grid_3D.cuh" />
+    <ClInclude Include="Rendering\DrawCommand.h" />
     <ClInclude Include="Rendering\mesh.h" />
     <ClInclude Include="Rendering\model.h" />
     <ClInclude Include="Rendering\Quad.h" />

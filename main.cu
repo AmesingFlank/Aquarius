@@ -5,24 +5,28 @@
 #include <math.h>
 
 
-#include "SPD_Solver.h"
-#include "Rendering/Quad.h"
+
+#include "GpuCommons.h"
+
+/*
 #include "Fluid_2D_SemiLagrange.cuh"
 #include "Fluid_2D_PCISPH.cuh"
-#include "GpuCommons.h"
 #include "Fluid_2D_PCISPH_CPU.h"
 #include "Fluid_2D_PoistionBased_CPU.h"
-#include "Fluid_2D_FLIP.cuh"
 #include "Fluid_2D_Full.cuh"
+#include "Fluid_3D_SPH.cuh"
+#include "Fluid_3D_PCISPH.cuh"
+*/
 
-#include "MAC_Grid_3D.cuh"
+#include "Fluid/Fluid_2D_FLIP.cuh"
+
 
 #include "Rendering/Renderer3D/Renderer3D.h"
 #include "Rendering/Renderer3D/camera.h"
 #include "InputHandler.h"
 #include "Rendering/Renderer3D/PointSprites.h"
-#include "Fluid_3D_SPH.cuh"
-#include "Fluid_3D_PCISPH.cuh"
+
+#include "Rendering/DrawCommand.h"
 
 
 
@@ -50,11 +54,6 @@ int main( void ) {
     InputHandler::camera = camera;
 
     Fluid_2D_FLIP::Fluid fluid;
-    Quad quad;
-
-    Skybox skybox("./resources/Park2/",".jpg");
-
-    
 	//Fluid_3D_PCISPH::Fluid fluid;
 
 
@@ -75,12 +74,15 @@ int main( void ) {
         glm::mat4 view = camera->GetViewMatrix();
         glm::mat4 projection = glm::perspective(camera->Zoom, (float)windowWidth/(float)windowHeight, 0.1f, 10000.0f);
 
+		DrawCommand drawCommand = {
+			view,projection,camera->Position,windowWidth,windowHeight
+		};
+
 
         double currentTime = glfwGetTime();
 
-        fluid.simulationStep(currentTime-lastFrameTime);
-        fluid.updateTexture();
-        quad.draw(fluid.texture);
+        fluid.simulationStep();
+        fluid.draw(drawCommand);
 
         //skybox.draw(view,projection);
 		//fluid.simulationStep();

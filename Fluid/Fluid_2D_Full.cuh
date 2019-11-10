@@ -14,24 +14,12 @@
 #include <unordered_map>
 #include <thrust/functional.h>
 #include <thrust/reduce.h>
-
+#include "PressureEquation2D.cuh"
 
 
 namespace Fluid_2D_Full {
 
-	__device__ __host__
-		struct PressureEquation2D {
-		//std::vector<std::pair<int,float>> terms;
-		//std::unordered_map<int,float> terms_map;
-		//std::vector<std::pair<int,float>> terms_list;
-
-		int termsIndex[5];
-		float termsCoeff[5];
-		unsigned char termCount = 0;
-		float RHS;
-		int x;
-		int y;
-	};
+	
 
 	
 
