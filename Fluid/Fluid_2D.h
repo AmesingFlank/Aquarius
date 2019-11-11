@@ -1,6 +1,3 @@
-//
-// Created by AmesingFlank on 2019-07-04.
-//
 
 #ifndef AQUARIUS_FLUID_2D_H
 #define AQUARIUS_FLUID_2D_H
@@ -14,7 +11,7 @@
 
 
 
-class Fluid_2D : Fluid{
+class Fluid_2D : public Fluid{
 public:
 	Quad quad;
     GLuint texture;

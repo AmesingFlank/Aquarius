@@ -8,8 +8,9 @@
 
 #include "GpuCommons.h"
 
+
+
 /*
-#include "Fluid_2D_SemiLagrange.cuh"
 #include "Fluid_2D_PCISPH.cuh"
 #include "Fluid_2D_PCISPH_CPU.h"
 #include "Fluid_2D_PoistionBased_CPU.h"
@@ -17,8 +18,11 @@
 #include "Fluid_3D_SPH.cuh"
 #include "Fluid_3D_PCISPH.cuh"
 */
-
+#include "Fluid/Fluid_2D_SemiLagrange.cuh"
 #include "Fluid/Fluid_2D_FLIP.cuh"
+#include "Fluid/Fluid_2D_PCISPH.cuh"
+
+#include "Fluid/Fluid_3D_PCISPH.cuh"
 
 
 #include "Rendering/Renderer3D/Renderer3D.h"
@@ -81,12 +85,9 @@ int main( void ) {
 
         double currentTime = glfwGetTime();
 
-        fluid.simulationStep();
-        fluid.draw(drawCommand);
 
-        //skybox.draw(view,projection);
-		//fluid.simulationStep();
-		//fluid.draw(view,projection,camera->Position,windowWidth,windowHeight);
+		fluid.simulationStep();
+		fluid.draw(drawCommand);
 
         ++framesSinceLast;
 

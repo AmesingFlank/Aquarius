@@ -275,7 +275,7 @@ void extrapolateVelocity(float timeStep, MAC_Grid_2D& grid) {
 
 
 template<typename Particle>
-void drawParticles(unsigned char* imageGPU,int sizeX,int sizeY,float cellPhysicalSize,
+void drawParticles(unsigned char* imageGPU,float containerSizeX,float containerSizeY,
 	Particle* particles,int particleCount,int numBlocksParticle,int numThreadsParticle,
 	int imageSizeX, int imageSizeY) {
 
@@ -284,7 +284,7 @@ void drawParticles(unsigned char* imageGPU,int sizeX,int sizeY,float cellPhysica
 	HANDLE_ERROR(cudaMemset(imageGPU, 255, imageMemorySize));
 
 
-	drawParticleImpl << <numBlocksParticle, numThreadsParticle >> > (sizeX, sizeY, cellPhysicalSize, particles, particleCount, imageGPU, imageSizeX, imageSizeY);
+	drawParticleImpl << <numBlocksParticle, numThreadsParticle >> > ( containerSizeX,  containerSizeY, particles, particleCount, imageGPU, imageSizeX, imageSizeY);
 	cudaDeviceSynchronize();
 	CHECK_CUDA_ERROR("update tex");
 
@@ -295,3 +295,4 @@ void drawGrid(MAC_Grid_2D& grid,unsigned char* imageGPU) {
 	cudaDeviceSynchronize();
 	CHECK_CUDA_ERROR("update tex");
 }
+

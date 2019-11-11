@@ -93,7 +93,7 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Defines>GLEW_STATIC;</Defines>
+      <Defines>GLEW_STATIC;STB_IMAGE_IMPLEMENTATION</Defines>
       <Include>C:\Users\Dunfan\Code\Libraries\include\amgx;C:\Users\Dunfan\Code\Libraries\include\cudaSamples;%(Include)</Include>
       <Runtime>MT</Runtime>
       <CodeGeneration>compute_61,sm_61</CodeGeneration>
@@ -119,19 +119,20 @@
     <ClInclude Include="Fluid\Fluid.h" />
     <ClInclude Include="Fluid\Fluid_2D.h" />
     <ClInclude Include="Fluid\Fluid_2D_FLIP.cuh" />
-    <ClInclude Include="Fluid\Fluid_2D_Full.cuh" />
     <ClInclude Include="Fluid\Fluid_2D_common.cuh" />
     <ClInclude Include="Fluid\Fluid_2D_PCISPH.cuh" />
-    <ClInclude Include="Fluid\Fluid_2D_PCISPH_CPU.h" />
     <ClInclude Include="Fluid\Fluid_2D_PoistionBased_CPU.h" />
     <ClInclude Include="Fluid\Fluid_2D_SemiLagrange.cuh" />
+    <ClInclude Include="Fluid\Fluid_3D.cuh" />
+    <ClInclude Include="Fluid\Fluid_3D_common.cuh" />
+    <ClInclude Include="Fluid\Fluid_3D_kernels.cuh" />
     <ClInclude Include="Fluid\Fluid_3D_PCISPH.cuh" />
     <ClInclude Include="Fluid\Fluid_3D_SPH.cuh" />
     <ClInclude Include="Fluid\PressureEquation2D.cuh" />
     <ClInclude Include="GpuCommons.h" />
     <ClInclude Include="InputHandler.h" />
-    <ClInclude Include="MAC_Grid_2D.cuh" />
-    <ClInclude Include="MAC_Grid_3D.cuh" />
+    <ClInclude Include="Fluid\MAC_Grid_2D.cuh" />
+    <ClInclude Include="Fluid\MAC_Grid_3D.cuh" />
     <ClInclude Include="Rendering\DrawCommand.h" />
     <ClInclude Include="Rendering\mesh.h" />
     <ClInclude Include="Rendering\model.h" />
@@ -143,8 +144,8 @@
     <ClInclude Include="Rendering\Renderer3D\Skybox.h" />
     <ClInclude Include="Rendering\Shader.h" />
     <ClInclude Include="Rendering\stb_image.h" />
-    <ClInclude Include="SPD_Solver.h" />
-    <ClInclude Include="WeightKernels.h" />
+    <ClInclude Include="Fluid\SPD_Solver.h" />
+    <ClInclude Include="Fluid\WeightKernels.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />

@@ -59,15 +59,19 @@ struct PointSprites {
 
 	glm::mat4  model = glm::mat4(1.0);
 
-	void draw(glm::mat4& view, glm::mat4& projection,glm::vec3 cameraPos,float windowWidth,float windowHeight,float radius) {
+	void draw(const DrawCommand& drawCommand,float radius) {
+
+		glm::mat4 view = drawCommand.view;
+		glm::mat4 projection = drawCommand.projection;
+		glm::vec3 cameraPos = drawCommand.cameraPosition;
 
 		shader->Use();
 		glUniformMatrix4fv(model_location, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(model));
 		glUniformMatrix4fv(view_location, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(view));
 		glUniformMatrix4fv(projection_location, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(projection));
 
-		glUniform1f(glGetUniformLocation(shader->Program, "windowWidth"), windowWidth);
-		glUniform1f(glGetUniformLocation(shader->Program, "windowHeight"), windowHeight);
+		glUniform1f(glGetUniformLocation(shader->Program, "windowWidth"), drawCommand.windowWidth);
+		glUniform1f(glGetUniformLocation(shader->Program, "windowHeight"), drawCommand.windowHeight);
 
 		glUniform1f(glGetUniformLocation(shader->Program, "radius"), radius);
 

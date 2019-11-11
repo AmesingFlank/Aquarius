@@ -7,8 +7,8 @@
 #ifndef AQUARIUS_FLUID_2D_FLIP_CUH
 #define AQUARIUS_FLUID_2D_FLIP_CUH
 
-#include "../MAC_Grid_2D.cuh"
-#include "../SPD_Solver.h"
+#include "MAC_Grid_2D.cuh"
+#include "SPD_Solver.h"
 #include <vector>
 #include <utility>
 #include "../GpuCommons.h"
@@ -23,6 +23,139 @@
 
 
 namespace Fluid_2D_FLIP {
+
+
+	// used by FLIP
+	template<typename Particle>
+	__global__ inline void transferToCell(Cell2D* cells, int sizeX, int sizeY, float cellPhysicalSize, int* cellStart, int* cellEnd,
+		Particle* particles, int particleCount) {
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		if (index >= sizeX * sizeY) return;
+
+		int y = index / sizeX;
+		int x = index - y * sizeX;
+
+		int cellID = x * (sizeY)+y;
+		Cell2D& thisCell = get2D(cells, x, y);
+
+		int cellsToCheck[9];
+		for (int r = 0; r < 3; ++r) {
+			for (int c = 0; c < 3; ++c) {
+				cellsToCheck[c * 3 + r] = cellID + (r - 1) + (c - 1) * (sizeY);
+			}
+		}
+
+		int cellCount = (sizeX) * (sizeY);
+
+		float2 xVelocityPos = make_float2(x * cellPhysicalSize, (y + 0.5) * cellPhysicalSize);
+		float2 yVelocityPos = make_float2((x + 0.5) * cellPhysicalSize, y * cellPhysicalSize);
+
+		float totalWeightX = 0;
+		float totalWeightY = 0;
+
+
+		for (int cell : cellsToCheck) {
+			if (cell >= 0 && cell < cellCount) {
+				for (int j = cellStart[cell]; j <= cellEnd[cell]; ++j) {
+					if (j >= 0 && j < particleCount) {
+						const Particle& p = particles[j];
+						float thisWeightX = trilinearHatKernel(p.position - xVelocityPos, cellPhysicalSize);
+						float thisWeightY = trilinearHatKernel(p.position - yVelocityPos, cellPhysicalSize);
+
+						thisCell.velocity.x += thisWeightX * p.velocity.x;
+						thisCell.velocity.y += thisWeightY * p.velocity.y;
+
+						totalWeightX += thisWeightX;
+						totalWeightY += thisWeightY;
+					}
+				}
+			}
+		}
+
+		if (totalWeightX > 0)
+			thisCell.velocity.x /= totalWeightX;
+		if (totalWeightY > 0)
+			thisCell.velocity.y /= totalWeightY;
+		thisCell.newVelocity = thisCell.velocity;
+
+		for (int j = cellStart[cellID]; j <= cellEnd[cellID]; ++j) {
+			if (j >= 0 && j < particleCount) {
+				thisCell.content = CONTENT_FLUID;
+
+				const Particle& p = particles[j];
+
+
+				if (p.kind > 0) {
+					thisCell.fluid1Count++;
+				}
+				else {
+					thisCell.fluid0Count++;
+				}
+			}
+		}
+	}
+
+
+
+	template<typename Particle>
+	__global__ inline void transferToParticlesImpl(Cell2D* cells, Particle* particles, int particleCount, int sizeX, int sizeY, float cellPhysicalSize) {
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		if (index >= particleCount) return;
+
+
+		Particle& particle = particles[index];
+		float2 newGridVelocity = MAC_Grid_2D::getPointNewVelocity(particle.position, cellPhysicalSize, sizeX, sizeY, cells);
+		float2 oldGridVelocity = MAC_Grid_2D::getPointVelocity(particle.position, cellPhysicalSize, sizeX, sizeY, cells);
+		float2 velocityChange = newGridVelocity - oldGridVelocity;
+		particle.velocity += velocityChange; //FLIP
+
+		//particle.velocity = newGridVelocity; //PIC
+
+	}
+
+
+
+	template<typename Particle>
+	__global__ inline void moveParticlesImpl(float timeStep, Cell2D* cells, Particle* particles, int particleCount, int sizeX, int sizeY, float cellPhysicalSize) {
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		if (index >= particleCount) return;
+
+		Particle& particle = particles[index];
+		float2 beginPos = particle.position;
+
+
+		float2 u1 = MAC_Grid_2D::getPointNewVelocity(beginPos, cellPhysicalSize, sizeX, sizeY, cells);
+		float2 u2 = MAC_Grid_2D::getPointNewVelocity(beginPos + timeStep * u1 / 2, cellPhysicalSize, sizeX, sizeY, cells);
+		float2 u3 = MAC_Grid_2D::getPointNewVelocity(beginPos + timeStep * u2 * 3 / 4, cellPhysicalSize, sizeX, sizeY, cells);
+
+		float2 destPos = beginPos + timeStep * (u1 * 2 / 9 + u2 * 3 / 9 + u3 * 4 / 9);
+
+		//destPos = beginPos+particle.velocity*timeStep;
+
+
+		destPos.x = max(0.0 + 1e-6, min(sizeX * cellPhysicalSize - 1e-6, destPos.x));
+		destPos.y = max(0.0 + 1e-6, min(sizeY * cellPhysicalSize - 1e-6, destPos.y));
+
+		particle.position = destPos;
+
+	}
+
+	__global__ inline void resetAllCells(Cell2D* cells, int sizeX, int sizeY, float content) {
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		if (index >= sizeX * sizeY) return;
+
+		int y = index / sizeX;
+		int x = index - y * sizeX;
+
+		Cell2D& thisCell = get2D(cells, x, y);
+
+		thisCell.content = content;
+		thisCell.velocity = make_float2(0, 0);
+		thisCell.newVelocity = make_float2(0, 0);
+		thisCell.fluid0Count = 0;
+		thisCell.fluid1Count = 0;
+
+	}
 	
     __device__ __host__
     struct Particle{
@@ -176,7 +309,7 @@ namespace Fluid_2D_FLIP {
 
 
         virtual void draw(const DrawCommand& drawCommand) override {
-			drawParticles(imageGPU, grid.sizeX, grid.sizeY, grid.cellPhysicalSize, particles, particleCount, numBlocksParticle,numThreadsParticle,imageSizeX, imageSizeY);
+			drawParticles(imageGPU, sizeX*cellPhysicalSize,sizeY*cellPhysicalSize, particles, particleCount, numBlocksParticle,numThreadsParticle,imageSizeX, imageSizeY);
 			//drawGrid(grid, imageGPU);
 			drawImage();
 			printGLError();

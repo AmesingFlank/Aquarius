@@ -7,7 +7,7 @@
 
 #include <stdlib.h>
 #include <memory>
-#include "GpuCommons.h"
+#include "../GpuCommons.h"
 #include <cmath>
 #include "WeightKernels.h"
 #include <thrust/functional.h>
@@ -329,28 +329,6 @@ public:
     }
 
 
-    float getMaxSpeed2(){
-        float maxSpeed = 0;
-
-        Cell2D *cellsTemp = copyCellsToHost();
-
-        for (int c = 0; c < (sizeY + 1) * (sizeX + 1); ++c) {
-            Cell2D &thisCell = cellsTemp[c];
-
-            if (thisCell.hasVelocityX) {
-                maxSpeed = max(maxSpeed,  abs(thisCell.newVelocity.x));
-            }
-            if (thisCell.hasVelocityY) {
-                maxSpeed = max(maxSpeed, abs(thisCell.newVelocity.y));
-            }
-        }
-        delete[] cellsTemp;
-
-        //maxSpeed = thrust::reduce(grid.cells, grid.cells+grid.cellCount,0,MAC_Grid_2D_Utils::GreaterCellSpeed());
-
-        maxSpeed = maxSpeed*sqrt(2);
-        return maxSpeed;
-    }
 
     float getMaxSpeed(){
         float * speedX;

@@ -17,11 +17,13 @@ struct Container {
 		projection_location = glGetUniformLocation(shader.Program, "projection");
 	}
 
-	void draw(glm::mat4& view, glm::mat4& projection, glm::vec3 cameraPos) {
+	void draw(const DrawCommand& drawCommand) {
+
+		glm::vec3 cameraPos = drawCommand.cameraPosition;
 
 		shader.Use();
-		glUniformMatrix4fv(view_location, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(view));
-		glUniformMatrix4fv(projection_location, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(projection));
+		glUniformMatrix4fv(view_location, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.view));
+		glUniformMatrix4fv(projection_location, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.projection));
 
 		glUniform3f(glGetUniformLocation(shader.Program, "cameraPosition"), cameraPos.x, cameraPos.y, cameraPos.z);
 

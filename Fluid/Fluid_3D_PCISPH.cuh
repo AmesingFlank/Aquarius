@@ -12,6 +12,9 @@
 #include "WeightKernels.h"
 #include "Rendering/Renderer3D/PointSprites.h"
 #include "Rendering/Renderer3D/Container.h"
+#include "Rendering/Renderer3D/Skybox.h"
+#include "Fluid_3D.cuh"
+#include "Fluid_3D_common.cuh"
 
 namespace Fluid_3D_PCISPH {
 
@@ -274,7 +277,7 @@ namespace Fluid_3D_PCISPH {
 	}
 
 
-	class Fluid {
+	class Fluid : public Fluid_3D{
 	public:
 		int particleCount;
 		int cellCount;
@@ -313,6 +316,8 @@ namespace Fluid_3D_PCISPH {
 		int numThreads, numBlocks;
 
 		Container container = Container(glm::vec3(gridDimension.x, gridDimension.y, gridDimension.z));
+
+		Skybox skybox = Skybox("resources/Park2/",".jpg");
 
 
 		Fluid() {
@@ -403,11 +408,11 @@ namespace Fluid_3D_PCISPH {
 
 
 
-		void draw(glm::mat4& view, glm::mat4& projection, glm::vec3 cameraPos, float windowWidth, float windowHeight) {
+		virtual void draw(const DrawCommand& drawCommand) override {
+			skybox.draw(drawCommand);
 			updateVBO();
-			pointSprites->draw(view, projection, cameraPos, windowWidth, windowHeight, particleSpacing / 2.0);
-			container.draw(view, projection, cameraPos);
-
+			pointSprites->draw( drawCommand, particleSpacing / 2.0);
+			container.draw(drawCommand);
 		}
 
 		void computeRestDensity() {
@@ -418,7 +423,7 @@ namespace Fluid_3D_PCISPH {
 		}
 
 
-		void simulationStep() {
+		virtual void simulationStep() override {
 			for (int i = 0; i < substeps; ++i) {
 
 				performSpatialHashing();

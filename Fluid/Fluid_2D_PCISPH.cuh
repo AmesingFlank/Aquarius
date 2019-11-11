@@ -5,7 +5,7 @@
 #ifndef AQUARIUS_FLUID_2D_PCISPH_CUH
 #define AQUARIUS_FLUID_2D_PCISPH_CUH
 
-#include "GpuCommons.h"
+#include "../GpuCommons.h"
 #include <vector>
 #include <algorithm>
 #include <thrust/sort.h>
@@ -13,6 +13,9 @@
 #include <iostream>
 #include "WeightKernels.h"
 #include "Fluid_2D.h"
+
+#include "FLuid_2D_common.cuh"
+#include "FLuid_2D_kernels.cuh"
 
 #define PRINT_INDEX 250
 
@@ -44,57 +47,13 @@ namespace Fluid_2D_PCISPH {
         int hash = 0;
 
         float lambda = 0;
+
+		float kind = 0;
     };
 
 
 
 
-    __global__
-    inline
-    void calcHashImpl(int *particleHashes,  // output
-                      Particle *particles,               // input: positions
-                      int particleCount,
-                      float cellPhysicalSize, int gridSizeX, int gridSizeY, int version) {
-        int index = blockIdx.x * blockDim.x + threadIdx.x;
-
-        if (index >= particleCount) return;
-
-        Particle &p = particles[index];
-
-        float2 pos = p.position;
-        if (version != 0) {
-            pos = p.newPosition;
-        }
-        // get address in grid
-        int x = pos.x / cellPhysicalSize;
-        int y = pos.y / cellPhysicalSize;
-        int hash = x * gridSizeY + y;
-
-        particleHashes[index] = hash;
-
-        //printf("p %d --> c %d\n",index,hash);
-    }
-
-    __global__
-    inline
-    void findCellStartEndImpl(int *particleHashes,
-                              int *cellStart, int *cellEnd,
-                              int particleCount) {
-        int index = blockIdx.x * blockDim.x + threadIdx.x;
-
-        if (index >= particleCount) return;
-
-        int thisHash = particleHashes[index];
-
-
-        if (index == 0 || particleHashes[index - 1] < thisHash) {
-            cellStart[thisHash] = index;
-        }
-
-        if (index == particleCount - 1 || particleHashes[index + 1] > thisHash) {
-            cellEnd[thisHash] = index;
-        }
-    }
 
 
     __global__
@@ -296,25 +255,6 @@ namespace Fluid_2D_PCISPH {
     }
 
 
-    __global__
-    inline
-    void updateTextureImpl(Particle *particles, int particleCount, float texCellPhysicalSize,
-                           int texSizeX, unsigned char *result) {
-        int index = blockIdx.x * blockDim.x + threadIdx.x;
-        if (index >= particleCount) return;
-        Particle &particle = particles[index];
-        int cellX = particle.position.x / texCellPhysicalSize;
-        int cellY = particle.position.y / texCellPhysicalSize;
-        int cellID = cellY * texSizeX + cellX;
-
-        unsigned char *base = result + cellID * 4;
-        base[0] = 0;
-        base[1] = 0;
-        base[2] = 255;
-        base[3] = 255;
-    }
-
-
 
     class Fluid:public Fluid_2D{
     public:
@@ -383,31 +323,9 @@ namespace Fluid_2D_PCISPH {
             std::cout<<"self contributed density: "<<poly6(make_float2(0,0),kernalRadius)<<std::endl;
 
             initFluid();
+			initTextureImage(512,256);
         }
 
-        void performSpatialHashing(int version = 0){
-            calcHashImpl<<< numBlocks, numThreads >>>(particleHashes,particles,particleCount,cellPhysicalSize,gridSizeX,gridSizeY,version);
-
-            CHECK_CUDA_ERROR("calc hash");
-            thrust::sort_by_key(thrust::device, particleHashes, particleHashes + particleCount, particles);
-
-            /*
-            for (int i = 0; i <particleCount ; ++i) {
-                int thisHash = 0;
-                HANDLE_ERROR(cudaMemcpy(&thisHash, particleHashes+i, sizeof(int), cudaMemcpyDeviceToHost));
-                std::cout<<"hash of "<<i<<" is "<<thisHash<<std::endl;
-            }
-             */
-
-            HANDLE_ERROR(cudaMemset(cellStart,-1,cellCount*sizeof(*cellStart)));
-            HANDLE_ERROR(cudaMemset(cellEnd,-1,cellCount*sizeof(*cellEnd)));
-            findCellStartEndImpl<<< numBlocks, numThreads >>>(particleHashes,cellStart,cellEnd,particleCount);
-            CHECK_CUDA_ERROR("find cell start end");
-
-
-            //std::cout<<"finished spatial hashing"<<std::endl;
-
-        }
 
         void createParticles(std::vector<Particle>& particleList, float2 centerPos){
             for (int particle = 0; particle < 1 ; ++particle) {
@@ -464,10 +382,10 @@ namespace Fluid_2D_PCISPH {
             //CHECK_CUDA_ERROR("calcDensity 0");
         }
 
-        void simulationStep(float totalTime){
+        virtual void simulationStep() override{
             float thisTimeStep = 0.01f;
 
-            performSpatialHashing();
+			performSpatialHashing(particleHashes, particles, particleCount, cellPhysicalSize, gridSizeX, gridSizeY, numBlocks, numThreads, cellStart, cellEnd, cellCount);
             calcOtherForces<<< numBlocks, numThreads >>>(particles,particleCount);
             CHECK_CUDA_ERROR("calcOtherForces");
             for (int i = 0 ; i < 20 ; ++i) {
@@ -489,40 +407,18 @@ namespace Fluid_2D_PCISPH {
             calcPositionVelocity<<< numBlocks, numThreads >>>(particles,particleCount,gridBoundaryX,gridBoundaryY,thisTimeStep,cellPhysicalSize);
             commitPositionVelocity<<< numBlocks, numThreads >>>(particles,particleCount,gridBoundaryX,gridBoundaryY);
             CHECK_CUDA_ERROR("calcPositionVelocity");
-            updateTexture();
 
             //std::cout<<"finished one step"<<std::endl<<std::endl;
         }
 
 
-        virtual void updateTexture()override {
-            printGLError();
-            glBindTexture(GL_TEXTURE_2D,texture);
-            int texSizeX = 256;
-            int texSizeY = 126;
-            float texCellPhysicalSize = cellPhysicalSize * gridSizeX/texSizeX;
-            size_t imageSize = texSizeX*texSizeY*4* sizeof(unsigned char);
-            unsigned char* image = (unsigned char*) malloc(imageSize);
-            unsigned char* imageGPU = nullptr;
-            HANDLE_ERROR(cudaMalloc(&imageGPU, imageSize ));
-            HANDLE_ERROR(cudaMemset(imageGPU,255,imageSize));
+		virtual void draw(const DrawCommand& drawCommand) override {
+			drawParticles(imageGPU, gridBoundaryX, gridBoundaryY, particles, particleCount, numBlocks, numThreads, imageSizeX, imageSizeY);
 
+			drawImage();
+			printGLError();
 
-            updateTextureImpl<<< numBlocks, numThreads >>>(particles,particleCount,texCellPhysicalSize,texSizeX,imageGPU);
-            CHECK_CUDA_ERROR("u t");
-
-            HANDLE_ERROR(cudaMemcpy(image,imageGPU,imageSize, cudaMemcpyDeviceToHost));
-
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texSizeX, texSizeY, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
-            glGenerateMipmap(GL_TEXTURE_2D);
-            glBindTexture(GL_TEXTURE_2D,0);
-            free(image);
-            HANDLE_ERROR(cudaFree(imageGPU));
-            printGLError();
-
-        }
-
-
+		}
 
     };
 
