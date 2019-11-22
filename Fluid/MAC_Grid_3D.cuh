@@ -7,11 +7,10 @@
 
 #include <stdlib.h>
 #include <memory>
-#include "GpuCommons.h"
+#include "../GpuCommons.h"
 #include <cmath>
 #include "WeightKernels.h"
 #include <thrust/functional.h>
-#include "MAC_Grid_3D.cuh"
 
 
 #define CONTENT_AIR  0.0
@@ -38,6 +37,9 @@ struct Cell3D{
     float fluid0Count = 0;
     float fluid1Count = 0;
 
+	float divergence;
+
+	float density;
 };
 
 
@@ -305,7 +307,7 @@ public:
 
 
     __device__ __host__
-    static float3 getPhysicalPos(int x,int y,float z,float cellPhysicalSize){
+    static float3 getPhysicalPos(int x,int y,int z,float cellPhysicalSize){
         return make_float3((x+0.5f)*cellPhysicalSize,(y+0.5f)*cellPhysicalSize,(z+0.5f)*cellPhysicalSize);
     }
 
@@ -314,23 +316,6 @@ public:
 
         MAC_Grid_3D_Utils::setContentToNewContent<<<numBlocksCell,numThreadsCell>>>(cells,cellCount);
         updateFluidCount();
-    }
-
-    void updateFluidCount2(){
-        Cell3D* cellsTemp = copyCellsToHost();
-        int index = 0;
-
-        for(int c = 0;c<cellCount;++c){
-            Cell3D& thisCell = cellsTemp[c];
-            if(thisCell.content==CONTENT_FLUID){
-                thisCell.fluidIndex = index;
-                index++;
-            }
-        }
-
-        fluidCount = index;
-        copyCellsToDevice(cellsTemp);
-        delete []cellsTemp;
     }
 
     void updateFluidCount(){
@@ -343,6 +328,7 @@ public:
 
         int numThreadsCell = min(1024, cellCount);
         int numBlocksCell = divUp(cellCount, numThreadsCell);
+
 
         MAC_Grid_3D_Utils::writeContentsAndIndices<<<numBlocksCell,numThreadsCell>>>(cells,cellCount,contentCopy0,contentCopy1,indices);
         CHECK_CUDA_ERROR("write contents and indices");
@@ -370,31 +356,6 @@ public:
     }
 
 
-    float getMaxSpeed2(){
-        float maxSpeed = 0;
-
-        Cell3D *cellsTemp = copyCellsToHost();
-
-        for (int c = 0; c < (sizeY + 1) * (sizeX + 1); ++c) {
-            Cell3D &thisCell = cellsTemp[c];
-
-            if (thisCell.hasVelocityX) {
-                maxSpeed = max(maxSpeed,  abs(thisCell.newVelocity.x));
-            }
-            if (thisCell.hasVelocityY) {
-                maxSpeed = max(maxSpeed, abs(thisCell.newVelocity.y));
-            }
-            if (thisCell.hasVelocityZ) {
-                maxSpeed = max(maxSpeed, abs(thisCell.newVelocity.z));
-            }
-        }
-        delete[] cellsTemp;
-
-        //maxSpeed = thrust::reduce(grid.cells, grid.cells+grid.cellCount,0,MAC_Grid_3D_Utils::GreaterCellSpeed());
-
-        maxSpeed = maxSpeed*sqrt(2);
-        return maxSpeed;
-    }
 
     float getMaxSpeed(){
         float * speedX;
@@ -410,13 +371,13 @@ public:
         MAC_Grid_3D_Utils::writeSpeedY<<<numBlocksCell,numThreadsCell>>>(cells,cellCount,speedY);
         CHECK_CUDA_ERROR("write vY");
         MAC_Grid_3D_Utils::writeSpeedZ<<<numBlocksCell,numThreadsCell>>>(cells,cellCount,speedZ);
-        CHECK_CUDA_ERROR("write vY");
+        CHECK_CUDA_ERROR("write vZ");
 
         float maxX = thrust::reduce(thrust::device,speedX, speedX+cellCount,0,thrust::maximum<float>());
         float maxY = thrust::reduce(thrust::device,speedY, speedY+cellCount,0,thrust::maximum<float>());
         float maxZ = thrust::reduce(thrust::device,speedZ, speedZ+cellCount,0,thrust::maximum<float>());
 
-        float maxSpeed = max(max(maxX,maxY),maxZ) *sqrt(2);
+        float maxSpeed = max(max(maxX,maxY),maxZ) *sqrt(3);
 
         HANDLE_ERROR(cudaFree (speedX));
         HANDLE_ERROR(cudaFree (speedY));

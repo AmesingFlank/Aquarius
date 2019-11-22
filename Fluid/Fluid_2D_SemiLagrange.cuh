@@ -152,7 +152,7 @@ namespace Fluid_2D_SemiLagrange {
             advectVelocity(thisTimeStep);
 
 
-            applyForces(thisTimeStep,grid,gravitationalAcceleration);
+            applyGravity(thisTimeStep,grid,gravitationalAcceleration);
             fixBoundary(grid);
 
             solvePressure(thisTimeStep,grid);

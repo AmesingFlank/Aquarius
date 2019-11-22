@@ -10,9 +10,9 @@
 #include <thrust/execution_policy.h>
 #include <iostream>
 #include "WeightKernels.h"
-#include "Rendering/Renderer3D/PointSprites.h"
-#include "Rendering/Renderer3D/Container.h"
-#include "Rendering/Renderer3D/Skybox.h"
+#include "../Rendering/Renderer3D/PointSprites.h"
+#include "../Rendering/Renderer3D/Container.h"
+#include "../Rendering/Renderer3D/Skybox.h"
 #include "Fluid_3D.cuh"
 #include "Fluid_3D_common.cuh"
 
@@ -41,51 +41,7 @@ namespace Fluid_3D_PCISPH {
 
 		}
 	};
-	__global__ void updatePositionsVBO(Particle* particles, float* positionsVBO, int particleCount) {
-		int index = blockIdx.x * blockDim.x + threadIdx.x;
-		if (index >= particleCount) return;
-
-		float* base = positionsVBO + index * 3;
-		Particle& particle = particles[index];
-
-
-		base[0] = particle.position.x;
-		base[1] = particle.position.y;
-		base[2] = particle.position.z;
-	}
-	__global__ void calcHashImpl(Particle* particles, int* particleHashes, float cellSize, int particleCount, int3 gridSize) {
-		int index = blockIdx.x * blockDim.x + threadIdx.x;
-		if (index >= particleCount) return;
-
-		Particle& particle = particles[index];
-		float3 pos = particle.position;
-
-		int x = pos.x / cellSize;
-		int y = pos.y / cellSize;
-		int z = pos.z / cellSize;
-
-		int hash = x * gridSize.y * gridSize.z + y * gridSize.z + z;
-
-		particleHashes[index] = hash;
-
-	}
-
-	__global__ void findCellStartEndImpl(int* particleHashes, int* cellBegin, int* cellEnd, int particleCount) {
-		int index = blockIdx.x * blockDim.x + threadIdx.x;
-		if (index >= particleCount) return;
-
-
-		int hash = particleHashes[index];
-
-		if (index == 0 || particleHashes[index - 1] < hash) {
-			cellBegin[hash] = index;
-		}
-
-		if (index == particleCount - 1 || particleHashes[index + 1] > hash) {
-			cellEnd[hash] = index;
-		}
-
-	}
+	
 
 
 	__global__ void computeExternalForcesImpl(Particle* particles, int particleCount) {
@@ -337,7 +293,7 @@ namespace Fluid_3D_PCISPH {
 			for (float x = particleSpacing; x < gridDimension.x - particleSpacing; x += particleSpacing) {
 				for (float y = particleSpacing; y < gridDimension.y - particleSpacing; y += particleSpacing) {
 					for (float z = particleSpacing; z < gridDimension.z - particleSpacing; z += particleSpacing) {
-						if (x <= gridDimension.x && y <= gridDimension.y / 2 && z <= gridDimension.z) {
+						if (x <= gridDimension.x/2 && y <= gridDimension.y / 2 && z <= gridDimension.z/2) {
 							particlesVec.emplace_back(make_float3(x, y, z));
 						}
 						else if (length(make_float3(x - gridDimension.x * 0.5, y - gridDimension.y * 0.75, z - gridDimension.z * 0.5)) < gridDimension.x * 0.2) {
@@ -416,7 +372,8 @@ namespace Fluid_3D_PCISPH {
 		}
 
 		void computeRestDensity() {
-			performSpatialHashing();
+			performSpatialHashing(particleHashes, particles, particleCount, kernelRadius, gridSize.x, gridSize.y, gridSize.z, numBlocks, numThreads, cellBegin, cellEnd,cellCount);
+
 			predictDensityAndPressureImpl << <numBlocks, numThreads >> >
 			(particles, kernelRadius, particleCount, cellBegin, cellEnd, gridSize, kernelRadius, true, timestep / (float)substeps);
 
@@ -426,7 +383,7 @@ namespace Fluid_3D_PCISPH {
 		virtual void simulationStep() override {
 			for (int i = 0; i < substeps; ++i) {
 
-				performSpatialHashing();
+				performSpatialHashing(particleHashes, particles, particleCount, kernelRadius, gridSize.x, gridSize.y, gridSize.z, numBlocks, numThreads, cellBegin, cellEnd, cellCount);
 				computeExternalForces();
 				initPressure();
 
@@ -482,19 +439,6 @@ namespace Fluid_3D_PCISPH {
 		}
 
 
-		void performSpatialHashing() {
-			HANDLE_ERROR(cudaMemset(cellBegin, 255, sizeof(*cellBegin) * cellCount));
-			HANDLE_ERROR(cudaMemset(cellEnd, 255, sizeof(*cellEnd) * cellCount));
-
-			calcHashImpl << <numBlocks, numThreads >> > (particles, particleHashes, kernelRadius, particleCount, gridSize);
-			CHECK_CUDA_ERROR("calc hash");
-
-			thrust::sort_by_key(thrust::device, particleHashes, particleHashes + particleCount, particles);
-
-			findCellStartEndImpl << < numBlocks, numThreads >> > (particleHashes, cellBegin, cellEnd, particleCount);
-			CHECK_CUDA_ERROR("find cell start end");
-
-		}
 
 	};
 }

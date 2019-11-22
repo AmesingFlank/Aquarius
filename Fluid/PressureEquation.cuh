@@ -10,3 +10,14 @@ struct PressureEquation2D {
 	int x;
 	int y;
 };
+
+__device__ __host__
+struct PressureEquation3D {
+	int termsIndex[7];
+	float termsCoeff[7];
+	unsigned char termCount = 0;
+	float RHS;
+	int x;
+	int y;
+	int z;
+};

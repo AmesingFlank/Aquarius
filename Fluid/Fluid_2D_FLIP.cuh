@@ -1,6 +1,3 @@
-//
-// Created by AmesingFlank on 2019-04-16.
-//
 
 #pragma once
 
@@ -24,26 +21,17 @@
 
 namespace Fluid_2D_FLIP {
 
-
-	// used by FLIP
 	template<typename Particle>
 	__global__ inline void transferToCell(Cell2D* cells, int sizeX, int sizeY, float cellPhysicalSize, int* cellStart, int* cellEnd,
 		Particle* particles, int particleCount) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
 		if (index >= sizeX * sizeY) return;
 
-		int y = index / sizeX;
-		int x = index - y * sizeX;
+		int x = index / sizeY;
+		int y = index - x * sizeY;
 
-		int cellID = x * (sizeY)+y;
 		Cell2D& thisCell = get2D(cells, x, y);
 
-		int cellsToCheck[9];
-		for (int r = 0; r < 3; ++r) {
-			for (int c = 0; c < 3; ++c) {
-				cellsToCheck[c * 3 + r] = cellID + (r - 1) + (c - 1) * (sizeY);
-			}
-		}
 
 		int cellCount = (sizeX) * (sizeY);
 
@@ -54,31 +42,46 @@ namespace Fluid_2D_FLIP {
 		float totalWeightY = 0;
 
 
-		for (int cell : cellsToCheck) {
-			if (cell >= 0 && cell < cellCount) {
-				for (int j = cellStart[cell]; j <= cellEnd[cell]; ++j) {
-					if (j >= 0 && j < particleCount) {
-						const Particle& p = particles[j];
-						float thisWeightX = trilinearHatKernel(p.position - xVelocityPos, cellPhysicalSize);
-						float thisWeightY = trilinearHatKernel(p.position - yVelocityPos, cellPhysicalSize);
+#pragma unroll
+		for (int dx = -1; dx <= 1; ++dx) {
+#pragma unroll
+			for (int dy = -1; dy <= 1; ++dy) {
+				int cell = (x + dx) * sizeY + y + dy;
+				if (cell >= 0 && cell < cellCount) {
+					for (int j = cellStart[cell]; j <= cellEnd[cell]; ++j) {
+						if (j >= 0 && j < particleCount) {
+							const Particle& p = particles[j];
+							float thisWeightX = trilinearHatKernel(p.position - xVelocityPos, cellPhysicalSize);
+							float thisWeightY = trilinearHatKernel(p.position - yVelocityPos, cellPhysicalSize);
 
-						thisCell.velocity.x += thisWeightX * p.velocity.x;
-						thisCell.velocity.y += thisWeightY * p.velocity.y;
+							thisCell.velocity.x += thisWeightX * p.velocity.x;
+							thisCell.velocity.y += thisWeightY * p.velocity.y;
 
-						totalWeightX += thisWeightX;
-						totalWeightY += thisWeightY;
+							totalWeightX += thisWeightX;
+							totalWeightY += thisWeightY;
+						}
 					}
 				}
 			}
 		}
 
+
+
 		if (totalWeightX > 0)
 			thisCell.velocity.x /= totalWeightX;
 		if (totalWeightY > 0)
 			thisCell.velocity.y /= totalWeightY;
+
+		if (isinf(thisCell.velocity.y)) {
+			printf("inf y in transfertocell\n");
+		}
+		if (isnan(thisCell.velocity.y)) {
+			printf("nah y in transfertocell\n");
+		}
+
 		thisCell.newVelocity = thisCell.velocity;
 
-		for (int j = cellStart[cellID]; j <= cellEnd[cellID]; ++j) {
+		for (int j = cellStart[index]; j <= cellEnd[index]; ++j) {
 			if (j >= 0 && j < particleCount) {
 				thisCell.content = CONTENT_FLUID;
 
@@ -152,6 +155,8 @@ namespace Fluid_2D_FLIP {
 		thisCell.content = content;
 		thisCell.velocity = make_float2(0, 0);
 		thisCell.newVelocity = make_float2(0, 0);
+		thisCell.hasVelocityX = false;
+		thisCell.hasVelocityY = false;
 		thisCell.fluid0Count = 0;
 		thisCell.fluid1Count = 0;
 
@@ -181,8 +186,8 @@ namespace Fluid_2D_FLIP {
 
     class Fluid : public Fluid_2D {
     public:
-        const int sizeX = 40;
-        const int sizeY = 20;
+        const int sizeX = 80;
+        const int sizeY = 40;
         const int cellCount = (sizeX+1)*(sizeY+1);
 
 
@@ -226,13 +231,10 @@ namespace Fluid_2D_FLIP {
             delete []cellsTemp;
 
             HANDLE_ERROR(cudaMalloc(&particles, particleCount * sizeof(Particle)));
-            Particle *particlesHostToCopy = new Particle[particleCount];
-            for (int i = 0; i < particleCount; ++i) {
-                particlesHostToCopy[i] = particlesHost[i];
-            }
-            HANDLE_ERROR(cudaMemcpy(particles, particlesHostToCopy, particleCount * sizeof(Particle),
+            
+
+            HANDLE_ERROR(cudaMemcpy(particles, particlesHost.data(), particleCount * sizeof(Particle),
                                     cudaMemcpyHostToDevice));
-            delete[] particlesHostToCopy;
 
             HANDLE_ERROR(cudaMalloc(&particleHashes, particleCount* sizeof(*particleHashes)));
             HANDLE_ERROR(cudaMalloc(&cellStart, cellCount* sizeof(*cellStart)));
@@ -258,12 +260,12 @@ namespace Fluid_2D_FLIP {
             transferToGrid();
             grid.updateFluidCount();
 
-            applyForces(thisTimeStep,grid,gravitationalAcceleration);
+            applyGravity(thisTimeStep,grid,gravitationalAcceleration);
             fixBoundary(grid);
 
-            //solvePressure(thisTimeStep);
+            solvePressure(thisTimeStep,grid);
 
-			solvePressureJacobi(thisTimeStep,grid,100);
+			//solvePressureJacobi(thisTimeStep,grid,100);
 
 
 			updateVelocityWithPressure(thisTimeStep,grid);

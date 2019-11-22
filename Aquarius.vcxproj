@@ -62,7 +62,7 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Defines>GLEW_STATIC;</Defines>
+      <Defines>GLEW_STATIC;STB_IMAGE_IMPLEMENTATION</Defines>
       <Include>C:\Users\Dunfan\Code\Libraries\include\amgx;C:\Users\Dunfan\Code\Libraries\include\cudaSamples;%(Include)</Include>
       <Runtime>MTd</Runtime>
       <CodeGeneration>compute_60,sm_60</CodeGeneration>
@@ -117,6 +117,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Fluid\Fluid.h" />
+    <ClInclude Include="Fluid\InitializationVolume.cuh" />
     <ClInclude Include="Fluid\Fluid_2D.h" />
     <ClInclude Include="Fluid\Fluid_2D_FLIP.cuh" />
     <ClInclude Include="Fluid\Fluid_2D_common.cuh" />
@@ -125,10 +126,11 @@
     <ClInclude Include="Fluid\Fluid_2D_SemiLagrange.cuh" />
     <ClInclude Include="Fluid\Fluid_3D.cuh" />
     <ClInclude Include="Fluid\Fluid_3D_common.cuh" />
+    <ClInclude Include="Fluid\Fluid_3D_FLIP.cuh" />
     <ClInclude Include="Fluid\Fluid_3D_kernels.cuh" />
     <ClInclude Include="Fluid\Fluid_3D_PCISPH.cuh" />
     <ClInclude Include="Fluid\Fluid_3D_SPH.cuh" />
-    <ClInclude Include="Fluid\PressureEquation2D.cuh" />
+    <ClInclude Include="Fluid\PressureEquation.cuh" />
     <ClInclude Include="GpuCommons.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="Fluid\MAC_Grid_2D.cuh" />

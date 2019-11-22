@@ -275,22 +275,7 @@ public:
         updateFluidCount();
     }
 
-    void updateFluidCount2(){
-        Cell2D* cellsTemp = copyCellsToHost();
-        int index = 0;
 
-        for(int c = 0;c<cellCount;++c){
-            Cell2D& thisCell = cellsTemp[c];
-            if(thisCell.content==CONTENT_FLUID){
-                thisCell.fluidIndex = index;
-                index++;
-            }
-        }
-
-        fluidCount = index;
-        copyCellsToDevice(cellsTemp);
-        delete []cellsTemp;
-    }
 
     void updateFluidCount(){
         int* contentCopy0;

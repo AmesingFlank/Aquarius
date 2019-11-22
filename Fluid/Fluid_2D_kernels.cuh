@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../GpuCommons.h"
-#include "PressureEquation2D.cuh"
+#include "PressureEquation.cuh"
 #include "MAC_Grid_2D.cuh"
 
 template<typename Particle>
@@ -50,12 +50,12 @@ __global__ inline void findCellStartEndImpl(int* particleHashes,
 
 
 
-__global__ inline void applyForcesImpl(Cell2D* cells, int sizeX, int sizeY, float timeStep, float gravitationalAcceleration) {
+__global__ inline void applyGravityImpl(Cell2D* cells, int sizeX, int sizeY, float timeStep, float gravitationalAcceleration) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= sizeX * sizeY) return;
 
-	int y = index / sizeX;
-	int x = index - y * sizeX;
+	int x = index / sizeY;
+	int y = index - x * sizeY;
 
 	if (get2D(cells, x, y).content == CONTENT_FLUID) {
 		get2D(cells, x, y).newVelocity.y -= gravitationalAcceleration * timeStep;
@@ -99,12 +99,12 @@ __device__ __host__ inline float getNeibourCoefficient(int x, int y, float dt_di
 		return dt_div_rho_div_dx * -1;
 	}
 	else {
-		if (x < 0 || y < 0 || x >= sizeX || get2D(cells, x, y).content == CONTENT_SOLID) {
+		if (x < 0 || y < 0 || x >= sizeX || y>=sizeY || get2D(cells, x, y).content == CONTENT_SOLID) {
 			centerCoefficient -= dt_div_rho_div_dx;
 			//RHS += u;
 			return 0;
 		}
-		else if (y >= sizeY || get2D(cells, x, y).content == CONTENT_AIR) {
+		else if (get2D(cells, x, y).content == CONTENT_AIR) {
 			return 0;
 		}
 	}
@@ -115,8 +115,8 @@ __global__ inline void constructPressureEquations(Cell2D* cells, int sizeX, int 
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= sizeX * sizeY) return;
 
-	int y = index / sizeX;
-	int x = index - y * sizeX;
+	int x = index / sizeY;
+	int y = index - x * sizeY;
 
 	get2D(cells, x, y).pressure = 0;
 	if (get2D(cells, x, y).content != CONTENT_FLUID)
@@ -181,8 +181,8 @@ __global__ inline void setPressure(Cell2D* cells, int sizeX, int sizeY, double* 
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= sizeX * sizeY) return;
 
-	int y = index / sizeX;
-	int x = index - y * sizeX;
+	int x = index / sizeY;
+	int y = index - x * sizeY;
 
 	if (get2D(cells, x, y).content != CONTENT_FLUID)
 		return;
@@ -194,8 +194,8 @@ __global__ inline void updateVelocityWithPressureImpl(Cell2D* cells, int sizeX, 
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= sizeX * sizeY) return;
 
-	int y = index / sizeX;
-	int x = index - y * sizeX;
+	int x = index / sizeY;
+	int y = index - x * sizeY;
 
 	Cell2D& thisCell = get2D(cells, x, y);
 
@@ -224,8 +224,8 @@ __global__ inline void extrapolateVelocityByOne(Cell2D* cells, int sizeX, int si
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= sizeX * sizeY) return;
 
-	int y = index / sizeX;
-	int x = index - y * sizeX;
+	int x = index / sizeY;
+	int y = index - x * sizeY;
 
 	Cell2D& thisCell = get2D(cells, x, y);
 	const float epsilon = 1e-6;
@@ -309,8 +309,8 @@ __global__ inline void drawCellImpl(Cell2D* cells, int sizeX, int sizeY, unsigne
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= sizeX * sizeY) return;
 
-	int y = index / sizeX;
-	int x = index - y * sizeX;
+	int x = index / sizeY;
+	int y = index - x * sizeY;
 
 	Cell2D& thisCell = get2D(cells, x, y);
 	unsigned char* base = image + 4 * (sizeX * y + x);
@@ -368,8 +368,8 @@ __global__ inline void computeDivergenceImpl(Cell2D* cells, int sizeX, int sizeY
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= sizeX * sizeY) return;
 
-	int y = index / sizeX;
-	int x = index - y * sizeX;
+	int x = index / sizeY;
+	int y = index - x * sizeY;
 
 	Cell2D& thisCell = get2D(cells, x, y);
 	Cell2D& upCell = get2D(cells, x, y + 1);
@@ -384,8 +384,8 @@ __global__ inline void resetPressureImpl(Cell2D* cells, int sizeX, int sizeY) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= sizeX * sizeY) return;
 
-	int y = index / sizeX;
-	int x = index - y * sizeX;
+	int x = index / sizeY;
+	int y = index - x * sizeY;
 
 	Cell2D& thisCell = get2D(cells, x, y);
 	thisCell.pressure = 0;
@@ -396,8 +396,8 @@ __global__ inline void jacobiImpl(Cell2D* cells, int sizeX, int sizeY, float dt_
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= sizeX * sizeY) return;
 
-	int y = index / sizeX;
-	int x = index - y * sizeX;
+	int x = index / sizeY;
+	int y = index - x * sizeY;
 
 	Cell2D& thisCell = get2D(cells, x, y);
 	Cell2D& rightCell = get2D(cells, x + 1, y);

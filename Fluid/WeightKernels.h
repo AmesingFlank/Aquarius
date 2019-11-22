@@ -196,6 +196,12 @@ float inline trilinearHatKernel(float2 r,float support){
 }
 
 __device__ __host__
+float inline trilinearHatKernel(float3 r, float support) {
+	return trilinearUnitKernel(r.x / support) * trilinearUnitKernel(r.y / support) * trilinearUnitKernel(r.z / support);
+}
+
+
+__device__ __host__
 float inline quadraticBSplineUnitKernel(float r){
     if(-3.0/2.0 <= r && r <= -1.0/2.0){
         return pow(r+3.0/2.0,2)/2;
@@ -212,6 +218,11 @@ float inline quadraticBSplineUnitKernel(float r){
 __device__ __host__
 float inline quadraticBSplineKernel(float2 r,float support){
     return quadraticBSplineUnitKernel(r.x / support) * quadraticBSplineUnitKernel(r.y / support);
+}
+
+__device__ __host__
+float inline quadraticBSplineKernel(float3 r, float support) {
+	return quadraticBSplineUnitKernel(r.x / support) * quadraticBSplineUnitKernel(r.y / support) * quadraticBSplineUnitKernel(r.z / support);
 }
 
 

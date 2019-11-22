@@ -23,6 +23,8 @@
 #include "Fluid/Fluid_2D_PCISPH.cuh"
 
 #include "Fluid/Fluid_3D_PCISPH.cuh"
+#include "Fluid/Fluid_3D_FLIP.cuh"
+
 
 
 #include "Rendering/Renderer3D/Renderer3D.h"
@@ -57,10 +59,8 @@ int main( void ) {
     std::shared_ptr<Camera> camera = std::make_shared<Camera>(glm::vec3(5,10,20));
     InputHandler::camera = camera;
 
-    Fluid_2D_FLIP::Fluid fluid;
-	//Fluid_3D_PCISPH::Fluid fluid;
-
-
+    Fluid_3D_FLIP::Fluid fluid;
+	
 	double framesSinceLast = 0;
 	double lastSecond = glfwGetTime();
 	double lastFrameTime = glfwGetTime();

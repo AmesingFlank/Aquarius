@@ -371,6 +371,10 @@ inline double* solveSPD2(SparseMatrixCSR A, SparseMatrixCSR R, double* f_dense_h
 
     cusolverSpDcsrlsvchol(cusolverSpHandle,n,A.nnz,descrA,valA,csrRowPtrA,csrColIndA,f,1e-6,0,x,&singularity);
 
+	if (singularity != -1) {
+		std::cout << "When using cusolver, detected that the matrix isn't SPD!! " << std::endl;
+	}
+
 	HANDLE_ERROR(cudaFree(f));
     return x;
 }

@@ -19,8 +19,8 @@ void performSpatialHashing(int* particleHashes, Particle* particles, int particl
 
 }
 
-void applyForces(float timeStep, MAC_Grid_2D& grid, float gravitationalAcceleration) {
-	applyForcesImpl <<< grid.numBlocksCell, grid.numThreadsCell >> >
+void applyGravity(float timeStep, MAC_Grid_2D& grid, float gravitationalAcceleration) {
+	applyGravityImpl <<< grid.numBlocksCell, grid.numThreadsCell >> >
 		(grid.cells, grid.sizeX, grid.sizeY, timeStep, gravitationalAcceleration);
 	cudaDeviceSynchronize();
 	CHECK_CUDA_ERROR("apply forces");
@@ -262,9 +262,9 @@ void extrapolateVelocity(float timeStep, MAC_Grid_2D& grid) {
 	//used to decide how far to extrapolate
 	float maxSpeed = grid.getMaxSpeed();
 
-	float maxDist = (maxSpeed * timeStep + 1) / grid.cellPhysicalSize;
+	float maxDist = ceil((maxSpeed * timeStep) / grid.cellPhysicalSize);
 	//maxDist=4;
-	//std::cout<<"maxDist "<<maxDist<<std::endl;
+	std::cout<<"maxDist "<<maxDist<<std::endl;
 
 	for (int distance = 0; distance < maxDist; ++distance) {
 		extrapolateVelocityByOne <<< grid.numBlocksCell, grid.numThreadsCell >> > (grid.cells, grid.sizeX, grid.sizeY);

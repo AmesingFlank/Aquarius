@@ -89,7 +89,7 @@ public:
         if (direction == RIGHT)
             this->Position += this->Right * velocity;
         lastProcessKeyboardTime = now;
-		std::cout << "camera at " << Position.x << "  " << Position.y <<"  "<< Position.z << std::endl;
+		//std::cout << "camera at " << Position.x << "  " << Position.y <<"  "<< Position.z << std::endl;
     }
 
     // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
