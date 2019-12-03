@@ -347,7 +347,7 @@ namespace Fluid_3D_FLIP{
 			grid.fluidCount = 0;
 			std::vector <Particle> particlesHost;
 			createSquareFluid(particlesHost, cellsTemp);
-			createSphereFluid(particlesHost, cellsTemp, grid.fluidCount);
+			//createSphereFluid(particlesHost, cellsTemp, grid.fluidCount);
 			particleCount = particlesHost.size();
 
 			grid.copyCellsToDevice(cellsTemp);
@@ -390,9 +390,11 @@ namespace Fluid_3D_FLIP{
 
 			calcDensity();
 
+			computeDivergence(grid, particlesPerCell);
+
 			//solvePressure(thisTimeStep,grid);
 
-			solvePressureJacobi(thisTimeStep, grid, particlesPerCell,20);
+			solvePressureJacobi(thisTimeStep, grid,50);
 
 
 			updateVelocityWithPressure(thisTimeStep, grid);
@@ -463,7 +465,7 @@ namespace Fluid_3D_FLIP{
 		void createSquareFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp, int startIndex = 0) {
 			int index = startIndex;
 			for (int z = 0 * sizeZ; z < 1 * sizeZ; ++z) {
-				for (int x = 0 * sizeX; x < 1 * sizeX; ++x) {
+				for (int x = 0 * sizeX; x < 0.5 * sizeX; ++x) {
 					for (int y = 0.0 * sizeY; y < 0.3 * sizeY; ++y) {
 						Cell3D& thisCell = get3D(cellsTemp,x,y,z);
 

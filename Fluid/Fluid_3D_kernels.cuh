@@ -131,7 +131,7 @@ __global__ inline void constructPressureEquations(Cell3D* cells, int sizeX, int 
 
 
 	PressureEquation3D thisEquation;
-	float RHS = (thisCell.newVelocity.y - upCell.newVelocity.y + thisCell.newVelocity.x - rightCell.newVelocity.x + thisCell.newVelocity.z - frontCell.newVelocity.z);
+	float RHS = -thisCell.divergence;
 
 	float centerCoeff = dt_div_rho_div_dx * 6;
 
@@ -434,9 +434,9 @@ __global__ inline void computeDivergenceImpl(Cell3D* cells, int sizeX, int sizeY
 	Cell3D& rightCell = get3D(cells, x + 1, y,z);
 	Cell3D& frontCell = get3D(cells, x, y, z + 1);
 
-	float div = (upCell.newVelocity.y - thisCell.newVelocity.y + rightCell.newVelocity.x - thisCell.newVelocity.x + frontCell.newVelocity.z - thisCell.newVelocity.z) / cellPhysicalSize;
+	float div = (upCell.newVelocity.y - thisCell.newVelocity.y + rightCell.newVelocity.x - thisCell.newVelocity.x + frontCell.newVelocity.z - thisCell.newVelocity.z);
 
-	div -= max((thisCell.density - restParticlesPerCell) * 1.0, 0.0) / cellPhysicalSize; //volume conservation
+	div -= max((thisCell.density - restParticlesPerCell) * 1.0, 0.0); //volume conservation
 
 	thisCell.divergence = div;
 
@@ -472,7 +472,7 @@ __global__ inline void jacobiImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ
 		return;
 	}
 
-	float RHS = -thisCell.divergence * cellPhysicalSize;
+	float RHS = -thisCell.divergence ;
 
 	float newPressure = 0;
 

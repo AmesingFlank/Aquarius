@@ -55,11 +55,14 @@ void fixBoundary(MAC_Grid_3D& grid) {
 
 }
 
-void solvePressureJacobi(float timeStep, MAC_Grid_3D& grid, float restParticlesPerCell, int iterations) {
+void computeDivergence(MAC_Grid_3D& grid, float restParticlesPerCell) {
 	computeDivergenceImpl << < grid.numBlocksCell, grid.numThreadsCell >> >
-		(grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ,grid.cellPhysicalSize, restParticlesPerCell);
-	resetPressureImpl << < grid.numBlocksCell, grid.numThreadsCell >> > (grid.cells, grid.sizeX, grid.sizeY,grid.sizeZ);
+		(grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ, grid.cellPhysicalSize, restParticlesPerCell);
+}
 
+void solvePressureJacobi(float timeStep, MAC_Grid_3D& grid, int iterations) {
+	
+	resetPressureImpl << < grid.numBlocksCell, grid.numThreadsCell >> > (grid.cells, grid.sizeX, grid.sizeY,grid.sizeZ);
 
 	float dt_div_rho_div_dx = 1;
 
@@ -237,7 +240,7 @@ void solvePressure(float timeStep, MAC_Grid_3D& grid) {
 	}
 
 	//solve the pressure equation
-	double* result_device = solveSPD4(A, R, f_host, numVariables);
+	double* result_device = solveSPD2(A, R, f_host, numVariables);
 
 	double* result_host = new double[numVariables];
 	HANDLE_ERROR(cudaMemcpy(result_host, result_device, numVariables * sizeof(*result_host),
