@@ -22,6 +22,8 @@ namespace Fluid_3D_FLIP{
 		float kind = 0;
 		float3 velocity = make_float3(0, 0, 0);
 
+		int hash;
+
 		__device__ __host__
 			Particle() {
 
@@ -71,6 +73,7 @@ namespace Fluid_3D_FLIP{
 		const float density = 1;
 
 		Particle* particles;
+		Particle* particlesOld;
 		int particleCount;
 
 		int numThreadsParticle, numBlocksParticle;
@@ -79,6 +82,8 @@ namespace Fluid_3D_FLIP{
 		const int particlesPerCell = 16;
 
 		int* particleHashes;
+		int* particleIndices;
+
 		int* cellStart;
 		int* cellEnd;
 

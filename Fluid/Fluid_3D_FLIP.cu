@@ -1,7 +1,98 @@
 #include "Fluid_3D_FLIP.cuh"
 #include "MAC_Grid_3D.cuh"
-
+#include "../GpuCommons.h"
 namespace Fluid_3D_FLIP {
+	__global__  void transferToCellAccumPhase2(Cell3D* cells, Particle* particles, int particleCount, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize) {
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		if (index >= particleCount) return;
+
+
+		Particle& particle = particles[index];
+		float3 pos = particle.position;
+		float3 vel = particle.velocity;
+		int x = (pos.x / cellPhysicalSize);
+		int y = (pos.y / cellPhysicalSize);
+		int z = (pos.z / cellPhysicalSize);
+
+		float3 velocityPos;
+		float weight;
+
+		Cell3D& thisCell = get3D(cells, x, y, z);
+		Cell3D& rightCell = get3D(cells, x + 1, y, z);
+		Cell3D& upCell = get3D(cells, x, y + 1, z);
+		Cell3D& frontCell = get3D(cells, x, y, z + 1);
+
+		thisCell.content = CONTENT_FLUID;
+
+		velocityPos = make_float3(x, (y + 0.5), (z + 0.5)) * cellPhysicalSize;
+		weight = trilinearHatKernel(pos - velocityPos, cellPhysicalSize);
+		atomicAdd(&thisCell.weight.x, weight);
+		atomicAdd(&thisCell.velocity.x, vel.x*weight);
+		
+
+		velocityPos = make_float3((x + 0.5), y, (z + 0.5)) * cellPhysicalSize;
+		weight = trilinearHatKernel(pos - velocityPos, cellPhysicalSize);
+		atomicAdd(&thisCell.weight.y, weight);
+		atomicAdd(&thisCell.velocity.y, vel.y * weight);
+
+		velocityPos = make_float3((x + 0.5), y + 0.5, z) * cellPhysicalSize;
+		weight = trilinearHatKernel(pos - velocityPos, cellPhysicalSize);
+		atomicAdd(&thisCell.weight.z, weight);
+		atomicAdd(&thisCell.velocity.z, vel.z * weight);
+
+
+		velocityPos = make_float3(x+1, (y + 0.5), (z + 0.5)) * cellPhysicalSize;
+		weight = trilinearHatKernel(pos - velocityPos, cellPhysicalSize);
+		atomicAdd(&rightCell.weight.x, weight);
+		atomicAdd(&rightCell.velocity.x, vel.x * weight);
+
+
+		velocityPos = make_float3((x + 0.5), y+1, (z + 0.5)) * cellPhysicalSize;
+		weight = trilinearHatKernel(pos - velocityPos, cellPhysicalSize);
+		atomicAdd(&upCell.weight.y, weight);
+		atomicAdd(&upCell.velocity.y, vel.y * weight);
+
+		velocityPos = make_float3((x + 0.5), y + 0.5, z+1) * cellPhysicalSize;
+		weight = trilinearHatKernel(pos - velocityPos, cellPhysicalSize);
+		atomicAdd(&frontCell.weight.z, weight);
+		atomicAdd(&frontCell.velocity.z, vel.z * weight);
+		
+
+	}
+
+	__global__  void transferToCellDividePhase2(Cell3D* cells, int sizeX, int sizeY, int sizeZ) {
+
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+		if (index >= sizeX * sizeY * sizeZ) return;
+
+		int x = index / (sizeY * sizeZ);
+		int y = (index - x * (sizeY * sizeZ)) / sizeZ;
+		int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
+
+		Cell3D& thisCell = get3D(cells, x, y, z);
+
+
+		if (thisCell.weight.x > 0) {
+			thisCell.velocity.x /= thisCell.weight.x;
+			thisCell.hasVelocityX = true;
+		}
+
+		if (thisCell.weight.y > 0) {
+			thisCell.velocity.y /= thisCell.weight.y;
+			thisCell.hasVelocityY = true;
+		}
+
+		if (thisCell.weight.z > 0) {
+			thisCell.velocity.z /= thisCell.weight.z;
+			thisCell.hasVelocityZ = true;
+		}
+
+		thisCell.newVelocity = thisCell.velocity;
+
+
+	}
+
 	__global__  void transferToCellAccumPhase(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd,
 		Particle* particles, int particleCount) {
 
@@ -107,15 +198,7 @@ namespace Fluid_3D_FLIP {
 			if (j >= 0 && j < particleCount) {
 
 				thisCell.content = CONTENT_FLUID;
-
-				const Particle& p = particles[j];
-
-				if (p.kind > 0) {
-					thisCell.fluid1Count++;
-				}
-				else {
-					thisCell.fluid0Count++;
-				}
+				break;
 			}
 		}
 	}
@@ -246,8 +329,7 @@ namespace Fluid_3D_FLIP {
 		thisCell.content = content;
 		thisCell.velocity = make_float3(0, 0, 0);
 		thisCell.newVelocity = make_float3(0, 0, 0);
-		thisCell.fluid0Count = 0;
-		thisCell.fluid1Count = 0;
+
 		thisCell.hasVelocityX = false;
 		thisCell.hasVelocityY = false;
 		thisCell.hasVelocityZ = false;
@@ -279,9 +361,9 @@ namespace Fluid_3D_FLIP {
 
 		computeDivergence(*grid, particlesPerCell);
 
-		//solvePressure(thisTimeStep,grid);
+		//solvePressure(thisTimeStep,*grid);
 
-		solvePressureJacobi(thisTimeStep, *grid, 100);
+		solvePressureJacobi(thisTimeStep, *grid, 50);
 
 
 		updateVelocityWithPressure(thisTimeStep, *grid);
@@ -299,14 +381,53 @@ namespace Fluid_3D_FLIP {
 		CHECK_CUDA_ERROR("calcDensity");
 	}
 
+	__global__  void writeIndicesImpl(int* particleIndices,  int particleCount) {
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+		if (index >= particleCount) return;
+
+		particleIndices[index] = index;
+	}
+
+
+	__global__  void applySortImpl(Particle* src, Particle* dest,int particleCount,int* particleIndices) {
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+		if (index >= particleCount) return;
+
+		dest[index] = src[particleIndices[index]];
+	}
+
+
+	void performSpatialHashing2(int* particleIndices,int* particleHashes, Particle*& particles, int particleCount, float cellPhysicalSize, float sizeX, float sizeY, float sizeZ, int numBlocksParticle, int numThreadsParticle, int* cellStart, int* cellEnd, int cellCount, Particle*& particlesOld) {
+		writeIndicesImpl << <numBlocksParticle, numThreadsParticle >> > (particleIndices, particleCount);
+		calcHashImpl << < numBlocksParticle, numThreadsParticle >> > (particleHashes, particles, particleCount, cellPhysicalSize, sizeX, sizeY, sizeZ);
+		//cudaDeviceSynchronize();
+		CHECK_CUDA_ERROR("calc hash");
+
+		thrust::sort_by_key(thrust::device, particleHashes, particleHashes + particleCount, particleIndices);
+
+		applySortImpl << < numBlocksParticle, numThreadsParticle >> > (particles, particlesOld, particleCount, particleIndices);
+		std::swap(particles, particlesOld);
+
+		HANDLE_ERROR(cudaMemset(cellStart, 255, cellCount * sizeof(*cellStart)));
+		HANDLE_ERROR(cudaMemset(cellEnd, 255, cellCount * sizeof(*cellEnd)));
+		findCellStartEndImpl << < numBlocksParticle, numThreadsParticle >> > (particleHashes, cellStart, cellEnd, particleCount);
+		CHECK_CUDA_ERROR("find cell start end");
+
+	}
 
 
 	void Fluid::transferToGrid() {
-		performSpatialHashing(particleHashes, particles, particleCount, cellPhysicalSize, sizeX, sizeY, sizeZ, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount);
+		performSpatialHashing2(particleIndices,particleHashes, particles, particleCount, cellPhysicalSize, sizeX, sizeY, sizeZ, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount,particlesOld);
+		//performSpatialHashing(particleHashes, particles, particleCount, cellPhysicalSize, sizeX, sizeY, sizeZ, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount);
 
 		resetAllCells << < numBlocksCell, numThreadsCell >> > (grid->cells, sizeX, sizeY, sizeZ, CONTENT_AIR);
 		cudaDeviceSynchronize();
 		CHECK_CUDA_ERROR("reset all cells");
+
+		//transferToCellAccumPhase2 << < numBlocksCell, numThreadsCell >> > (grid->cells, particles, particleCount, sizeX, sizeY, sizeZ, cellPhysicalSize);
+		//transferToCellDividePhase2 << < numBlocksCell, numThreadsCell >> > (grid->cells, sizeX, sizeY, sizeZ);
 
 		transferToCellAccumPhase << < numBlocksCell, numThreadsCell >> > (grid->cells, sizeX, sizeY, sizeZ, cellPhysicalSize, cellStart, cellEnd, particles, particleCount);
 		transferToCellDividePhase << < numBlocksCell, numThreadsCell >> > (grid->cells, sizeX, sizeY, sizeZ, cellPhysicalSize, cellStart, cellEnd, particles, particleCount);
@@ -401,6 +522,9 @@ namespace Fluid_3D_FLIP {
 		pointSprites = std::make_shared<PointSprites>(particleCount);
 
 		HANDLE_ERROR(cudaDeviceSetLimit(cudaLimitPrintfFifoSize, numBlocksCell * numThreadsCell * 1024));
+
+		HANDLE_ERROR(cudaMalloc(&particleIndices, particleCount * sizeof(*particleIndices)));
+		HANDLE_ERROR(cudaMalloc(&particlesOld, particleCount * sizeof(Particle)));
 	}
 
 

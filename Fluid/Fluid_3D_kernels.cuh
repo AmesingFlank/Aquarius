@@ -38,17 +38,17 @@ __global__  void fixBoundaryY(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
 __global__  void fixBoundaryZ(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
 
 
-__device__ __host__  float getNeibourCoefficient(int x, int y, int z, float dt_div_rho_div_dx, float u, float& centerCoefficient, float& RHS, Cell3D* cells,
+__device__ __host__  float getNeibourCoefficient(int x, int y, int z,  float u, float& centerCoefficient, float& RHS, Cell3D* cells,
 	int sizeX, int sizeY, int sizeZ);
 
 
 
-__global__  void constructPressureEquations(Cell3D* cells, int sizeX, int sizeY, int sizeZ, PressureEquation3D* equations, float dt_div_rho_div_dx, bool* hasNonZeroRHS);
+__global__  void constructPressureEquations(Cell3D* cells, int sizeX, int sizeY, int sizeZ, PressureEquation3D* equations,  bool* hasNonZeroRHS);
 
 __global__  void setPressure(Cell3D* cells, int sizeX, int sizeY, int sizeZ, double* pressureResult);
 
 
-__global__  void updateVelocityWithPressureImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float dt_div_rho_div_dx);
+__global__  void updateVelocityWithPressureImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
 
 __global__  void extrapolateVelocityByOne(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
 
@@ -57,7 +57,7 @@ __global__  void computeDivergenceImpl(Cell3D* cells, int sizeX, int sizeY, int 
 
 __global__  void resetPressureImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
 
-__global__  void jacobiImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float dt_div_rho_div_dx, float cellPhysicalSize);
+__global__  void jacobiImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ,  float cellPhysicalSize);
 
 __global__  void precomputeNeighbors(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
 

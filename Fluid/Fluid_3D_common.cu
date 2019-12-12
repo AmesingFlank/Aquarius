@@ -51,11 +51,10 @@ void  solvePressureJacobi(float timeStep, MAC_Grid_3D& grid, int iterations) {
 	resetPressureImpl << < grid.numBlocksCell, grid.numThreadsCell >> > (grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ);
 	precomputeNeighbors << < grid.numBlocksCell, grid.numThreadsCell >> >
 		(grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ);
-	float dt_div_rho_div_dx = 1;
 
 	for (int i = 0; i < iterations; ++i) {
 		jacobiImpl << < grid.numBlocksCell, grid.numThreadsCell >> >
-			(grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ, dt_div_rho_div_dx, grid.cellPhysicalSize);
+			(grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ, grid.cellPhysicalSize);
 	}
 
 }
@@ -72,7 +71,6 @@ void  solvePressure(float timeStep, MAC_Grid_3D& grid) {
 	PressureEquation3D* equations = new PressureEquation3D[grid.fluidCount];
 	int nnz = 0;
 	bool hasNonZeroRHS = false;
-	float dt_div_rho_div_dx = 1;
 
 
 	PressureEquation3D* equationsDevice;
@@ -83,7 +81,7 @@ void  solvePressure(float timeStep, MAC_Grid_3D& grid) {
 	HANDLE_ERROR(cudaMemset(hasNonZeroRHS_Device, 0, sizeof(*hasNonZeroRHS_Device)));
 
 	constructPressureEquations << < numBlocksCell, numThreadsCell >> >
-		(grid.cells, sizeX, sizeY, sizeZ, equationsDevice, dt_div_rho_div_dx, hasNonZeroRHS_Device);
+		(grid.cells, sizeX, sizeY, sizeZ, equationsDevice, hasNonZeroRHS_Device);
 	cudaDeviceSynchronize();
 	CHECK_CUDA_ERROR("construct eqns");
 
@@ -227,7 +225,7 @@ void  solvePressure(float timeStep, MAC_Grid_3D& grid) {
 	}
 
 	//solve the pressure equation
-	double* result_device = solveSPD2(A, R, f_host, numVariables);
+	double* result_device = solveSPD4(A, R, f_host, numVariables);
 
 	double* result_host = new double[numVariables];
 	HANDLE_ERROR(cudaMemcpy(result_host, result_device, numVariables * sizeof(*result_host),
@@ -251,8 +249,7 @@ void  solvePressure(float timeStep, MAC_Grid_3D& grid) {
 }
 
 void  updateVelocityWithPressure(float timeStep, MAC_Grid_3D& grid) {
-	float dt_div_rho_div_dx = 1;
-	updateVelocityWithPressureImpl << < grid.numBlocksCell, grid.numThreadsCell >> > (grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ, dt_div_rho_div_dx);
+	updateVelocityWithPressureImpl << < grid.numBlocksCell, grid.numThreadsCell >> > (grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ);
 	cudaDeviceSynchronize();
 	CHECK_CUDA_ERROR("update velocity with pressure");
 }

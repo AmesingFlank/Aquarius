@@ -34,8 +34,6 @@ struct Cell3D{
     bool hasVelocityY = false;
     bool hasVelocityZ = false;
 
-    float fluid0Count = 0;
-    float fluid1Count = 0;
 
 	float divergence;
 

@@ -2,11 +2,12 @@
 #include "../DrawCommand.h"
 
 void PointSprites::draw(const DrawCommand& drawCommand, float radius, int skybox) {
+	//return;
 	drawSimple(drawCommand, radius); return;
 
 	renderDepth(drawCommand, radius);
 
-	smoothDepth(drawCommand, 0, 5, 6, 0.1);
+	smoothDepth(drawCommand, 6, 5, 6, 0.1);
 
 	renderNormal(drawCommand);
 

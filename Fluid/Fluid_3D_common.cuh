@@ -4,6 +4,7 @@
 template<typename Particle>
 void inline performSpatialHashing(int* particleHashes, Particle* particles, int particleCount, float cellPhysicalSize, float sizeX, float sizeY, float sizeZ,int numBlocksParticle, int numThreadsParticle, int* cellStart, int* cellEnd, int cellCount) {
 	calcHashImpl<Particle> << < numBlocksParticle, numThreadsParticle >> > (particleHashes, particles, particleCount, cellPhysicalSize, sizeX, sizeY,sizeZ);
+	//cudaDeviceSynchronize();
 	CHECK_CUDA_ERROR("calc hash");
 
 	thrust::sort_by_key(thrust::device, particleHashes, particleHashes + particleCount, particles);

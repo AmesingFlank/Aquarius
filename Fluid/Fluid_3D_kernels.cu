@@ -66,14 +66,14 @@ __global__  void fixBoundaryZ(Cell3D* cells, int sizeX, int sizeY, int sizeZ) {
 }
 
 
-__device__ __host__  float getNeibourCoefficient(int x, int y, int z, float dt_div_rho_div_dx, float u, float& centerCoefficient, float& RHS, Cell3D* cells,
+__device__ __host__  float getNeibourCoefficient(int x, int y, int z, float u, float& centerCoefficient, float& RHS, Cell3D* cells,
 	int sizeX, int sizeY, int sizeZ) {
 	if (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ && get3D(cells, x, y, z).content == CONTENT_FLUID) {
-		return dt_div_rho_div_dx * -1;
+		return -1;
 	}
 	else {
 		if (x < 0 || y < 0 || z < 0 || x >= sizeX || y >= sizeY || z >= sizeZ || get3D(cells, x, y, z).content == CONTENT_SOLID) {
-			centerCoefficient -= dt_div_rho_div_dx;
+			centerCoefficient -= 1;
 			//RHS += u;
 			return 0;
 		}
@@ -85,7 +85,7 @@ __device__ __host__  float getNeibourCoefficient(int x, int y, int z, float dt_d
 
 
 
-__global__  void constructPressureEquations(Cell3D* cells, int sizeX, int sizeY, int sizeZ, PressureEquation3D* equations, float dt_div_rho_div_dx, bool* hasNonZeroRHS) {
+__global__  void constructPressureEquations(Cell3D* cells, int sizeX, int sizeY, int sizeZ, PressureEquation3D* equations, bool* hasNonZeroRHS) {
 
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= sizeX * sizeY * sizeZ) return;
@@ -107,14 +107,14 @@ __global__  void constructPressureEquations(Cell3D* cells, int sizeX, int sizeY,
 	PressureEquation3D thisEquation;
 	float RHS = -thisCell.divergence;
 
-	float centerCoeff = dt_div_rho_div_dx * 6;
+	float centerCoeff = 6;
 
-	float leftCoeff = getNeibourCoefficient(x - 1, y, z, dt_div_rho_div_dx, thisCell.newVelocity.x, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
-	float rightCoeff = getNeibourCoefficient(x + 1, y, z, dt_div_rho_div_dx, rightCell.newVelocity.x, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
-	float downCoeff = getNeibourCoefficient(x, y - 1, z, dt_div_rho_div_dx, thisCell.newVelocity.y, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
-	float upCoeff = getNeibourCoefficient(x, y + 1, z, dt_div_rho_div_dx, upCell.newVelocity.y, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
-	float backCoeff = getNeibourCoefficient(x, y, z - 1, dt_div_rho_div_dx, thisCell.newVelocity.z, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
-	float frontCoeff = getNeibourCoefficient(x, y, z + 1, dt_div_rho_div_dx, frontCell.newVelocity.z, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
+	float leftCoeff = getNeibourCoefficient(x - 1, y, z, thisCell.newVelocity.x, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
+	float rightCoeff = getNeibourCoefficient(x + 1, y, z, rightCell.newVelocity.x, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
+	float downCoeff = getNeibourCoefficient(x, y - 1, z, thisCell.newVelocity.y, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
+	float upCoeff = getNeibourCoefficient(x, y + 1, z,  upCell.newVelocity.y, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
+	float backCoeff = getNeibourCoefficient(x, y, z - 1, thisCell.newVelocity.z, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
+	float frontCoeff = getNeibourCoefficient(x, y, z + 1,  frontCell.newVelocity.z, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
 
 	int nnz = 0;
 
@@ -187,7 +187,7 @@ __global__  void setPressure(Cell3D* cells, int sizeX, int sizeY, int sizeZ, dou
 }
 
 
-__global__  void updateVelocityWithPressureImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float dt_div_rho_div_dx) {
+__global__  void updateVelocityWithPressureImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= sizeX * sizeY * sizeZ) return;
 
@@ -204,7 +204,7 @@ __global__  void updateVelocityWithPressureImpl(Cell3D* cells, int sizeX, int si
 	if (x > 0) {
 		Cell3D& leftCell = get3D(cells, x - 1, y, z);
 		if (thisCell.content == CONTENT_FLUID || leftCell.content == CONTENT_FLUID) {
-			float uX = thisCell.newVelocity.x - dt_div_rho_div_dx * (thisCell.pressure - leftCell.pressure);
+			float uX = thisCell.newVelocity.x -  (thisCell.pressure - leftCell.pressure);
 			thisCell.newVelocity.x = uX;
 			thisCell.hasVelocityX = true;
 		}
@@ -212,7 +212,7 @@ __global__  void updateVelocityWithPressureImpl(Cell3D* cells, int sizeX, int si
 	if (y > 0) {
 		Cell3D& downCell = get3D(cells, x, y - 1, z);
 		if (thisCell.content == CONTENT_FLUID || downCell.content == CONTENT_FLUID) {
-			float uY = thisCell.newVelocity.y - dt_div_rho_div_dx * (thisCell.pressure - downCell.pressure);
+			float uY = thisCell.newVelocity.y -  (thisCell.pressure - downCell.pressure);
 			thisCell.newVelocity.y = uY;
 			thisCell.hasVelocityY = true;
 		}
@@ -220,7 +220,7 @@ __global__  void updateVelocityWithPressureImpl(Cell3D* cells, int sizeX, int si
 	if (z > 0) {
 		Cell3D& backCell = get3D(cells, x, y, z - 1);
 		if (thisCell.content == CONTENT_FLUID || backCell.content == CONTENT_FLUID) {
-			float uZ = thisCell.newVelocity.z - dt_div_rho_div_dx * (thisCell.pressure - backCell.pressure);
+			float uZ = thisCell.newVelocity.z -  (thisCell.pressure - backCell.pressure);
 			thisCell.newVelocity.z = uZ;
 			thisCell.hasVelocityZ = true;
 		}
@@ -465,7 +465,7 @@ __global__  void precomputeNeighbors(Cell3D* cells, int sizeX, int sizeY, int si
 	}
 }
 
-__global__  void jacobiImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float dt_div_rho_div_dx, float cellPhysicalSize) {
+__global__  void jacobiImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= sizeX * sizeY * sizeZ) return;
 
@@ -474,9 +474,6 @@ __global__  void jacobiImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, floa
 	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
 
 	Cell3D& thisCell = get3D(cells, x, y, z);
-	Cell3D& upCell = get3D(cells, x, y + 1, z);
-	Cell3D& rightCell = get3D(cells, x + 1, y, z);
-	Cell3D& frontCell = get3D(cells, x, y, z + 1);
 
 	if (thisCell.content == CONTENT_AIR) {
 		thisCell.pressure = 0;
@@ -487,56 +484,14 @@ __global__  void jacobiImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, floa
 
 	float newPressure = 0;
 
-	float centerCoeff = dt_div_rho_div_dx * 6;
+	float centerCoeff = 6;
 
-	if (x > 0) {
-		newPressure += get3D(cells, x - 1, y, z).pressure * dt_div_rho_div_dx;
-	}
-	else {
-		newPressure += get3D(cells, x, y, z).pressure * dt_div_rho_div_dx;
-		// centercoeff -= dt_div_rho_div_dx;
-	}
-
-	if (x < sizeX - 1) {
-		newPressure += get3D(cells, x + 1, y, z).pressure * dt_div_rho_div_dx;
-	}
-	else {
-		newPressure += get3D(cells, x, y, z).pressure * dt_div_rho_div_dx;
-		// centercoeff -= dt_div_rho_div_dx;
-	}
-
-	if (y > 0) {
-		newPressure += get3D(cells, x, y - 1, z).pressure * dt_div_rho_div_dx;
-	}
-	else {
-		newPressure += get3D(cells, x, y, z).pressure * dt_div_rho_div_dx;
-		// centercoeff -= dt_div_rho_div_dx;
-	}
-
-	if (y < sizeY - 1) {
-		newPressure += get3D(cells, x, y + 1, z).pressure * dt_div_rho_div_dx;
-	}
-	else {
-		newPressure += get3D(cells, x, y, z).pressure * dt_div_rho_div_dx;
-		// centercoeff -= dt_div_rho_div_dx;
-	}
-
-	if (z > 0) {
-		newPressure += get3D(cells, x, y, z - 1).pressure * dt_div_rho_div_dx;
-	}
-	else {
-		newPressure += get3D(cells, x, y, z).pressure * dt_div_rho_div_dx;
-		// centercoeff -= dt_div_rho_div_dx;
-	}
-
-	if (z < sizeZ - 1) {
-		newPressure += get3D(cells, x, y, z + 1).pressure * dt_div_rho_div_dx;
-	}
-	else {
-		newPressure += get3D(cells, x, y, z).pressure * dt_div_rho_div_dx;
-		//centerCoeff -= dt_div_rho_div_dx;
-	}
-
+	newPressure += thisCell.leftCell->pressure;
+	newPressure += thisCell.rightCell->pressure;
+	newPressure += thisCell.upCell->pressure;
+	newPressure += thisCell.downCell->pressure; 
+	newPressure += thisCell.frontCell->pressure;
+	newPressure += thisCell.backCell->pressure;
 
 	newPressure += RHS;
 	newPressure /= centerCoeff;
