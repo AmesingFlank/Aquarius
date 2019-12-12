@@ -428,6 +428,43 @@ __global__  void resetPressureImpl(Cell3D* cells, int sizeX, int sizeY, int size
 
 }
 
+__global__  void precomputeNeighbors(Cell3D* cells, int sizeX, int sizeY, int sizeZ) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index >= sizeX * sizeY * sizeZ) return;
+
+	int x = index / (sizeY * sizeZ);
+	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
+	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
+
+	Cell3D& thisCell = get3D(cells, x, y, z);
+	thisCell.leftCell = &thisCell;
+	thisCell.rightCell = &thisCell;
+	thisCell.upCell = &thisCell;
+	thisCell.downCell = &thisCell;
+	thisCell.frontCell = &thisCell;
+	thisCell.backCell = &thisCell;
+
+	if (x > 0) {
+		thisCell.leftCell = &get3D(cells, x-1, y, z);
+	}
+	if (y > 0) {
+		thisCell.downCell = &get3D(cells, x, y-1, z);
+	}
+	if (z > 0) {
+		thisCell.backCell = &get3D(cells, x, y , z-1);
+	}
+
+	if (x < sizeX-1) {
+		thisCell.rightCell = &get3D(cells, x + 1, y, z);
+	}
+	if (y < sizeY - 1) {
+		thisCell.upCell = &get3D(cells, x , y+1, z);
+	}
+	if (z < sizeZ - 1) {
+		thisCell.frontCell = &get3D(cells, x , y, z+1);
+	}
+}
+
 __global__  void jacobiImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float dt_div_rho_div_dx, float cellPhysicalSize) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= sizeX * sizeY * sizeZ) return;

@@ -113,6 +113,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <CudaCompile Include="Fluid\FluidConfig.cu" />
     <CudaCompile Include="Fluid\Fluid_2D_kernels.cuh" />
     <CudaCompile Include="Fluid\Fluid_3D_common.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_FLIP.cu" />
@@ -122,7 +123,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Fluid\Fluid.h" />
-    <ClInclude Include="Fluid\InitializationVolume.cuh" />
+    <ClInclude Include="Fluid\FluidConfig.cuh" />
     <ClInclude Include="Fluid\Fluid_2D.h" />
     <ClInclude Include="Fluid\Fluid_2D_FLIP.cuh" />
     <ClInclude Include="Fluid\Fluid_2D_common.cuh" />
@@ -157,6 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
+    <None Include="resources\LaunchConfigs.json" />
     <None Include="resources\Shaders\PointSprites_depth_fs.glsl" />
     <None Include="resources\Shaders\PointSprites_depth_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_fs.glsl" />

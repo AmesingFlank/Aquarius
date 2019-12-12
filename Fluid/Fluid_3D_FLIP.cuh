@@ -57,20 +57,18 @@ namespace Fluid_3D_FLIP{
 	class Fluid :Fluid_3D {
 	public:
 
-		const int sizeXYZ = 32;
-
-		const int sizeX = sizeXYZ;
-		const int sizeY = sizeXYZ;
-		const int sizeZ = sizeXYZ;
+		int sizeX;
+		int sizeY;
+		int sizeZ;
 
 
-		const int cellCount = (sizeX + 1) * (sizeY + 1)*(sizeZ + 1);
+		int cellCount;
 
 
-		const float cellPhysicalSize = 10.f / (float)sizeY;
+		float cellPhysicalSize;
+
 		const float gravitationalAcceleration = 9.8;
 		const float density = 1;
-		MAC_Grid_3D grid = MAC_Grid_3D(sizeX, sizeY,sizeZ, cellPhysicalSize);
 
 		Particle* particles;
 		int particleCount;
@@ -78,21 +76,22 @@ namespace Fluid_3D_FLIP{
 		int numThreadsParticle, numBlocksParticle;
 		int numThreadsCell, numBlocksCell;
 
-		int particlesPerCell = 16;
+		const int particlesPerCell = 16;
 
 		int* particleHashes;
 		int* cellStart;
 		int* cellEnd;
 
-		Container container = Container(glm::vec3(sizeX, sizeY, sizeZ)*cellPhysicalSize);
 
 		Skybox skybox = Skybox("resources/Park2/", ".jpg");
 
-		PointSprites* pointSprites;
+		std::shared_ptr<PointSprites> pointSprites;
+		std::shared_ptr<Container> container;
+		std::shared_ptr<MAC_Grid_3D> grid;
 
 		Fluid();
 
-		void init();
+
 
 		virtual void simulationStep() override;
 
@@ -107,11 +106,15 @@ namespace Fluid_3D_FLIP{
 
 		virtual void draw(const DrawCommand& drawCommand) override;
 
+		virtual void init(std::shared_ptr<FluidConfig> config) override;
+
 		void createParticles(std::vector <Particle>& particlesHost, float3 centerPos, float tag = 0);
 
-		void createSquareFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp, int startIndex = 0);
+		void createSquareFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp, float3 minPos,float3 maxPos, int startIndex = 0);
 
-		void createSphereFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp, int startIndex = 0);
+		void createSphereFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp,float3 center,float radius, int startIndex = 0);
+
+
 
 	};
 }

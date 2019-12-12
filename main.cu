@@ -22,7 +22,7 @@
 
 
 #include "Rendering/WindowInfo.h"
-
+#include "Fluid/FluidConfig.cuh"
 
 
 int main( void ) {
@@ -47,13 +47,17 @@ int main( void ) {
     std::shared_ptr<Camera> camera = std::make_shared<Camera>(glm::vec3(5,10,20));
     InputHandler::camera = camera;
 
-    Fluid_3D_FLIP::Fluid fluid;
 	
 	double framesSinceLast = 0;
 	double lastSecond = glfwGetTime();
 	double lastFrameTime = glfwGetTime();
 
 	glEnable(GL_BLEND);
+
+
+	std::shared_ptr<FluidConfig> config = getConfig();
+	Fluid_3D_FLIP::Fluid fluid;
+	fluid.init(config);
 
     while(!glfwWindowShouldClose(window)){
 

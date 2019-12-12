@@ -42,6 +42,14 @@ struct Cell3D{
 	float density;
 
 	float3 weight = make_float3(0, 0, 0);
+
+	Cell3D* rightCell;
+	Cell3D* leftCell;
+	Cell3D* upCell;
+	Cell3D* downCell;
+	Cell3D* frontCell;
+	Cell3D* backCell;
+
 };
 
 

@@ -59,6 +59,8 @@ __global__  void resetPressureImpl(Cell3D* cells, int sizeX, int sizeY, int size
 
 __global__  void jacobiImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float dt_div_rho_div_dx, float cellPhysicalSize);
 
+__global__  void precomputeNeighbors(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
+
 
 template<typename Particle>
 __global__ inline void updatePositionsVBO(Particle* particles, float* positionsVBO, int particleCount) {
