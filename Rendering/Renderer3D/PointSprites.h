@@ -1,87 +1,74 @@
 #pragma once
 
 #include "../../GpuCommons.h"
-#include "PointSprites_vs.glsl"
-#include "PointSprites_fs.glsl"
+
+
 #include "../Shader.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-
+#include "../WindowInfo.h"
+#include "../DrawCommand.h"
 
 struct PointSprites {
 	int count;
 	float* positionsHost;
-	GLuint VAO, VBO;
-	GLint model_location, view_location, projection_location, vPos_location;
+	GLuint pointsVAO, pointsVBO;
+	GLint points_vPos_location; // used by multiple shaders. location specified as common value in all shaders
 
 	cudaGraphicsResource* cudaResourceVBO;
 	float* positionsDevice;
 
-	Shader* shader;
+	Shader* basicShader;
 
-	PointSprites(int count_):count(count_) {
+	float quadVertices[24] = { 
+		// positions   // texCoords
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		-1.0f, -1.0f,  0.0f, 0.0f,
+		1.0f, -1.0f,  1.0f, 0.0f,
 
-		positionsHost = new float[count*3];
+		-1.0f,  1.0f,  0.0f, 1.0f,
+		1.0f, -1.0f,  1.0f, 0.0f,
+		1.0f,  1.0f,  1.0f, 1.0f
+	};
 
-		std::string vs = PointSprites_vs;
-		std::string fs = PointSprites_fs;
+	GLuint quadVBO, quadVAO;
 
-		shader = new Shader(1, vs.c_str(), fs.c_str(), nullptr);
+	GLuint FBO;
 
+	GLuint depthTextureNDC;
+	// view space
+	GLuint depthTextureA;
+	GLuint depthTextureB;
+	GLuint lastDepthTexture;
 
-		vPos_location = glGetAttribLocation(shader->Program, "position");
-		model_location = glGetUniformLocation(shader->Program, "model");
-		view_location = glGetUniformLocation(shader->Program, "view");
-		projection_location = glGetUniformLocation(shader->Program, "projection");
+	GLuint normalTexture;
+	GLuint thicknessTexture;
 
-
-		glGenVertexArrays(1, &VAO);
-		glGenBuffers(1, &VBO);
-		glBindVertexArray(VAO); 
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(float)*count*3, positionsHost, GL_STATIC_DRAW);
-		glEnableVertexAttribArray(vPos_location);
-		glVertexAttribPointer(vPos_location, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
-
-		HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaResourceVBO, VBO, cudaGraphicsMapFlagsNone));
-		
-		size_t  size;   
-		HANDLE_ERROR(cudaGraphicsMapResources(1, &cudaResourceVBO, NULL));
-		HANDLE_ERROR(cudaGraphicsResourceGetMappedPointer((void**)&positionsDevice, &size, cudaResourceVBO));
-
-		glBindVertexArray(0);
-
-
-
-	}
+	Shader* depthShader;
+	Shader* renderShader;
+	Shader* normalShader;
+	Shader* thicknessShader;
+	Shader* smoothShader;
 
 	glm::mat4  model = glm::mat4(1.0);
 
-	void draw(const DrawCommand& drawCommand,float radius) {
 
-		glm::mat4 view = drawCommand.view;
-		glm::mat4 projection = drawCommand.projection;
-		glm::vec3 cameraPos = drawCommand.cameraPosition;
+	void initScreenSpaceRenderer();
+	
 
-		shader->Use();
-		glUniformMatrix4fv(model_location, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(model));
-		glUniformMatrix4fv(view_location, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(view));
-		glUniformMatrix4fv(projection_location, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(projection));
+	void renderDepth(const DrawCommand& drawCommand, float radius);
+	void smoothDepth(const DrawCommand& drawCommand, int iterations, int smoothRadius, float sigma_d, float sigma_r);
 
-		glUniform1f(glGetUniformLocation(shader->Program, "windowWidth"), drawCommand.windowWidth);
-		glUniform1f(glGetUniformLocation(shader->Program, "windowHeight"), drawCommand.windowHeight);
+	void renderNormal(const DrawCommand& drawCommand);
+	void renderThickness(const DrawCommand& drawCommand, float radius);
+	void renderFinal(const DrawCommand& drawCommand, int skybox);
 
-		glUniform1f(glGetUniformLocation(shader->Program, "radius"), radius);
-
-		glUniform3f(glGetUniformLocation(shader->Program, "cameraPosition"), cameraPos.x, cameraPos.y, cameraPos.z);
+	PointSprites(int count_);
 
 
-		glBindVertexArray(VAO);
-		glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-		glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
-		//glPointSize(50);
-		glDrawArrays(GL_POINTS, 0, count);
-	}
+	void draw(const DrawCommand& drawCommand, float radius, int skybox);
+
+	void drawSimple(const DrawCommand& drawCommand, float radius);
 };

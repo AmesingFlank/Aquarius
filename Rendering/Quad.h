@@ -5,8 +5,6 @@
 #ifndef AQUARIUS_QUAD_H
 #define AQUARIUS_QUAD_H
 
-#include "Quad_vs.glsl"
-#include "Quad_fs.glsl"
 #include "Shader.h"
 
 
@@ -29,10 +27,10 @@ struct Quad {
 
     Quad (){
 
-        std::string vs = Quad_vs;
-        std::string fs = Quad_fs;
+		std::string vsPath = Shader::SHADERS_PATH("Quad_vs.glsl");
+		std::string fsPath = Shader::SHADERS_PATH("Quad_fs.glsl");
 
-        shader = new Shader(1,vs.c_str(),fs.c_str(), nullptr);
+        shader = new Shader(vsPath.c_str(),fsPath.c_str(), nullptr);
 
         vPos_location = glGetAttribLocation(shader->Program, "vPos");
         texCoord_location = glGetAttribLocation(shader->Program,"texCoord");

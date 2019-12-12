@@ -13,6 +13,11 @@
 class Shader
 {
 public:
+	static std::string SHADERS_PATH(const std::string& file = "") { 
+		return "./resources/Shaders/" + file; 
+	}
+
+public:
     GLuint Program;
     // Constructor generates the shader on the fly
     Shader(int i,const GLchar* vShaderCode,const GLchar* fShaderCode,const GLchar* gShaderCode ){

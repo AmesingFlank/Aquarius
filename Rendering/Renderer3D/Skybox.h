@@ -9,8 +9,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include "Skybox_vs.glsl"
-#include "Skybox_fs.glsl"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "../stb_image.h"
 
@@ -69,10 +68,10 @@ struct Skybox{
 
     Skybox(const std::string& path, const std::string& extension){
 
-        std::string vs = Skybox_vs;
-        std::string fs = Skybox_fs;
+		std::string vsPath = Shader::SHADERS_PATH("Skybox_vs.glsl");
+		std::string fsPath = Shader::SHADERS_PATH("Skybox_fs.glsl");
 
-        shader = new Shader(1,vs.c_str(),fs.c_str(), nullptr);
+        shader = new Shader(vsPath.c_str(),fsPath.c_str(), nullptr);
 
 
         vPos_location = glGetAttribLocation(shader->Program, "position");

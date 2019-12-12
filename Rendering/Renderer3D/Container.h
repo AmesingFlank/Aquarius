@@ -1,7 +1,5 @@
 #pragma once
 #include "../model.h"
-#include "Container_vs.glsl"
-#include "Container_fs.glsl"
 
 struct Container {
 	Model model;
@@ -10,7 +8,7 @@ struct Container {
 	GLint model_location, view_location, projection_location;
 
 	Container(glm::vec3 size):model("./resources/Container/container.obj",size,glm::vec3(size.x/2.f, 0,size.z/2.f) ),
-		shader(1,Container_vs.c_str(),Container_fs.c_str(),nullptr) {
+		shader(Shader::SHADERS_PATH("Container_vs.glsl").c_str(), Shader::SHADERS_PATH("Container_fs.glsl").c_str(),nullptr) {
 		
 		model_location = glGetUniformLocation(shader.Program, "model");
 		view_location = glGetUniformLocation(shader.Program, "view");

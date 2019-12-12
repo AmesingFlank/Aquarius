@@ -5,7 +5,7 @@
 #ifndef AQUARIUS_SPD_SOLVER_H
 #define AQUARIUS_SPD_SOLVER_H
 
-#include "GpuCommons.h"
+#include "../GpuCommons.h"
 #include <iostream>
 
 

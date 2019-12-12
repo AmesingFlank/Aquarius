@@ -66,6 +66,7 @@
       <Include>C:\Users\Dunfan\Code\Libraries\include\amgx;C:\Users\Dunfan\Code\Libraries\include\cudaSamples;%(Include)</Include>
       <Runtime>MTd</Runtime>
       <CodeGeneration>compute_60,sm_60</CodeGeneration>
+      <MaxRegCount>10</MaxRegCount>
     </CudaCompile>
     <CudaLink>
       <AdditionalLibraryDirectories>C:\Users\Dunfan\Code\Libraries\vc2019\amgx;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -113,7 +114,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="Fluid\Fluid_2D_kernels.cuh" />
+    <CudaCompile Include="Fluid\Fluid_3D_common.cu" />
+    <CudaCompile Include="Fluid\Fluid_3D_FLIP.cu" />
+    <CudaCompile Include="Fluid\Fluid_3D_kernels.cu" />
     <CudaCompile Include="main.cu" />
+    <CudaCompile Include="Rendering\Renderer3D\PointSprites.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Fluid\Fluid.h" />
@@ -148,17 +153,28 @@
     <ClInclude Include="Rendering\stb_image.h" />
     <ClInclude Include="Fluid\SPD_Solver.h" />
     <ClInclude Include="Fluid\WeightKernels.h" />
+    <ClInclude Include="Rendering\WindowInfo.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
-    <None Include="Rendering\Quad_fs.glsl" />
-    <None Include="Rendering\Quad_vs.glsl" />
-    <None Include="Rendering\Renderer3D\Container_fs.glsl" />
-    <None Include="Rendering\Renderer3D\Container_vs.glsl" />
-    <None Include="Rendering\Renderer3D\PointSprites_fs.glsl" />
-    <None Include="Rendering\Renderer3D\PointSprites_vs.glsl" />
-    <None Include="Rendering\Renderer3D\Skybox_fs.glsl" />
-    <None Include="Rendering\Renderer3D\Skybox_vs.glsl" />
+    <None Include="resources\Shaders\PointSprites_depth_fs.glsl" />
+    <None Include="resources\Shaders\PointSprites_depth_vs.glsl" />
+    <None Include="resources\Shaders\PointSprites_fs.glsl" />
+    <None Include="resources\Shaders\PointSprites_normal_fs.glsl" />
+    <None Include="resources\Shaders\PointSprites_normal_vs.glsl" />
+    <None Include="resources\Shaders\PointSprites_render_fs.glsl" />
+    <None Include="resources\Shaders\PointSprites_render_vs.glsl" />
+    <None Include="resources\Shaders\PointSprites_smooth_fs.glsl" />
+    <None Include="resources\Shaders\PointSprites_smooth_vs.glsl" />
+    <None Include="resources\Shaders\PointSprites_thickness_fs.glsl" />
+    <None Include="resources\Shaders\PointSprites_thickness_vs.glsl" />
+    <None Include="resources\Shaders\PointSprites_vs.glsl" />
+    <None Include="resources\Shaders\Container_fs.glsl" />
+    <None Include="resources\Shaders\Container_vs.glsl" />
+    <None Include="resources\Shaders\Quad_fs.glsl" />
+    <None Include="resources\Shaders\Quad_vs.glsl" />
+    <None Include="resources\Shaders\Skybox_fs.glsl" />
+    <None Include="resources\Shaders\Skybox_vs.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

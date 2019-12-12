@@ -40,6 +40,8 @@ struct Cell3D{
 	float divergence;
 
 	float density;
+
+	float3 weight = make_float3(0, 0, 0);
 };
 
 

@@ -1,9 +1,10 @@
-#include<string>
-static const std::string PointSprites_vs = R"(
 
 #version 330 core
 layout (location = 0) in vec3 position;
 out vec3 TexCoords;
+out vec4 posToCamera;
+out float sphereRadius;
+out mat4 proj;
 
 uniform mat4 projection;
 uniform mat4 view;
@@ -15,7 +16,6 @@ uniform float radius;
 
 uniform vec3 cameraPosition;
 
-out vec3 debug;
 
 void main()
 {
@@ -46,6 +46,7 @@ void main()
     gl_Position =   mvp * vec4(position, 1.0);
     TexCoords = position;
 
+	posToCamera = view * model * vec4(position, 1.0);
+	sphereRadius = radius;
+	proj = projection;
 }
-
-)";

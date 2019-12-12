@@ -367,7 +367,7 @@ namespace Fluid_3D_PCISPH {
 		virtual void draw(const DrawCommand& drawCommand) override {
 			skybox.draw(drawCommand);
 			updateVBO();
-			pointSprites->draw( drawCommand, particleSpacing / 2.0);
+			pointSprites->draw( drawCommand, particleSpacing / 2.0,skybox.texSkyBox);
 			container.draw(drawCommand);
 		}
 

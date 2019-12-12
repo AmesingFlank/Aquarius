@@ -1,12 +1,9 @@
-#pragma once
-#include<string>
-static const std::string Container_fs = R"(
-
 #version 330 core
 in vec2 TexCoords;
 in vec3 Normal;
 in vec3 FragPos;
 out vec4 FragColor;
+
 
 struct Material {
     vec3 ambient;
@@ -28,6 +25,8 @@ struct Light {
 };
 
 uniform vec3 cameraPosition;
+
+
 
 void main()
 {
@@ -70,6 +69,5 @@ void main()
     float gamma = 2.2;
     FragColor.rgb = pow(FragColor.rgb, vec3(1.0/gamma));
 
-}
 
-)";
+}

@@ -1,6 +1,3 @@
-#pragma once
-#include<string>
-static string Container_vs = R"(
 #version 330 core
 layout (location = 0) in vec3 position;
 layout (location = 1) in vec3 normal;
@@ -20,5 +17,6 @@ void main()
     gl_Position = projection * view * model * vec4(position, 1.0f);
     TexCoords = texCoords;
     Normal=mat3(transpose(inverse(model))) *normal ;
+
+
 }
-)";

@@ -27,6 +27,9 @@
 
 #include <stdarg.h>
 
+#include <thrust/functional.h>
+#include <thrust/reduce.h>
+
 inline const char* cublasGetErrorString(cublasStatus_t status)
 {
     switch(status)
@@ -198,6 +201,27 @@ inline void printGLError(){
     if(err!=GL_NO_ERROR){
         std::cerr <<"GL Error :  "<<error<<std::endl;
     }
+}
+
+
+inline void checkFramebufferComplete()
+{
+	GLenum err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	const char* errString = NULL;
+	switch (err) {
+	case GL_FRAMEBUFFER_UNDEFINED: errString = "GL_FRAMEBUFFER_UNDEFINED"; break;
+	case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT: errString = "GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT"; break;
+	case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT: errString = "GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT"; break;
+	case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER: errString = "GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER"; break;
+	case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER: errString = "GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER"; break;
+	case GL_FRAMEBUFFER_UNSUPPORTED: errString = "GL_FRAMEBUFFER_UNSUPPORTED"; break;
+	case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE: errString = "GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE"; break;
+	case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS: errString = "GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS"; break;
+	}
+
+	if (errString) {
+		fprintf(stderr, "OpenGL Framebuffer Error #%d: %s\n", err, errString);
+	}
 }
 
 

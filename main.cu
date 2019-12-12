@@ -9,20 +9,6 @@
 #include "GpuCommons.h"
 
 
-
-/*
-#include "Fluid_2D_PCISPH.cuh"
-#include "Fluid_2D_PCISPH_CPU.h"
-#include "Fluid_2D_PoistionBased_CPU.h"
-#include "Fluid_2D_Full.cuh"
-#include "Fluid_3D_SPH.cuh"
-#include "Fluid_3D_PCISPH.cuh"
-*/
-#include "Fluid/Fluid_2D_SemiLagrange.cuh"
-#include "Fluid/Fluid_2D_FLIP.cuh"
-#include "Fluid/Fluid_2D_PCISPH.cuh"
-
-#include "Fluid/Fluid_3D_PCISPH.cuh"
 #include "Fluid/Fluid_3D_FLIP.cuh"
 
 
@@ -35,7 +21,7 @@
 #include "Rendering/DrawCommand.h"
 
 
-
+#include "Rendering/WindowInfo.h"
 
 
 
@@ -48,10 +34,12 @@ int main( void ) {
 
 	getScreenDimensions(screenWidth, screenHeight);
 
-	float windowWidth = screenWidth / 2;
-	float windowHeight = windowWidth / 2;
+	WindowInfo& windowInfo = WindowInfo::instance();
 
-    GLFWwindow* window = createWindowOpenGL(windowWidth,windowHeight);
+	windowInfo.windowWidth = screenWidth * 3 / 4;
+	windowInfo.windowHeight = windowInfo.windowWidth / 2;
+
+    GLFWwindow* window = createWindowOpenGL(windowInfo.windowWidth, windowInfo.windowHeight);
 
     glfwSetKeyCallback(window, InputHandler::key_callback);
     glfwSetCursorPosCallback(window, InputHandler::mouse_callback);
@@ -65,6 +53,8 @@ int main( void ) {
 	double lastSecond = glfwGetTime();
 	double lastFrameTime = glfwGetTime();
 
+	glEnable(GL_BLEND);
+
     while(!glfwWindowShouldClose(window)){
 
         glEnable(GL_DEPTH_TEST);
@@ -75,16 +65,19 @@ int main( void ) {
         glfwPollEvents();
         InputHandler::Do_Movement();
 
+		float near = 0.1;
+		float far = 1000;
+
         glm::mat4 view = camera->GetViewMatrix();
-        glm::mat4 projection = glm::perspective(camera->Zoom, (float)windowWidth/(float)windowHeight, 0.1f, 10000.0f);
+		float widthHeightRatio = (float)windowInfo.windowWidth / (float)windowInfo.windowHeight;
+        glm::mat4 projection = glm::perspective(camera->Zoom, widthHeightRatio, near,far);
 
 		DrawCommand drawCommand = {
-			view,projection,camera->Position,windowWidth,windowHeight
+			view,projection,camera->Position,windowInfo.windowWidth,windowInfo.windowHeight,camera->Zoom,near,far
 		};
 
 
         double currentTime = glfwGetTime();
-
 
 		fluid.simulationStep();
 		fluid.draw(drawCommand);
@@ -108,6 +101,7 @@ int main( void ) {
     }
 
     std::cout<<"finished everything"<<std::endl;
+	cudaDeviceReset();
 
     return 0;
 }
