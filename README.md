@@ -1,6 +1,6 @@
 #Aquarius
 
-A 2D (for now) Fluid Simulator on GPU
+A Fluid Simulator on GPU
 
 Implemented methods:
 * Semi-Lagrangian with AMGPCG pressure solve
