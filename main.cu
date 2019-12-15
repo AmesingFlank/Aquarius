@@ -12,8 +12,6 @@
 #include "Fluid/Fluid_3D_FLIP.cuh"
 
 
-
-#include "Rendering/Renderer3D/Renderer3D.h"
 #include "Rendering/Renderer3D/camera.h"
 #include "InputHandler.h"
 #include "Rendering/Renderer3D/PointSprites.h"

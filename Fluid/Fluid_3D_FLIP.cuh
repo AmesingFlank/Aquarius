@@ -15,6 +15,8 @@
 #include "../Rendering/Renderer3D/PointSprites.h"
 #include "../Rendering/Renderer3D/Container.h"
 #include "../Rendering/Renderer3D/Skybox.h"
+#include "../Rendering/Renderer3D/Mesher.cuh"
+#include "../Rendering/Renderer3D/FluidMeshRenderer.cuh"
 
 namespace Fluid_3D_FLIP{
 	__device__ __host__ struct Particle {
@@ -73,13 +75,13 @@ namespace Fluid_3D_FLIP{
 		const float density = 1;
 
 		Particle* particles;
-		Particle* particlesOld;
+		Particle* particlesCopy; //used for fast spatial hashing only
 		int particleCount;
 
 		int numThreadsParticle, numBlocksParticle;
 		int numThreadsCell, numBlocksCell;
 
-		const int particlesPerCell = 16;
+		const int particlesPerCell = 8;
 
 		int* particleHashes;
 		int* particleIndices;
@@ -93,6 +95,9 @@ namespace Fluid_3D_FLIP{
 		std::shared_ptr<PointSprites> pointSprites;
 		std::shared_ptr<Container> container;
 		std::shared_ptr<MAC_Grid_3D> grid;
+
+		std::shared_ptr<Mesher> mesher;
+		std::shared_ptr<FluidMeshRenderer> meshRenderer;
 
 		Fluid();
 

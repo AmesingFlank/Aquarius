@@ -500,3 +500,13 @@ __global__  void jacobiImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, floa
 
 	thisCell.pressure = newPressure;
 }
+
+
+__global__  void writeIndicesImpl(int* particleIndices, int particleCount) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (index >= particleCount) return;
+
+	particleIndices[index] = index;
+}
+

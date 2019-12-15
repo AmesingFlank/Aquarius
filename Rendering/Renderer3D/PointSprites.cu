@@ -3,16 +3,15 @@
 
 void PointSprites::draw(const DrawCommand& drawCommand, float radius, int skybox) {
 	//return;
-	drawSimple(drawCommand, radius); return;
+	//drawSimple(drawCommand, radius); return;
 
 	renderDepth(drawCommand, radius);
 
-	smoothDepth(drawCommand, 6, 5, 6, 0.1);
+	smoothDepth(drawCommand, 10, 5, 6, 0.1);
 
 	renderNormal(drawCommand);
 
 	renderThickness(drawCommand, radius);
-
 
 	renderFinal(drawCommand, skybox);
 	printGLError();

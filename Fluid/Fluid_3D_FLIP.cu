@@ -294,12 +294,13 @@ namespace Fluid_3D_FLIP {
 
 		//destPos = beginPos+particle.velocity*timeStep;
 
+		float epsilon = 1e-3;
 
-		destPos.x = max(0.0 + 1e-6, min(sizeX * cellPhysicalSize - 1e-6, destPos.x));
-		//destPos.y = max(0.0 + 1e-6,  destPos.y );
+		destPos.x = max(0.0 + epsilon, min(sizeX * cellPhysicalSize - epsilon, destPos.x));
+		//destPos.y = max(0.0 + epsilon,  destPos.y );
 
-		destPos.y = max(0.0 + 1e-6, min(sizeY * cellPhysicalSize - 1e-6, destPos.y));
-		destPos.z = max(0.0 + 1e-6, min(sizeZ * cellPhysicalSize - 1e-6, destPos.z));
+		destPos.y = max(0.0 + epsilon, min(sizeY * cellPhysicalSize - epsilon, destPos.y));
+		destPos.z = max(0.0 + epsilon, min(sizeZ * cellPhysicalSize - epsilon, destPos.z));
 
 
 		particle.position = destPos;
@@ -381,45 +382,11 @@ namespace Fluid_3D_FLIP {
 		CHECK_CUDA_ERROR("calcDensity");
 	}
 
-	__global__  void writeIndicesImpl(int* particleIndices,  int particleCount) {
-		int index = blockIdx.x * blockDim.x + threadIdx.x;
-
-		if (index >= particleCount) return;
-
-		particleIndices[index] = index;
-	}
-
-
-	__global__  void applySortImpl(Particle* src, Particle* dest,int particleCount,int* particleIndices) {
-		int index = blockIdx.x * blockDim.x + threadIdx.x;
-
-		if (index >= particleCount) return;
-
-		dest[index] = src[particleIndices[index]];
-	}
-
-
-	void performSpatialHashing2(int* particleIndices,int* particleHashes, Particle*& particles, int particleCount, float cellPhysicalSize, float sizeX, float sizeY, float sizeZ, int numBlocksParticle, int numThreadsParticle, int* cellStart, int* cellEnd, int cellCount, Particle*& particlesOld) {
-		writeIndicesImpl << <numBlocksParticle, numThreadsParticle >> > (particleIndices, particleCount);
-		calcHashImpl << < numBlocksParticle, numThreadsParticle >> > (particleHashes, particles, particleCount, cellPhysicalSize, sizeX, sizeY, sizeZ);
-		//cudaDeviceSynchronize();
-		CHECK_CUDA_ERROR("calc hash");
-
-		thrust::sort_by_key(thrust::device, particleHashes, particleHashes + particleCount, particleIndices);
-
-		applySortImpl << < numBlocksParticle, numThreadsParticle >> > (particles, particlesOld, particleCount, particleIndices);
-		std::swap(particles, particlesOld);
-
-		HANDLE_ERROR(cudaMemset(cellStart, 255, cellCount * sizeof(*cellStart)));
-		HANDLE_ERROR(cudaMemset(cellEnd, 255, cellCount * sizeof(*cellEnd)));
-		findCellStartEndImpl << < numBlocksParticle, numThreadsParticle >> > (particleHashes, cellStart, cellEnd, particleCount);
-		CHECK_CUDA_ERROR("find cell start end");
-
-	}
+	
 
 
 	void Fluid::transferToGrid() {
-		performSpatialHashing2(particleIndices,particleHashes, particles, particleCount, cellPhysicalSize, sizeX, sizeY, sizeZ, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount,particlesOld);
+		performSpatialHashing2(particleIndices,particleHashes, particles, particlesCopy, particleCount, cellPhysicalSize, sizeX, sizeY, sizeZ, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount);
 		//performSpatialHashing(particleHashes, particles, particleCount, cellPhysicalSize, sizeX, sizeY, sizeZ, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount);
 
 		resetAllCells << < numBlocksCell, numThreadsCell >> > (grid->cells, sizeX, sizeY, sizeZ, CONTENT_AIR);
@@ -456,8 +423,13 @@ namespace Fluid_3D_FLIP {
 		cudaDeviceSynchronize();
 		container->draw(drawCommand);
 
-		float renderRadius = 2 * cellPhysicalSize / pow(particlesPerCell, 1.0 / 3.0);
-		pointSprites->draw(drawCommand, renderRadius, skybox.texSkyBox);
+		float renderRadius = cellPhysicalSize / pow(particlesPerCell, 1.0 / 3.0);
+		//pointSprites->draw(drawCommand, renderRadius, skybox.texSkyBox);
+
+		mesher->mesh(particles, particlesCopy,particleHashes,particleIndices,particleCount,numBlocksParticle,numThreadsParticle, meshRenderer->coordsDevice,make_float3(sizeX,sizeY,sizeZ)*cellPhysicalSize);
+		cudaDeviceSynchronize();
+		meshRenderer->draw(drawCommand);
+
 		printGLError();
 
 	}
@@ -524,11 +496,31 @@ namespace Fluid_3D_FLIP {
 		HANDLE_ERROR(cudaDeviceSetLimit(cudaLimitPrintfFifoSize, numBlocksCell * numThreadsCell * 1024));
 
 		HANDLE_ERROR(cudaMalloc(&particleIndices, particleCount * sizeof(*particleIndices)));
-		HANDLE_ERROR(cudaMalloc(&particlesOld, particleCount * sizeof(Particle)));
+		HANDLE_ERROR(cudaMalloc(&particlesCopy, particleCount * sizeof(Particle)));
+
+
+		mesher = std::make_shared<Mesher>(sizeX, sizeY, sizeZ);
+		meshRenderer = std::make_shared<FluidMeshRenderer>(mesher->triangleCount);
 	}
 
 
 	void Fluid::createParticles(std::vector <Particle>& particlesHost, float3 centerPos, float tag ) {
+
+		for (float dx = 0; dx <= 1; ++dx) {
+			for (float dy = 0; dy <= 1; ++dy) {
+				for (float dz = 0; dz <= 1; ++dz) {
+					float3 subcellCenter = make_float3(dx - 0.5, dy - 0.5, dz - 0.5) * 0.5 * cellPhysicalSize + centerPos;
+					float xBias = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
+					float yBias = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
+					float zBias = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
+					float3 particlePos = subcellCenter + make_float3(xBias, yBias, zBias);
+					particlesHost.emplace_back(particlePos, tag);
+				}
+			}
+		}
+
+		return;
+
 		for (int particle = 0; particle < particlesPerCell; ++particle) {
 			float xBias = (random0to1() - 0.5f) * cellPhysicalSize;
 			float yBias = (random0to1() - 0.5f) * cellPhysicalSize;

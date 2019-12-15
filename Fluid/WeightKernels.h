@@ -226,4 +226,10 @@ float inline quadraticBSplineKernel(float3 r, float support) {
 }
 
 
+__device__ __host__
+float inline zhu05Kernel(float3 r, float support) {
+	float s = length(r) / support;
+	return max(0.0,pow((1.0-s*s),3));
+}
+
 #endif //AQUARIUS_WEIGHTKERNELS_H
