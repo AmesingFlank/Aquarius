@@ -3,7 +3,10 @@
 
 void PointSprites::draw(const DrawCommand& drawCommand, float radius, int skybox) {
 	//return;
-	//drawSimple(drawCommand, radius); return;
+	if (drawCommand.renderMode == RenderMode::Particles) {
+		drawSimple(drawCommand, radius); return;
+	}
+	
 
 	renderDepth(drawCommand, radius);
 

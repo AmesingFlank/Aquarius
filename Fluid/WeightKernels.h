@@ -232,4 +232,21 @@ float inline zhu05Kernel(float3 r, float support) {
 	return max(0.0,pow((1.0-s*s),3));
 }
 
+__device__ __host__
+float inline pcaKernel(float3 r, float support) {
+	return 1 - pow(length(r) / support, 3);
+}
+
+__device__ __host__
+float inline Bcubic(float3 r, float support) {
+	float s = length(r) / support;
+	if (s < 1) {
+		return (1 - s * s * 3.f / 2.f + s * s * s * 3.f / 4.f) / M_PI;
+	}
+	else if (s < 2) {
+		return pow(2 - s, 3) / (4.0 * M_PI);
+	}
+	return 0;
+}
+
 #endif //AQUARIUS_WEIGHTKERNELS_H

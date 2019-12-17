@@ -239,11 +239,13 @@ namespace Fluid_3D_PCISPH {
 		int cellCount;
 
 		Particle* particles;
+		Particle* particlesCopy;
+		int* particleIndices;
 		int* particleHashes;
 		int* cellBegin;
 		int* cellEnd;
 
-		float timestep = 1e-3;
+		float timestep = 5e-3;
 		float substeps = 1;
 
 		float3 gridDimension = make_float3(10.f, 10.f, 10.f);
@@ -252,7 +254,7 @@ namespace Fluid_3D_PCISPH {
 
 		float restDensity;
 
-		float particleCountWhenFull = 3e4;
+		float particleCountWhenFull = 3e5;
 
 		float kernelRadiusToSpacingRatio = 3.5;
 
@@ -274,6 +276,9 @@ namespace Fluid_3D_PCISPH {
 		Container container = Container(glm::vec3(gridDimension.x, gridDimension.y, gridDimension.z));
 
 		Skybox skybox = Skybox("resources/Park2/",".jpg");
+
+		std::shared_ptr<Mesher> mesher;
+		std::shared_ptr<FluidMeshRenderer> meshRenderer;
 
 
 		Fluid() {
@@ -304,6 +309,7 @@ namespace Fluid_3D_PCISPH {
 			}
 			particleCount = particlesVec.size();
 			HANDLE_ERROR(cudaMalloc(&particles, particleCount * sizeof(Particle)));
+			HANDLE_ERROR(cudaMalloc(&particlesCopy, particleCount * sizeof(Particle)));
 
 			HANDLE_ERROR(cudaMemcpy(particles, particlesVec.data(), particleCount * sizeof(Particle), cudaMemcpyHostToDevice));
 
@@ -315,6 +321,8 @@ namespace Fluid_3D_PCISPH {
 			gridSize.z = ceil(gridDimension.z / kernelRadius);
 
 			cellCount = gridSize.x * gridSize.y * gridSize.z;
+
+			HANDLE_ERROR(cudaMalloc(&particleIndices, particleCount * sizeof(*particleIndices)));
 
 			HANDLE_ERROR(cudaMalloc(&particleHashes, particleCount * sizeof(*particleHashes)));
 			HANDLE_ERROR(cudaMalloc(&cellBegin, cellCount * sizeof(*cellBegin)));
@@ -354,6 +362,9 @@ namespace Fluid_3D_PCISPH {
 			std::cout << "variance : " << variance << std::endl;
 
 
+			mesher = std::make_shared<Mesher>(gridSize.x, gridSize.y, gridSize.z, particleCount, numBlocks, numThreads);
+			meshRenderer = std::make_shared<FluidMeshRenderer>(mesher->triangleCount);
+
 
 
 		}
@@ -367,12 +378,25 @@ namespace Fluid_3D_PCISPH {
 		virtual void draw(const DrawCommand& drawCommand) override {
 			skybox.draw(drawCommand);
 			updateVBO();
-			pointSprites->draw( drawCommand, particleSpacing / 2.0,skybox.texSkyBox);
 			container.draw(drawCommand);
+
+			if (drawCommand.renderMode == RenderMode::Mesh) {
+				mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice, gridDimension);
+				cudaDeviceSynchronize();
+				meshRenderer->draw(drawCommand);
+			}
+			else {
+				pointSprites->draw(drawCommand, particleSpacing, skybox.texSkyBox);
+			}
+
+		}
+
+		virtual void init(std::shared_ptr<FluidConfig> config) {
+
 		}
 
 		void computeRestDensity() {
-			performSpatialHashing(particleHashes, particles, particleCount, kernelRadius, gridSize.x, gridSize.y, gridSize.z, numBlocks, numThreads, cellBegin, cellEnd,cellCount);
+			performSpatialHashing2(particleIndices, particleHashes, particles, particlesCopy, particleCount, kernelRadius, gridSize.x, gridSize.y, gridSize.z, numBlocks, numThreads, cellBegin, cellEnd,cellCount);
 
 			predictDensityAndPressureImpl << <numBlocks, numThreads >> >
 			(particles, kernelRadius, particleCount, cellBegin, cellEnd, gridSize, kernelRadius, true, timestep / (float)substeps);

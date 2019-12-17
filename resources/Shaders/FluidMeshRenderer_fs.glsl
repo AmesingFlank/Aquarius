@@ -4,7 +4,7 @@ out vec4 color;
 
 void main()
 {
-	float intensity = FragPos.y / 5;
+	float intensity = 0.2 + 0.8*(FragPos.y)/5;
 	color = vec4(FragPos.x/10,FragPos.y/5,FragPos.z/10, 1);
 
 	color *= intensity;

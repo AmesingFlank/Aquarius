@@ -269,13 +269,6 @@ namespace Fluid_3D_FLIP {
 		//particle.velocity = newGridVelocity; //PIC
 
 
-		if (isinf(particle.velocity.y)) {
-			printf("inf y in transfertoParticle\n");
-		}
-		if (isnan(particle.velocity.y)) {
-			printf("nah y in transfertoParticle\n");
-		}
-
 	}
 
 	__global__  void moveParticlesImpl(float timeStep, Cell3D* cells, Particle* particles, int particleCount, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize) {
@@ -305,12 +298,6 @@ namespace Fluid_3D_FLIP {
 
 		particle.position = destPos;
 
-		if (isinf(particle.velocity.y)) {
-			printf("inf y in moveParticle\n");
-		}
-		if (isnan(particle.velocity.y)) {
-			printf("nah y in moveParticle\n");
-		}
 
 	}
 
@@ -424,11 +411,15 @@ namespace Fluid_3D_FLIP {
 		container->draw(drawCommand);
 
 		float renderRadius = cellPhysicalSize / pow(particlesPerCell, 1.0 / 3.0);
-		//pointSprites->draw(drawCommand, renderRadius, skybox.texSkyBox);
-
-		mesher->mesh(particles, particlesCopy,particleHashes,particleIndices,particleCount,numBlocksParticle,numThreadsParticle, meshRenderer->coordsDevice,make_float3(sizeX,sizeY,sizeZ)*cellPhysicalSize);
-		cudaDeviceSynchronize();
-		meshRenderer->draw(drawCommand);
+		if (drawCommand.renderMode == RenderMode::Mesh) {
+			mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice, make_float3(sizeX, sizeY, sizeZ) * cellPhysicalSize);
+			cudaDeviceSynchronize();
+			meshRenderer->draw(drawCommand);
+		}
+		else {
+			pointSprites->draw(drawCommand, renderRadius, skybox.texSkyBox);
+		}
+		
 
 		printGLError();
 
@@ -499,7 +490,7 @@ namespace Fluid_3D_FLIP {
 		HANDLE_ERROR(cudaMalloc(&particlesCopy, particleCount * sizeof(Particle)));
 
 
-		mesher = std::make_shared<Mesher>(sizeX, sizeY, sizeZ);
+		mesher = std::make_shared<Mesher>(sizeX, sizeY, sizeZ,particleCount,numBlocksParticle,numThreadsParticle);
 		meshRenderer = std::make_shared<FluidMeshRenderer>(mesher->triangleCount);
 	}
 
@@ -517,18 +508,6 @@ namespace Fluid_3D_FLIP {
 					particlesHost.emplace_back(particlePos, tag);
 				}
 			}
-		}
-
-		return;
-
-		for (int particle = 0; particle < particlesPerCell; ++particle) {
-			float xBias = (random0to1() - 0.5f) * cellPhysicalSize;
-			float yBias = (random0to1() - 0.5f) * cellPhysicalSize;
-			float zBias = (random0to1() - 0.5f) * cellPhysicalSize;
-			//xBias = 0;yBias=0;zBias=0;
-			float3 particlePos = centerPos + make_float3(xBias, yBias, zBias);
-
-			particlesHost.emplace_back(particlePos, tag);
 		}
 	}
 

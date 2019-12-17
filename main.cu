@@ -10,6 +10,8 @@
 
 
 #include "Fluid/Fluid_3D_FLIP.cuh"
+#include "Fluid/Fluid_3D_PCISPH.cuh"
+
 
 
 #include "Rendering/Renderer3D/camera.h"
@@ -22,8 +24,21 @@
 #include "Rendering/WindowInfo.h"
 #include "Fluid/FluidConfig.cuh"
 
+void SVD_Test() {
+	Mat3x3 m;
+	m.r0 = { 0,0,0 };
+	m.r1 = { 0,0,0 };
+	m.r2 = { 0,0,0 };
+	float3 eVals, v0, v1, v2;
+	computeSVD(m, eVals, v0, v1, v2);
+	std::cout << eVals.x << std::endl << eVals.y << std::endl << eVals.z << std::endl << std::endl;
+}
+
 
 int main( void ) {
+
+	SVD_Test();
+	//return 0;
 
 	initOpenGL();
 
@@ -57,6 +72,8 @@ int main( void ) {
 	Fluid_3D_FLIP::Fluid fluid;
 	fluid.init(config);
 
+	RenderMode renderMode = RenderMode::Mesh;
+
     while(!glfwWindowShouldClose(window)){
 
         glEnable(GL_DEPTH_TEST);
@@ -66,6 +83,10 @@ int main( void ) {
         glClearColor(0.25f,0.38f,0.5f,0.f);
         glfwPollEvents();
         InputHandler::Do_Movement();
+		if (InputHandler::keys[GLFW_KEY_SPACE]) {
+			InputHandler::keys[GLFW_KEY_SPACE] = false;
+			renderMode = (RenderMode) (((int)renderMode + 1) %  (int)RenderMode::MAX);
+		}
 
 		float near = 0.1;
 		float far = 1000;
@@ -75,7 +96,8 @@ int main( void ) {
         glm::mat4 projection = glm::perspective(camera->Zoom, widthHeightRatio, near,far);
 
 		DrawCommand drawCommand = {
-			view,projection,camera->Position,windowInfo.windowWidth,windowInfo.windowHeight,camera->Zoom,near,far
+			view,projection,camera->Position,windowInfo.windowWidth,windowInfo.windowHeight,camera->Zoom,near,far,
+			renderMode
 		};
 
 

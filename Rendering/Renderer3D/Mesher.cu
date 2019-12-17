@@ -291,26 +291,99 @@ float3 edgeToCoord[12] = {
 };
 
 
+
+__device__ __host__
+float getSDF(int x, int y, int z, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, int sizeX_mesh, int sizeY_mesh, int sizeZ_mesh, float cellPhysicalSize_mesh, float* sdf) {
+	if (x == 0 || y == 0 || z == 0 || x >= sizeX_mesh - 1 || y >= sizeY_mesh - 1 || z >= sizeZ_mesh - 1) {
+		return cellPhysicalSize_mesh;
+	}
+	float3 position = make_float3(x-1, y-1, z-1) * cellPhysicalSize_mesh;
+	float3 sdfGridPosition = position / cellPhysicalSize_SDF;
+
+	const int i = floor(sdfGridPosition.x);
+	const int j = floor(sdfGridPosition.y);
+	const int k = floor(sdfGridPosition.z);
+
+	if (i<0 || j<0 || k<0 || i>=sizeX_SDF-1 || j>=sizeY_SDF-1 || k>=sizeZ_SDF-1) {
+		//printf("%d,%d,%d,\n",i,j,k);
+	}
+
+	float u[2];
+	float v[2];
+	float w[2];
+	float weight[2][2][2];
+
+	// interpolant 
+	float sx = sdfGridPosition.x - i;
+	float sy = sdfGridPosition.y - j;
+	float sz = sdfGridPosition.z - k;
+
+	u[0] = 1.f - sx;
+	v[0] = 1.f - sy;
+	w[0] = 1.f - sz;
+
+	u[1] = sx;
+	v[1] = sy;
+	w[1] = sz;
+
+	
+
+	for (int a = 0; a < 2; ++a) {
+		for (int b = 0; b < 2; ++b) {
+			for (int c = 0; c < 2; ++c) {
+				weight[a][b][c] = u[a] * v[b] * w[c];
+			}
+		}
+	}
+	//if(x==1 && y==1 && z==1) printf("in device %p\n", sdf);
+
+#define getPhi(x_,y_,z_) (sdf[ (x_) *sizeY_SDF*sizeZ_SDF + (y_) * sizeZ_SDF + (z_)  ])
+//#define getPhi(x,y,z) (1)
+
+
+	float result = 
+		weight[0][0][0] * getPhi(i, j , k) +
+		weight[1][0][0] * getPhi(i+1, j, k) +
+		weight[0][1][0] * getPhi( i, j + 1, k) +
+		weight[1][1][0] * getPhi( i + 1, j + 1, k) +
+		weight[0][0][1] * getPhi( i, j, k + 1) +
+		weight[1][0][1] * getPhi( i + 1, j, k + 1) +
+		weight[0][1][1] * getPhi( i, j + 1, k + 1) +
+		weight[1][1][1] * getPhi( i + 1, j + 1, k + 1)
+		;
+
+	return result;
+
+//#undef getPhi
+}
+
+
+__device__
+float getSDF2(float* sdf) {
+	return sdf[0];
+}
+
+
 __global__
-void marchingCubes(float* output, float* sdf, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize) {
+void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, int sizeX_mesh, int sizeY_mesh, int sizeZ_mesh, float cellPhysicalSize_mesh,unsigned int* occupiedCellIndex) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if (index >= (sizeX-1) * (sizeY-1) * (sizeZ-1) ) return;
+	if (index >= (sizeX_mesh) * (sizeY_mesh) * (sizeZ_mesh) ) return;
 
-	int x = index / ( (sizeY-1) * (sizeZ-1));
-	int y = (index - x * ((sizeY-1) * (sizeZ-1))) / (sizeZ-1);
-	int z = index - x * ((sizeY-1) * (sizeZ-1)) - y * ((sizeZ-1));
+	int x = index / ( (sizeY_mesh) * (sizeZ_mesh));
+	int y = (index - x * ((sizeY_mesh) * (sizeZ_mesh))) / (sizeZ_mesh);
+	int z = index - x * ((sizeY_mesh) * (sizeZ_mesh)) - y * ((sizeZ_mesh));
 
 
 
-#define getIsFluid(x,y,z) (sdf[ (x) * (sizeY ) * (sizeZ) + (y) * (sizeZ) + (z)]<=0)
-#define getSDF(p) (sdf[ (p.x) * (sizeY ) * (sizeZ) + (p.y) * (sizeZ) + (p.z)])
+#define getIsFluid(x_,y_,z_) (getSDF(x_,y_,z_,sizeX_SDF,sizeY_SDF,sizeZ_SDF,cellPhysicalSize_SDF,sizeX_mesh,sizeY_mesh,sizeZ_mesh,cellPhysicalSize_mesh,sdf)<0)
 
-//#define getIsFluid(x,y,z) ((x>0 && y>0 && z>0 && x<sizeX-1 && y<sizeY-1 && z<sizeZ-1) && (x==5 && y==5 && z==5))
+//#define getIsFluid(x,y,z) (!(x == 0 || y == 0 || z == 0 || x >= sizeX_mesh - 1 || y >= sizeY_mesh - 1 || z >= sizeZ_mesh - 1))
 
 	int cubeType = 0;
 
-	int vertexIsFluid[8];
+	int vertexIsFluid[8] = {0,0,0,0,0,0,0,0};
+	//vertexIsFluid[0] = sdf[0] < 0;
 	vertexIsFluid[0] = getIsFluid(x,y,z);
 	vertexIsFluid[1] = getIsFluid(x+1, y, z);
 	vertexIsFluid[2] = getIsFluid(x+1, y, z+1);
@@ -331,16 +404,25 @@ void marchingCubes(float* output, float* sdf, int sizeX, int sizeY, int sizeZ, f
 
 	int* edges = triangleTable[cubeType]; // egdes of the cube that corresponds to vertices of triangles...
 
-	float3 thisCubeMinPos = make_float3(x - 0.5, y - 0.5, z - 0.5) * cellPhysicalSize;
+	float3 thisCubeMinPos = make_float3(x-1,y-1,z-1) * cellPhysicalSize_mesh;
 
+	int thisOccupiedCellIndex = -1;
+
+	
+#pragma unroll
 	for (int i = 0; i < 15; ++i) {
-		float3* base = ((float3*)output) + 15 * index + i;
+
+		
 		int e = edges[i];
-		if (e == -1) {
-			*base = make_float3(0, 0, 0);
-		}
-		else {
+		if (e != -1) {
 			//printf("not -1! (x,y,z)==(%d,%d,%d) , type == %d, i == %d , e == %d \n",x,y,z,cubeType,i,e);
+
+			if (thisOccupiedCellIndex == -1) {
+				thisOccupiedCellIndex = atomicInc(occupiedCellIndex, 1 << 22-1);
+				
+			}
+
+			float3* base = ((float3*)output) + 15 * thisOccupiedCellIndex + i;
 
 			int vertA = edgeToVertices[e][0];
 			int vertB = edgeToVertices[e][1];
@@ -351,38 +433,40 @@ void marchingCubes(float* output, float* sdf, int sizeX, int sizeY, int sizeZ, f
 			float3 posA = make_float3(coordsA);
 			float3 posB = make_float3(coordsB);
 
-			float sdfA = getSDF( (coordsA + make_int3(x, y, z)));
-			float sdfB = getSDF( (coordsB + make_int3(x, y, z)));
+			float sdfA = getSDF(coordsA.x + x, coordsA.y+y,coordsA.z+z, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sizeX_mesh, sizeY_mesh, sizeZ_mesh, cellPhysicalSize_mesh,sdf);
+			float sdfB = getSDF(coordsB.x + x, coordsB.y + y, coordsB.z + z, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sizeX_mesh, sizeY_mesh, sizeZ_mesh, cellPhysicalSize_mesh,sdf);
 
 			
 			float factor = -sdfA / (sdfB - sdfA);
 
+			factor = 0.5;
 
 			float3 coordsDiff = posA * (1.0-factor) + posB*factor;
-			*base = thisCubeMinPos + coordsDiff*cellPhysicalSize;
+			*base = thisCubeMinPos + coordsDiff*cellPhysicalSize_mesh;
 		}
 	}
 
 	return;
 
 
-	if (!getIsFluid(x,y,z)) return;
+	//if (!getIsFluid(x,y,z)) return;
 
 	float3* base = ((float3*)output) + 3 * index;
 	
-	base[0] = make_float3(x, y, z) * cellPhysicalSize;
-	base[1] = make_float3(x + 1, y, z) * cellPhysicalSize;
-	base[2] = make_float3(x + 1, y + 1, z) * cellPhysicalSize;
+	base[0] = make_float3(x, y, z) * cellPhysicalSize_SDF;
+	base[1] = make_float3(x + 1, y, z) * cellPhysicalSize_SDF;
+	base[2] = make_float3(x + 1, y + 1, z) * cellPhysicalSize_SDF;
 	return;
 
-#undef getIsFluid
-#undef getSDF
+//#undef getIsFluid
+//#undef getSDF
 }
 
 
 
 __global__
-void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float particleRadius,float* sdf, int* hasSDF,float3* meanXs) {
+void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float particleRadius,float* sdf, int* hasSDF,float3* meanXCell) {
+
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
 	int cellCount = (sizeX) * (sizeY) * (sizeZ);
@@ -393,9 +477,6 @@ void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, flo
 	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
 	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
 
-	if (x == 0 || y == 0 || z == 0 || x == sizeX - 1 || y == sizeY - 1 || z == sizeZ - 1) {
-		return;
-	}
 
 	if (hasSDF[index]) {
 		return;
@@ -405,19 +486,19 @@ void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, flo
 	float newSDF = 0;
 	float3 newMeanX;
 
-	float3 centerPos = make_float3((x - 0.5), (y - 0.5), (z - 0.5)) * cellPhysicalSize;
+	float3 centerPos = make_float3(x,y,z) * cellPhysicalSize;
 
 #pragma unroll
 	for (int dx = -1; dx <= 1; ++dx) {
 #pragma unroll
-		for (int dy = -1; dy <= 1; ++dy) {
+		for (int dy = -3; dy <= 1; ++dy) {
 #pragma unroll
 			for (int dz = -1; dz <= 1; ++dz) {
 				int cell = (x + dx) * sizeY * sizeZ + (y + dy) * sizeZ + z + dz;
 
 				if (cell >= 0 && cell < cellCount) {
 					if (hasSDF[cell]) {
-						float3 thatMeanX = meanXs[cell];
+						float3 thatMeanX = meanXCell[cell];
 						float potentialNewSDF = length(thatMeanX - centerPos) - particleRadius;
 						if (!hasNewSDF || potentialNewSDF < newSDF) {
 							hasNewSDF = true;
@@ -433,7 +514,58 @@ void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, flo
 	if (hasNewSDF) {
 		hasSDF[index] = true;
 		sdf[index] = newSDF;
-		meanXs[index] = newMeanX;
+		meanXCell[index] = newMeanX;
 	}
+
+}
+
+
+__global__
+void smoothSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float particleRadius, float* sdf, int* hasSDF, float sigma) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	int cellCount = (sizeX) * (sizeY) * (sizeZ);
+
+	if (index >= cellCount) return;
+
+	int x = index / (sizeY * sizeZ);
+	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
+	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
+
+
+	if (!hasSDF[index]) {
+		return;
+	}
+
+	float newSDF = 0;
+
+	float originalSDF = sdf[index];
+
+	float3 centerPos = make_float3(x, y, z) * cellPhysicalSize;
+
+	float commonWeight = 0.0639 / sigma;  //= 1.0 / (pow(2 * M_PI, 3.0 / 2.0) * sigma);
+
+#pragma unroll
+	for (int dx = -1; dx <= 1; ++dx) {
+#pragma unroll
+		for (int dy = -1; dy <= 1; ++dy) {
+#pragma unroll
+			for (int dz = -1; dz <= 1; ++dz) {
+				int cell = (x + dx) * sizeY * sizeZ + (y + dy) * sizeZ + z + dz;
+				float3 thatPos = make_float3(x+dx, y+dy, z+dz) * cellPhysicalSize;
+				float weight = commonWeight * exp(-length(thatPos - centerPos) / (2*sigma*sigma));
+				if (cell >= 0 && cell < cellCount && hasSDF[cell]) {
+					float thatSDF = sdf[cell];
+					newSDF += thatSDF * weight;
+				}
+				else {
+					newSDF += originalSDF * weight;
+				}
+			}
+		}
+	}
+
+	if(newSDF * originalSDF > 0)
+	sdf[index] = newSDF;
 
 }

@@ -118,6 +118,7 @@
     <CudaCompile Include="Fluid\Fluid_3D_common.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_FLIP.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_kernels.cu" />
+    <CudaCompile Include="Fluid\SVD.cu" />
     <CudaCompile Include="main.cu" />
     <CudaCompile Include="Rendering\Renderer3D\FluidMeshRenderer.cu" />
     <CudaCompile Include="Rendering\Renderer3D\Mesher.cu" />
@@ -139,6 +140,7 @@
     <ClInclude Include="Fluid\Fluid_3D_PCISPH.cuh" />
     <ClInclude Include="Fluid\Fluid_3D_SPH.cuh" />
     <ClInclude Include="Fluid\PressureEquation.cuh" />
+    <ClInclude Include="Fluid\SVD.cuh" />
     <ClInclude Include="GpuCommons.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="Fluid\MAC_Grid_2D.cuh" />
@@ -152,6 +154,7 @@
     <ClInclude Include="Rendering\Renderer3D\FluidMeshRenderer.cuh" />
     <ClInclude Include="Rendering\Renderer3D\Mesher.cuh" />
     <ClInclude Include="Rendering\Renderer3D\PointSprites.h" />
+    <ClInclude Include="Rendering\Renderer3D\ScreenSpaceNormal.cuh" />
     <ClInclude Include="Rendering\Renderer3D\Skybox.h" />
     <ClInclude Include="Rendering\Shader.h" />
     <ClInclude Include="Rendering\stb_image.h" />

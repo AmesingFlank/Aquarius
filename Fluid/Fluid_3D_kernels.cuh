@@ -23,7 +23,6 @@ __global__  inline void calcHashImpl(int* particleHashes,  // output
 	int z = pos.z / cellPhysicalSize;
 	int hash = x * (sizeY*sizeZ)+y*(sizeZ)+z;
 
-
 	particleHashes[index] = hash;
 }
 
