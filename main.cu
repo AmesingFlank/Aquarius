@@ -56,8 +56,19 @@ int main( void ) {
 
 
 	std::shared_ptr<FluidConfig> config = getConfig();
-	Fluid_3D_FLIP::Fluid fluid;
-	fluid.init(config);
+	std::shared_ptr<Fluid> fluid;
+	if (config->method == "Fluid_3D_FLIP") {
+		fluid = std::static_pointer_cast<Fluid,Fluid_3D_FLIP::Fluid>(std::make_shared<Fluid_3D_FLIP::Fluid>());
+	}
+	else if (config->method == "Fluid_3D_PCISPH") {
+		fluid = std::static_pointer_cast<Fluid, Fluid_3D_PCISPH::Fluid>(std::make_shared<Fluid_3D_PCISPH::Fluid>());
+	}
+	else {
+		std::cout << "unsupported method in config file" << std::endl;
+		exit(1);
+	}
+
+	fluid->init(config);
 
 	RenderMode renderMode = RenderMode::Mesh;
 
@@ -98,14 +109,14 @@ int main( void ) {
         double currentTime = glfwGetTime();
 
 		if (!paused) {
-			fluid.simulationStep();
+			fluid->simulationStep();
 		}
 		else {
 			// There's still a bug that, when paused, the meshed rendering doesn't work, unless sleep for a while..
 			std::this_thread::sleep_for(std::chrono::milliseconds(16));
 		}
 		
-		fluid.draw(drawCommand);
+		fluid->draw(drawCommand);
 
         ++framesSinceLast;
 

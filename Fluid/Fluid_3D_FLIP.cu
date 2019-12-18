@@ -412,7 +412,7 @@ namespace Fluid_3D_FLIP {
 
 		if (drawCommand.renderMode == RenderMode::Mesh) {
 
-			mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice, make_float3(sizeX, sizeY, sizeZ) * cellPhysicalSize);
+			mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
 
 			cudaDeviceSynchronize();
 			meshRenderer->draw(drawCommand,skybox.texSkyBox);
@@ -496,7 +496,7 @@ namespace Fluid_3D_FLIP {
 		HANDLE_ERROR(cudaMalloc(&particlesCopy, particleCount * sizeof(Particle)));
 
 
-		mesher = std::make_shared<Mesher>(sizeX, sizeY, sizeZ,particleCount,numBlocksParticle,numThreadsParticle);
+		mesher = std::make_shared<Mesher>(make_float3(sizeX,sizeY,sizeZ)*cellPhysicalSize,cellPhysicalSize/2, particleCount,numBlocksParticle,numThreadsParticle);
 		meshRenderer = std::make_shared<FluidMeshRenderer>(mesher->triangleCount);
 	}
 

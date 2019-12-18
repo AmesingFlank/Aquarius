@@ -7,11 +7,12 @@
 
 struct FluidMeshRenderer {
 	int count;
-	const int floatsPerVertex = 3;
+	const int floatsPerVertex = 6;
 	float* coordsHost;
 	float* coordsDevice;
 	GLuint VAO, VBO;
-	GLint vPos_location;
+	GLint positionLocation;
+	GLint normalLocation;
 	cudaGraphicsResource* cudaResourceVBO;
 	Shader* shader;
 	Shader* depthShader;

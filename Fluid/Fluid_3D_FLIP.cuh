@@ -58,7 +58,7 @@ namespace Fluid_3D_FLIP{
 
 	
 
-	class Fluid :Fluid_3D {
+	class Fluid :public Fluid_3D {
 	public:
 
 		int sizeX;

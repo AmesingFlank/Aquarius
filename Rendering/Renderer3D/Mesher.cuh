@@ -353,7 +353,11 @@ struct Mesher {
 	float3* meanXParticle;
 	float3* anistropy;
 
-	Mesher(int sizeX_sim, int sizeY_sim, int sizeZ_sim,int particleCount_,int numBlocksParticle_,int numThreadsParticle_){
+	float cellPhysicalSize_SDF;
+	float particleRadius;
+	float cellPhysicalSize_mesh;
+
+	Mesher(float3 containerSize,float particleSpacing,int particleCount_,int numBlocksParticle_,int numThreadsParticle_){
 
 		particleCount = particleCount_;
 		numBlocksParticle = numBlocksParticle_;
@@ -361,9 +365,14 @@ struct Mesher {
 
 		float f = 1;
 
-		sizeX_SDF = f*sizeX_sim + 2;
-		sizeY_SDF = f*sizeY_sim + 2;
-		sizeZ_SDF = f*sizeZ_sim + 2;
+		cellPhysicalSize_SDF = particleSpacing * 2;
+		particleRadius = particleSpacing;
+
+		cellPhysicalSize_mesh = containerSize.x / (float)(sizeX_mesh - 2);
+
+		sizeX_SDF = 1 + containerSize.x / cellPhysicalSize_SDF;
+		sizeY_SDF = 1 + containerSize.y / cellPhysicalSize_SDF;
+		sizeZ_SDF = 1 + containerSize.z / cellPhysicalSize_SDF;
 
 		cellCount_SDF = sizeX_SDF * sizeY_SDF * sizeZ_SDF;
 
@@ -393,18 +402,16 @@ struct Mesher {
 	}
 
 	template<typename Particle>
-	void mesh(Particle*& particles, Particle*& particlesCopy,int* particleHashes, int* particleIndices, float* output, float3 containerSize) {
+	void mesh(Particle*& particles, Particle*& particlesCopy,int* particleHashes, int* particleIndices, float* output) {
 
 		cudaDeviceSynchronize(); //make sure all atomic calls to occupiedCellIndex finishes
 		HANDLE_ERROR(cudaMemset(occupiedCellIndex, 0, sizeof(unsigned int)));
 		cudaDeviceSynchronize(); //make sure memset finishes before the atomics start
 		
 
-		HANDLE_ERROR(cudaMemset(output, 0, triangleCount * 3 * 3 * sizeof(float)));
+		HANDLE_ERROR(cudaMemset(output, 0, triangleCount * 3 * 6 * sizeof(float)));
 
 
-		float cellPhysicalSize_SDF = containerSize.x / (float)(sizeX_SDF-1 );
-		float particleRadius = cellPhysicalSize_SDF / 2;
 
 
 		performSpatialHashing2(particleIndices, particleHashes, particles, particlesCopy, particleCount, cellPhysicalSize_SDF, sizeX_SDF, sizeY_SDF, sizeZ_SDF, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount_SDF);
@@ -437,7 +444,6 @@ struct Mesher {
 			CHECK_CUDA_ERROR("smooth sdf");
 		}
 
-		float cellPhysicalSize_mesh = containerSize.x / (float)(sizeX_mesh-1);
 
 		marchingCubes<<<numBlocksCell_mesh,numThreadsCell_mesh >>>(output, sdf, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF,sizeX_mesh, sizeY_mesh,sizeZ_mesh, cellPhysicalSize_mesh,occupiedCellIndex);
 		CHECK_CUDA_ERROR("marching cubes");

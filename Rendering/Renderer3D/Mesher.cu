@@ -291,7 +291,7 @@ float3 edgeToCoord[12] = {
 };
 
 
-
+// Get SDF using grid coordinates;
 __device__ __host__
 float getSDF(int x, int y, int z, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, int sizeX_mesh, int sizeY_mesh, int sizeZ_mesh, float cellPhysicalSize_mesh, float* sdf) {
 	if (x == 0 || y == 0 || z == 0 || x >= sizeX_mesh - 1 || y >= sizeY_mesh - 1 || z >= sizeZ_mesh - 1) {
@@ -353,6 +353,69 @@ float getSDF(int x, int y, int z, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, f
 #undef getPhi
 }
 
+// get sdf using world space coordinates
+__device__ __host__
+float getSDF(float3 position, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, float* sdf) {
+	
+	float3 sdfGridPosition = position / cellPhysicalSize_SDF;
+
+	int i = floor(sdfGridPosition.x);
+	int j = floor(sdfGridPosition.y);
+	int k = floor(sdfGridPosition.z);
+
+	i = max(0, min(sizeX_SDF - 2, i));
+	j = max(0, min(sizeY_SDF - 2, j));
+	k = max(0, min(sizeZ_SDF - 2, k));
+
+
+	float u[2];
+	float v[2];
+	float w[2];
+	float weight[2][2][2];
+
+	// interpolant 
+	float sx = sdfGridPosition.x - i;
+	float sy = sdfGridPosition.y - j;
+	float sz = sdfGridPosition.z - k;
+
+	u[0] = 1.f - sx;
+	v[0] = 1.f - sy;
+	w[0] = 1.f - sz;
+
+	u[1] = sx;
+	v[1] = sy;
+	w[1] = sz;
+
+
+
+	for (int a = 0; a < 2; ++a) {
+		for (int b = 0; b < 2; ++b) {
+			for (int c = 0; c < 2; ++c) {
+				weight[a][b][c] = u[a] * v[b] * w[c];
+			}
+		}
+	}
+
+#define getPhi(x_,y_,z_) (sdf[ (x_) *sizeY_SDF*sizeZ_SDF + (y_) * sizeZ_SDF + (z_)  ])
+
+
+	float result =
+		weight[0][0][0] * getPhi(i, j, k) +
+		weight[1][0][0] * getPhi(i + 1, j, k) +
+		weight[0][1][0] * getPhi(i, j + 1, k) +
+		weight[1][1][0] * getPhi(i + 1, j + 1, k) +
+		weight[0][0][1] * getPhi(i, j, k + 1) +
+		weight[1][0][1] * getPhi(i + 1, j, k + 1) +
+		weight[0][1][1] * getPhi(i, j + 1, k + 1) +
+		weight[1][1][1] * getPhi(i + 1, j + 1, k + 1)
+		;
+
+	return result;
+
+#undef getPhi
+}
+
+
 
 __device__
 float getSDF2(float* sdf) {
@@ -371,7 +434,6 @@ void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int 
 	int z = index - x * ((sizeY_mesh) * (sizeZ_mesh)) - y * ((sizeZ_mesh));
 
 
-
 #define getIsFluid(x_,y_,z_) (getSDF(x_,y_,z_,sizeX_SDF,sizeY_SDF,sizeZ_SDF,cellPhysicalSize_SDF,sizeX_mesh,sizeY_mesh,sizeZ_mesh,cellPhysicalSize_mesh,sdf)<0)
 
 //#define getIsFluid(x,y,z) (!(x == 0 || y == 0 || z == 0 || x >= sizeX_mesh - 1 || y >= sizeY_mesh - 1 || z >= sizeZ_mesh - 1))
@@ -379,7 +441,7 @@ void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int 
 	int cubeType = 0;
 
 	int vertexIsFluid[8] = {0,0,0,0,0,0,0,0};
-	//vertexIsFluid[0] = sdf[0] < 0;
+
 	vertexIsFluid[0] = getIsFluid(x,y,z);
 	vertexIsFluid[1] = getIsFluid(x+1, y, z);
 	vertexIsFluid[2] = getIsFluid(x+1, y, z+1);
@@ -416,7 +478,8 @@ void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int 
 				
 			}
 
-			float3* base = ((float3*)output) + 15 * thisOccupiedCellIndex + i;
+			float3* position = ((float3*)output) + 2*(15 * thisOccupiedCellIndex + i);
+			float3* normal = position + 1;
 
 			int vertA = edgeToVertices[e][0];
 			int vertB = edgeToVertices[e][1];
@@ -436,7 +499,27 @@ void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int 
 			//factor = 0.5;
 
 			float3 coordsDiff = posA * (1.0-factor) + posB*factor;
-			*base = thisCubeMinPos + coordsDiff*cellPhysicalSize_mesh;
+			float3 pos = thisCubeMinPos + coordsDiff * cellPhysicalSize_mesh;
+
+			*position = pos;
+
+			float dx = cellPhysicalSize_mesh / 4;
+
+			float sdfLeft = 
+				getSDF(pos + make_float3(-dx, 0, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdf);
+			float sdfRight =
+				getSDF(pos + make_float3(dx, 0, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdf);
+			float sdfUp =
+				getSDF(pos + make_float3(0, dx, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdf);
+			float sdfDown =
+				getSDF(pos + make_float3(0, -dx, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdf);
+			float sdfFront =
+				getSDF(pos + make_float3(0, 0, dx), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdf);
+			float sdfBack =
+				getSDF(pos + make_float3(0, 0, -dx), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdf);
+
+			float3 norm = make_float3(sdfRight - sdfLeft, sdfUp - sdfDown, sdfFront - sdfBack);
+			*normal = normalize(norm);
 		}
 	}
 

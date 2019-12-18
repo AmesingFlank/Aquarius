@@ -16,8 +16,8 @@ FluidMeshRenderer::FluidMeshRenderer(int count_) :count(count_) {
 		Shader::SHADERS_PATH("FluidMeshRenderer_depth_fs.glsl").c_str(),
 		nullptr);
 
-	vPos_location = glGetAttribLocation(shader->Program, "position");
-
+	positionLocation = glGetAttribLocation(shader->Program, "position");
+	normalLocation = glGetAttribLocation(shader->Program, "normal");
 
 
 	glGenVertexArrays(1, &VAO);
@@ -25,8 +25,13 @@ FluidMeshRenderer::FluidMeshRenderer(int count_) :count(count_) {
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * count * 3 *floatsPerVertex, coordsHost, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(vPos_location);
-	glVertexAttribPointer(vPos_location, 3, GL_FLOAT, GL_FALSE, sizeof(float) *  floatsPerVertex, 0);
+
+	glEnableVertexAttribArray(positionLocation);
+	glVertexAttribPointer(positionLocation, 3, GL_FLOAT, GL_FALSE, sizeof(float) *  floatsPerVertex, 0);
+
+	glEnableVertexAttribArray(normalLocation);
+	glVertexAttribPointer(normalLocation, 3, GL_FLOAT, GL_FALSE, sizeof(float) * floatsPerVertex, 
+		(void*) (3*sizeof(float)));
 
 	HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaResourceVBO, VBO, cudaGraphicsMapFlagsNone));
 

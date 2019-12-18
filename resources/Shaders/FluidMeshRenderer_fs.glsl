@@ -2,6 +2,7 @@
 in vec3 fragPos;
 out vec4 color;
 in vec3 fragPosNDC;
+in vec3 fragNormal;
 
 uniform sampler2D normalTexture;
 
@@ -34,6 +35,8 @@ void main()
 
 	vec3 viewSpaceNormal = texture(normalTexture, texCoords).rgb;
 	vec3 normal = mat3(inverseView) * viewSpaceNormal;
+
+	//normal = fragNormal;
 
 	color.rgb = normal;
 
