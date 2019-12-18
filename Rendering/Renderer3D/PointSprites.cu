@@ -7,16 +7,16 @@ void PointSprites::draw(const DrawCommand& drawCommand, float radius, int skybox
 		drawSimple(drawCommand, radius); return;
 	}
 	
-
-	renderDepth(drawCommand, radius);
-
-	smoothDepth(drawCommand, 10, 5, 6, 0.1);
-
-	renderNormal(drawCommand);
+	GLuint normalTexture = screenSpaceNormal.generateNormalTexture([&]() 
+		{
+			renderDepth(drawCommand,radius);
+		},
+		6, 5, 6, 0.1, drawCommand);
+	GLuint depthTexture = screenSpaceNormal.lastDepthTexture;
 
 	renderThickness(drawCommand, radius);
 
-	renderFinal(drawCommand, skybox);
+	renderFinal(drawCommand, skybox,normalTexture,depthTexture);
 	printGLError();
 }
 
@@ -29,24 +29,6 @@ void PointSprites::initScreenSpaceRenderer() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	glGenTextures(1, &depthTextureA);
-	glBindTexture(GL_TEXTURE_2D, depthTextureA);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, WindowInfo::instance().windowWidth, WindowInfo::instance().windowHeight, 0, GL_RED, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	glGenTextures(1, &depthTextureB);
-	glBindTexture(GL_TEXTURE_2D, depthTextureB);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32F, WindowInfo::instance().windowWidth, WindowInfo::instance().windowHeight, 0, GL_RED, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	glGenTextures(1, &normalTexture);
-	glBindTexture(GL_TEXTURE_2D, normalTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, WindowInfo::instance().windowWidth, WindowInfo::instance().windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
 	glGenTextures(1, &thicknessTexture);
 	glBindTexture(GL_TEXTURE_2D, thicknessTexture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, WindowInfo::instance().windowWidth, WindowInfo::instance().windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
@@ -56,9 +38,6 @@ void PointSprites::initScreenSpaceRenderer() {
 	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTextureNDC, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, depthTextureA, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, depthTextureB, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, normalTexture, 0);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, thicknessTexture, 0);
 
 
@@ -74,19 +53,12 @@ void PointSprites::initScreenSpaceRenderer() {
 		Shader::SHADERS_PATH("PointSprites_render_vs.glsl").c_str(),
 		Shader::SHADERS_PATH("PointSprites_render_fs.glsl").c_str()
 	);
-	normalShader = new Shader(
-		Shader::SHADERS_PATH("PointSprites_normal_vs.glsl").c_str(),
-		Shader::SHADERS_PATH("PointSprites_normal_fs.glsl").c_str()
-	);
+	
+
 	thicknessShader = new Shader(
 		Shader::SHADERS_PATH("PointSprites_thickness_vs.glsl").c_str(),
 		Shader::SHADERS_PATH("PointSprites_thickness_fs.glsl").c_str()
 	);
-	smoothShader = new Shader(
-		Shader::SHADERS_PATH("PointSprites_smooth_vs.glsl").c_str(),
-		Shader::SHADERS_PATH("PointSprites_smooth_fs.glsl").c_str()
-	);
-
 
 	glGenVertexArrays(1, &quadVAO);
 	glGenBuffers(1, &quadVBO);
@@ -109,22 +81,12 @@ void PointSprites::initScreenSpaceRenderer() {
 
 
 void PointSprites::renderDepth(const DrawCommand& drawCommand, float radius) {
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	glDisable(GL_BLEND);
-
-	glClear(GL_DEPTH_BUFFER_BIT);
-
 	glm::mat4 view = drawCommand.view;
 	glm::mat4 projection = drawCommand.projection;
 	glm::vec3 cameraPos = drawCommand.cameraPosition;
 
 	depthShader->Use();
 
-	GLenum bufs[] = { GL_COLOR_ATTACHMENT0 };
-	glDrawBuffers(1, bufs);
-
-	static const float zero[] = { 0, 0, 0, 0 };
-	glClearBufferfv(GL_COLOR, 0, zero);
 
 	glUniformMatrix4fv(glGetUniformLocation(depthShader->Program, "model")
 		, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(model));
@@ -146,128 +108,8 @@ void PointSprites::renderDepth(const DrawCommand& drawCommand, float radius) {
 
 	glDrawArrays(GL_POINTS, 0, count);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glEnable(GL_BLEND);
-
-	lastDepthTexture = depthTextureA;
-
 }
 
-void PointSprites::smoothDepth(const DrawCommand& drawCommand, int iterations, int smoothRadius, float sigma_d, float sigma_r) {
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	glDisable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
-
-	smoothShader->Use();
-	glBindVertexArray(quadVAO);
-
-	GLuint windowWidthLocation = glGetUniformLocation(smoothShader->Program, "windowWidth");
-	glUniform1f(windowWidthLocation, drawCommand.windowWidth);
-
-	GLuint windowHeightLocation = glGetUniformLocation(smoothShader->Program, "windowHeight");
-	glUniform1f(windowHeightLocation, drawCommand.windowHeight);
-
-	GLuint smoothRadiusXLocation = glGetUniformLocation(smoothShader->Program, "smoothRadiusX");
-	GLuint smoothRadiusYLocation = glGetUniformLocation(smoothShader->Program, "smoothRadiusY");
-
-
-	GLuint sigma_d_location = glGetUniformLocation(smoothShader->Program, "sigma_d");
-	glUniform1f(sigma_d_location, sigma_d);
-
-	GLuint sigma_r_location = glGetUniformLocation(smoothShader->Program, "sigma_r");
-	glUniform1f(sigma_r_location, sigma_r);
-
-	int smoothRadiusX = smoothRadius;
-	int smoothRadiusY = smoothRadius;
-
-
-	for (int i = 0; i < iterations; i++) {
-
-		GLuint targetAttachment;
-		GLuint nextDepthTexture;
-
-		if (lastDepthTexture == depthTextureA) {
-			targetAttachment = GL_COLOR_ATTACHMENT1;
-			nextDepthTexture = depthTextureB;
-		}
-		else {
-			targetAttachment = GL_COLOR_ATTACHMENT0;
-			nextDepthTexture = depthTextureA;
-		}
-
-		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-
-		smoothShader->Use();
-		glBindVertexArray(quadVAO);
-
-
-
-		GLenum bufs[] = { targetAttachment };
-		glDrawBuffers(1, bufs);
-
-
-		static const float zero[] = { 0,0,0,0 };
-		glClearBufferfv(GL_COLOR, 0, zero);
-
-
-		glUniform1i(smoothRadiusXLocation, smoothRadiusX);
-		glUniform1i(smoothRadiusYLocation, smoothRadiusY);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, lastDepthTexture);
-		GLuint depthTextureLocation = glGetUniformLocation(smoothShader->Program, "depthTexture");
-		glUniform1i(depthTextureLocation, 0);
-
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		lastDepthTexture = nextDepthTexture;
-		std::swap(smoothRadiusX, smoothRadiusY);
-	}
-
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glEnable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-}
-
-void PointSprites::renderNormal(const DrawCommand& drawCommand) {
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	glDisable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
-
-	GLenum bufs[] = { GL_COLOR_ATTACHMENT2 };
-	glDrawBuffers(1, bufs);
-
-	static const float zero[] = { 0,0,0,0 };
-	glClearBufferfv(GL_COLOR, 0, zero);
-
-	normalShader->Use();
-	glBindVertexArray(quadVAO);
-
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, lastDepthTexture);
-	GLuint depthTextureLocation = glGetUniformLocation(normalShader->Program, "depthTexture");
-	glUniform1i(depthTextureLocation, 0);
-
-	GLuint windowWidthLocation = glGetUniformLocation(normalShader->Program, "windowWidth");
-	glUniform1f(windowWidthLocation, drawCommand.windowWidth);
-
-	GLuint windowHeightLocation = glGetUniformLocation(normalShader->Program, "windowHeight");
-	glUniform1f(windowHeightLocation, drawCommand.windowHeight);
-
-	GLuint zoomLocation = glGetUniformLocation(normalShader->Program, "zoom");
-	glUniform1f(zoomLocation, drawCommand.zoom);
-
-	glDrawArrays(GL_TRIANGLES, 0, 6);
-
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glEnable(GL_BLEND);
-	glEnable(GL_DEPTH_TEST);
-
-}
 
 void PointSprites::renderThickness(const DrawCommand& drawCommand, float radius) {
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
@@ -319,7 +161,7 @@ void PointSprites::renderThickness(const DrawCommand& drawCommand, float radius)
 
 }
 
-void PointSprites::renderFinal(const DrawCommand& drawCommand, int skybox) {
+void PointSprites::renderFinal(const DrawCommand& drawCommand, int skybox,GLuint normalTexture,GLuint depthTexture) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
@@ -328,7 +170,7 @@ void PointSprites::renderFinal(const DrawCommand& drawCommand, int skybox) {
 	glBindVertexArray(quadVAO);
 
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, lastDepthTexture);
+	glBindTexture(GL_TEXTURE_2D, depthTexture);
 	GLuint depthTextureLocation = glGetUniformLocation(renderShader->Program, "depthTexture");
 	glUniform1i(depthTextureLocation, 0);
 

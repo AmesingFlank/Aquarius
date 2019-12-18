@@ -304,9 +304,7 @@ float getSDF(int x, int y, int z, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, f
 	const int j = floor(sdfGridPosition.y);
 	const int k = floor(sdfGridPosition.z);
 
-	if (i<0 || j<0 || k<0 || i>=sizeX_SDF-1 || j>=sizeY_SDF-1 || k>=sizeZ_SDF-1) {
-		//printf("%d,%d,%d,\n",i,j,k);
-	}
+
 
 	float u[2];
 	float v[2];
@@ -335,10 +333,8 @@ float getSDF(int x, int y, int z, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, f
 			}
 		}
 	}
-	//if(x==1 && y==1 && z==1) printf("in device %p\n", sdf);
 
 #define getPhi(x_,y_,z_) (sdf[ (x_) *sizeY_SDF*sizeZ_SDF + (y_) * sizeZ_SDF + (z_)  ])
-//#define getPhi(x,y,z) (1)
 
 
 	float result = 
@@ -354,7 +350,7 @@ float getSDF(int x, int y, int z, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, f
 
 	return result;
 
-//#undef getPhi
+#undef getPhi
 }
 
 
@@ -415,8 +411,6 @@ void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int 
 		
 		int e = edges[i];
 		if (e != -1) {
-			//printf("not -1! (x,y,z)==(%d,%d,%d) , type == %d, i == %d , e == %d \n",x,y,z,cubeType,i,e);
-
 			if (thisOccupiedCellIndex == -1) {
 				thisOccupiedCellIndex = atomicInc(occupiedCellIndex, 1 << 22-1);
 				
@@ -439,7 +433,7 @@ void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int 
 			
 			float factor = -sdfA / (sdfB - sdfA);
 
-			factor = 0.5;
+			//factor = 0.5;
 
 			float3 coordsDiff = posA * (1.0-factor) + posB*factor;
 			*base = thisCubeMinPos + coordsDiff*cellPhysicalSize_mesh;

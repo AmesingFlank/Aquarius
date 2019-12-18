@@ -377,15 +377,15 @@ namespace Fluid_3D_PCISPH {
 
 		virtual void draw(const DrawCommand& drawCommand) override {
 			skybox.draw(drawCommand);
-			updateVBO();
 			container.draw(drawCommand);
 
 			if (drawCommand.renderMode == RenderMode::Mesh) {
 				mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice, gridDimension);
 				cudaDeviceSynchronize();
-				meshRenderer->draw(drawCommand);
+				meshRenderer->draw(drawCommand, skybox.texSkyBox);
 			}
 			else {
+				updateVBO();
 				pointSprites->draw(drawCommand, particleSpacing, skybox.texSkyBox);
 			}
 

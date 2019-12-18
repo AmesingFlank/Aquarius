@@ -3,6 +3,7 @@
 #include "../../GpuCommons.h"
 #include "../Shader.h"
 #include "../DrawCommand.h"
+#include "ScreenSpaceNormal.cuh"
 
 struct FluidMeshRenderer {
 	int count;
@@ -13,7 +14,11 @@ struct FluidMeshRenderer {
 	GLint vPos_location;
 	cudaGraphicsResource* cudaResourceVBO;
 	Shader* shader;
+	Shader* depthShader;
+
+	ScreenSpaceNormal screenSpaceNormal;
 
 	FluidMeshRenderer(int count_);
-	void draw(const DrawCommand& drawCommand);
+	void draw(const DrawCommand& drawCommand,GLuint skybox);
+	void drawDepth(const DrawCommand& drawCommand);
 };

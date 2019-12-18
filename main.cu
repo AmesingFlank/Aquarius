@@ -24,21 +24,8 @@
 #include "Rendering/WindowInfo.h"
 #include "Fluid/FluidConfig.cuh"
 
-void SVD_Test() {
-	Mat3x3 m;
-	m.r0 = { 0,0,0 };
-	m.r1 = { 0,0,0 };
-	m.r2 = { 0,0,0 };
-	float3 eVals, v0, v1, v2;
-	computeSVD(m, eVals, v0, v1, v2);
-	std::cout << eVals.x << std::endl << eVals.y << std::endl << eVals.z << std::endl << std::endl;
-}
-
 
 int main( void ) {
-
-	SVD_Test();
-	//return 0;
 
 	initOpenGL();
 
@@ -74,7 +61,10 @@ int main( void ) {
 
 	RenderMode renderMode = RenderMode::Mesh;
 
+	bool paused = false;
+
     while(!glfwWindowShouldClose(window)){
+
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
@@ -85,7 +75,11 @@ int main( void ) {
         InputHandler::Do_Movement();
 		if (InputHandler::keys[GLFW_KEY_SPACE]) {
 			InputHandler::keys[GLFW_KEY_SPACE] = false;
-			renderMode = (RenderMode) (((int)renderMode + 1) %  (int)RenderMode::MAX);
+			paused = !paused;
+		}
+		if (InputHandler::keys[GLFW_KEY_RIGHT_SHIFT]) {
+			InputHandler::keys[GLFW_KEY_RIGHT_SHIFT] = false;
+			renderMode = (RenderMode)(((int)renderMode + 1) % (int)RenderMode::MAX);
 		}
 
 		float near = 0.1;
@@ -103,7 +97,14 @@ int main( void ) {
 
         double currentTime = glfwGetTime();
 
-		fluid.simulationStep();
+		if (!paused) {
+			fluid.simulationStep();
+		}
+		else {
+			// There's still a bug that, when paused, the meshed rendering doesn't work, unless sleep for a while..
+			std::this_thread::sleep_for(std::chrono::milliseconds(16));
+		}
+		
 		fluid.draw(drawCommand);
 
         ++framesSinceLast;

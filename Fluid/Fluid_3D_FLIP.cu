@@ -1,6 +1,7 @@
 #include "Fluid_3D_FLIP.cuh"
 #include "MAC_Grid_3D.cuh"
 #include "../GpuCommons.h"
+#include <thread>
 namespace Fluid_3D_FLIP {
 	__global__  void transferToCellAccumPhase2(Cell3D* cells, Particle* particles, int particleCount, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -351,7 +352,7 @@ namespace Fluid_3D_FLIP {
 
 		//solvePressure(thisTimeStep,*grid);
 
-		solvePressureJacobi(thisTimeStep, *grid, 50);
+		solvePressureJacobi(thisTimeStep, *grid, 100);
 
 
 		updateVelocityWithPressure(thisTimeStep, *grid);
@@ -406,17 +407,22 @@ namespace Fluid_3D_FLIP {
 
 	void Fluid::draw(const DrawCommand& drawCommand){
 		skybox.draw(drawCommand);
-		updatePositionsVBO << <numBlocksParticle, numThreadsParticle >> > (particles, pointSprites->positionsDevice, particleCount);
-		cudaDeviceSynchronize();
-		container->draw(drawCommand);
+		
+		//container->draw(drawCommand);
 
-		float renderRadius = cellPhysicalSize / pow(particlesPerCell, 1.0 / 3.0);
 		if (drawCommand.renderMode == RenderMode::Mesh) {
+
 			mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice, make_float3(sizeX, sizeY, sizeZ) * cellPhysicalSize);
+
 			cudaDeviceSynchronize();
-			meshRenderer->draw(drawCommand);
+			meshRenderer->draw(drawCommand,skybox.texSkyBox);
+
 		}
 		else {
+			float renderRadius = cellPhysicalSize / pow(particlesPerCell, 1.0 / 3.0);
+
+			updatePositionsVBO << <numBlocksParticle, numThreadsParticle >> > (particles, pointSprites->positionsDevice, particleCount);
+			cudaDeviceSynchronize();
 			pointSprites->draw(drawCommand, renderRadius, skybox.texSkyBox);
 		}
 		

@@ -3,6 +3,7 @@
 #include "../../Fluid/MAC_Grid_3D.cuh"
 #include <memory>
 #include "../../Fluid/SVD.cuh"
+#include <thread>
 
 __global__
 void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, int sizeX_mesh, int sizeY_mesh, int sizeZ_mesh, float cellPhysicalSize_mesh,unsigned int* occupiedCellIndex);
@@ -23,6 +24,7 @@ inline void computeSDF(Particle* particles, int particleCount,float particleRadi
 	
 	// set to some postive value first. this means that, by default, all cells are not occupied.
 	sdf[index] = cellPhysicalSize;
+	hasSDF[index] = 0;
 
 	float3 sumX = { 0,0,0 };
 	float sumWeight = 0;
@@ -241,12 +243,6 @@ inline void computeAnistropy(Particle* particles, int particleCount, float parti
 
 	float result = f * (1.f - pow(1.f - pow((gammaMax - gamma) / (gammaMax - 1.f), 2), 3)) + 1.f - f;
 
-	if (isnan(gamma) || isinf(gamma)) {
-		printf("evs: %f %f\n", eVals.x, eVals.y);
-		printf("gmma: %f\n", gamma);
-		printf("result: %f\n", result);
-	}
-
 	anistropy[index].x = result;
 
 }
@@ -309,6 +305,10 @@ inline void computeSDF2(Particle* particles, int particleCount, float particleRa
 	}
 
 }
+
+__global__ inline void setOccupiedCellIndexToZero(unsigned int* addr) {
+	atomicAnd(addr, 0);
+}
 struct Mesher {
 
 	// two grids:
@@ -319,9 +319,9 @@ struct Mesher {
 	int sizeY_SDF;
 	int sizeZ_SDF;
 
-	int sizeX_mesh = 256;
-	int sizeY_mesh = 256;
-	int sizeZ_mesh = 256;
+	int sizeX_mesh = 128;
+	int sizeY_mesh = 128;
+	int sizeZ_mesh = 128;
 
 	int cellCount_mesh = sizeX_mesh * sizeY_mesh * sizeZ_mesh;
 
@@ -393,19 +393,21 @@ struct Mesher {
 	}
 
 	template<typename Particle>
-	void mesh(Particle* particles, Particle* particlesCopy,int* particleHashes, int* particleIndices, float* output, float3 containerSize) {
+	void mesh(Particle*& particles, Particle*& particlesCopy,int* particleHashes, int* particleIndices, float* output, float3 containerSize) {
+
+		cudaDeviceSynchronize(); //make sure all atomic calls to occupiedCellIndex finishes
+		HANDLE_ERROR(cudaMemset(occupiedCellIndex, 0, sizeof(unsigned int)));
+		cudaDeviceSynchronize(); //make sure memset finishes before the atomics start
 		
+
 		HANDLE_ERROR(cudaMemset(output, 0, triangleCount * 3 * 3 * sizeof(float)));
 
-		HANDLE_ERROR(cudaMemset(hasSDF, 0, cellCount_SDF * sizeof(*hasSDF)));
-
-		HANDLE_ERROR(cudaMemset(occupiedCellIndex, 0, sizeof(unsigned int)));
 
 		float cellPhysicalSize_SDF = containerSize.x / (float)(sizeX_SDF-1 );
 		float particleRadius = cellPhysicalSize_SDF / 2;
 
-		performSpatialHashing2(particleIndices, particleHashes, particles, particlesCopy, particleCount, cellPhysicalSize_SDF, sizeX_SDF, sizeY_SDF, sizeZ_SDF, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount_SDF);
 
+		performSpatialHashing2(particleIndices, particleHashes, particles, particlesCopy, particleCount, cellPhysicalSize_SDF, sizeX_SDF, sizeY_SDF, sizeZ_SDF, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount_SDF);
 
 
 
@@ -419,8 +421,8 @@ struct Mesher {
 		computeAnistropy << <numBlocksParticle, numThreadsParticle >> > (particles, particleCount, particleRadius, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, cellStart, cellEnd, covMats,anistropy);
 		CHECK_CUDA_ERROR("compute anistropy");
 
-
-
+		
+		
 
 		computeSDF2 << <numBlocksCell_SDF, numThreadsCell_SDF >> > (particles, particleCount, particleRadius, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, cellStart, cellEnd, sdf, hasSDF,meanXCell,anistropy);
 		CHECK_CUDA_ERROR("compute sdf");

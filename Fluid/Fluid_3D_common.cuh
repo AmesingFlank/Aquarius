@@ -29,15 +29,21 @@ void inline performSpatialHashing2(int* particleIndices, int* particleHashes, Pa
 	CHECK_CUDA_ERROR("calc hash");
 
 	thrust::sort_by_key(thrust::device, particleHashes, particleHashes + particleCount, particleIndices);
+	cudaDeviceSynchronize();
+
 
 	applySortImpl << < numBlocksParticle, numThreadsParticle >> > (particles, result, particleCount, particleIndices);
-	std::swap(particles, result);
 	CHECK_CUDA_ERROR("apply sort");
+
+	std::swap(particles, result);
+
 
 	HANDLE_ERROR(cudaMemset(cellStart, 255, cellCount * sizeof(*cellStart)));
 	HANDLE_ERROR(cudaMemset(cellEnd, 255, cellCount * sizeof(*cellEnd)));
 	findCellStartEndImpl << < numBlocksParticle, numThreadsParticle >> > (particleHashes, cellStart, cellEnd, particleCount);
 	CHECK_CUDA_ERROR("find cell start end");
+	cudaDeviceSynchronize();
+
 
 }
 

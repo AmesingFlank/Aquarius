@@ -123,6 +123,7 @@
     <CudaCompile Include="Rendering\Renderer3D\FluidMeshRenderer.cu" />
     <CudaCompile Include="Rendering\Renderer3D\Mesher.cu" />
     <CudaCompile Include="Rendering\Renderer3D\PointSprites.cu" />
+    <CudaCompile Include="Rendering\Renderer3D\ScreenSpaceNormal.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Fluid\Fluid.h" />
@@ -165,17 +166,18 @@
   <ItemGroup>
     <None Include="README.md" />
     <None Include="resources\LaunchConfigs.json" />
+    <None Include="resources\Shaders\FluidMeshRenderer_depth_fs.glsl" />
     <None Include="resources\Shaders\FluidMeshRenderer_fs.glsl" />
     <None Include="resources\Shaders\FluidMeshRenderer_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_depth_fs.glsl" />
     <None Include="resources\Shaders\PointSprites_depth_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_fs.glsl" />
-    <None Include="resources\Shaders\PointSprites_normal_fs.glsl" />
-    <None Include="resources\Shaders\PointSprites_normal_vs.glsl" />
+    <None Include="resources\Shaders\ScreenSpaceNormal_normal_fs.glsl" />
+    <None Include="resources\Shaders\ScreenSpaceNormal_normal_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_render_fs.glsl" />
     <None Include="resources\Shaders\PointSprites_render_vs.glsl" />
-    <None Include="resources\Shaders\PointSprites_smooth_fs.glsl" />
-    <None Include="resources\Shaders\PointSprites_smooth_vs.glsl" />
+    <None Include="resources\Shaders\ScreenSpaceNormal_smooth_fs.glsl" />
+    <None Include="resources\Shaders\ScreenSpaceNormal_smooth_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_thickness_fs.glsl" />
     <None Include="resources\Shaders\PointSprites_thickness_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_vs.glsl" />

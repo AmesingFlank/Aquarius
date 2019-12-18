@@ -51,10 +51,10 @@ void main() {
 	vec3 tangentX = vec3(dxViewSpace, 0, dzdx);
 	vec3 tangentY = vec3(0,dyViewSpace, dzdy);
 	vec3 normal = cross(tangentX,tangentY);
-	//normal = vec3(1,1,0);
 	normal = normalize(normal);
 	if(normal.z < 0) normal = -normal;
 
+	//normal = vec3(1, 1, 1);
 
 	normalOutput = vec4(normal,1);
 	
