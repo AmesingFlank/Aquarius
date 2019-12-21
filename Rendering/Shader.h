@@ -1,6 +1,3 @@
-//
-// Created by AmesingFlank on 2019-04-22.
-//
 
 #ifndef AQUARIUS_SHADER_H
 #define AQUARIUS_SHADER_H

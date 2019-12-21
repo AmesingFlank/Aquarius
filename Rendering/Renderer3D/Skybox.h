@@ -1,6 +1,3 @@
-//
-// Created by AmesingFlank on 04/01/2017.
-//
 
 #ifndef CUBEMAPLEARN_SKYBOX_H
 #define CUBEMAPLEARN_SKYBOX_H
@@ -11,7 +8,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../stb_image.h"
+#include <stb_image.h>
 #include "../../GpuCommons.h"
 #include "../DrawCommand.h"
 #include <vector>

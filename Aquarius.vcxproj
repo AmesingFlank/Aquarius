@@ -161,7 +161,6 @@
     <ClInclude Include="Rendering\Renderer3D\ScreenSpaceNormal.cuh" />
     <ClInclude Include="Rendering\Renderer3D\Skybox.h" />
     <ClInclude Include="Rendering\Shader.h" />
-    <ClInclude Include="Rendering\stb_image.h" />
     <ClInclude Include="Fluid\SPD_Solver.h" />
     <ClInclude Include="Fluid\WeightKernels.h" />
     <ClInclude Include="Rendering\WindowInfo.h" />

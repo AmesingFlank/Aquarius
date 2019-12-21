@@ -20,7 +20,7 @@ using namespace std;
 #include <assimp/postprocess.h>
 
 #include "mesh.h"
-#include "stb_image.h"
+#include <stb_image.h>
 
 static GLint TextureFromFile(const char* path, string directory, bool gamma = false);
 

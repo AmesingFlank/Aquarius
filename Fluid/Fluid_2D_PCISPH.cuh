@@ -1,6 +1,3 @@
-//
-// Created by AmesingFlank on 2019-07-01.
-//
 
 #ifndef AQUARIUS_FLUID_2D_PCISPH_CUH
 #define AQUARIUS_FLUID_2D_PCISPH_CUH

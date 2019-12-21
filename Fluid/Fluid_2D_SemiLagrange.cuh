@@ -1,6 +1,4 @@
-//
-// Created by AmesingFlank on 2019-04-16.
-//
+
 
 #ifndef AQUARIUS_FLUID_2D_SEMILAGRANGE_CUH
 #define AQUARIUS_FLUID_2D_SEMILAGRANGE_CUH

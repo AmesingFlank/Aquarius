@@ -1,6 +1,3 @@
-//
-// Created by AmesingFlank on 2019-07-03.
-//
 
 #ifndef AQUARIUS_WEIGHTKERNELS_H
 #define AQUARIUS_WEIGHTKERNELS_H

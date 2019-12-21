@@ -1,6 +1,4 @@
-//
-// Created by AmesingFlank on 2019-04-16.
-//
+
 
 #ifndef AQUARIUS_MAC_GRID_2D_CUH
 #define AQUARIUS_MAC_GRID_2D_CUH

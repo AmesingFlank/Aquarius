@@ -1,6 +1,3 @@
-//
-// Created by AmesingFlank on 2019-07-21.
-//
 
 #ifndef AQUARIUS_FLUID_2D_POISTIONBASED_CPU_H
 #define AQUARIUS_FLUID_2D_POISTIONBASED_CPU_H

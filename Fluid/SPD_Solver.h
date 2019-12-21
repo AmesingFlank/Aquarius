@@ -1,6 +1,3 @@
-//
-// Created by AmesingFlank on 2019-04-20.
-//
 
 #ifndef AQUARIUS_SPD_SOLVER_H
 #define AQUARIUS_SPD_SOLVER_H

@@ -1,6 +1,4 @@
-//
-// Created by AmesingFlank on 2019-04-17.
-//
+
 
 #ifndef AQUARIUS_GPUCOMMONS_H
 #define AQUARIUS_GPUCOMMONS_H

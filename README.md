@@ -18,7 +18,15 @@ This is Dunfan Lu's (ongoing) 3rd year project at the CS department of Oxford.
 *3D FLIP ball-drop simulation. 50^3 grid, 8 particles per cell, mraching cubes*
 
 ![](demo/3d_flip_50.gif)
-*3D FLIP ball-drop simulation. 50^3 grid, 8 particles per cell, mraching cubes. Simulation + Rendering at around 20FPS on a GTX 1080 Ti*
+*3D FLIP ball-drop simulation. 50^3 grid, 8 particles per cell, marching cubes. Simulation + Rendering at around 20FPS on a GTX 1080 Ti*
 
 ![](demo/recording_0.gif)
 *2D semi-Lagrangian*
+
+## dependencies
+* GLFW
+* CUDA 
+* Assimp
+* STB image
+* View the vcproj file for details. CMakeList doens't work now.
+

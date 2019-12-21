@@ -1,6 +1,3 @@
-//
-// Created by AmesingFlank on 2019-08-13.
-//
 
 #ifndef AQUARIUS_INPUTHANDLER_H
 #define AQUARIUS_INPUTHANDLER_H
