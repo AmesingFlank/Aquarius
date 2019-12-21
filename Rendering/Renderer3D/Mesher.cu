@@ -300,7 +300,7 @@ float getSDF(int x, int y, int z, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, f
 	}
 	
 	float3 position = make_float3(x-1, y-1, z-1) * cellPhysicalSize_mesh;
-	float3 sdfGridPosition = position / cellPhysicalSize_SDF;
+	float3 sdfGridPosition = make_float3(1,1,1) + position / cellPhysicalSize_SDF;
 	float3 coord = {
 		sdfGridPosition.x / (sizeX_SDF - 1),
 		sdfGridPosition.y / (sizeY_SDF - 1),
@@ -314,7 +314,7 @@ float getSDF(int x, int y, int z, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, f
 __device__ __forceinline__
 float getSDF(float3 position, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, cudaTextureObject_t sdfTexture) {
 	
-	float3 sdfGridPosition = position / cellPhysicalSize_SDF;
+	float3 sdfGridPosition = make_float3(1, 1, 1) + position / cellPhysicalSize_SDF;
 	float3 coord = {
 		sdfGridPosition.x / (sizeX_SDF - 1),
 		sdfGridPosition.y / (sizeY_SDF - 1),
@@ -405,7 +405,7 @@ void marchingCubes(float* output, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, f
 
 			*position = pos;
 
-			float dx = cellPhysicalSize_mesh ;
+			float dx = cellPhysicalSize_mesh / 1 ;
 
 			float sdfLeft = 
 				getSDF(pos + make_float3(-dx,0, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF,  sdfTexture);

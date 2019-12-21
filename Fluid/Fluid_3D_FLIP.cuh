@@ -21,19 +21,13 @@
 namespace Fluid_3D_FLIP{
 	__device__ __host__ struct Particle {
 		float3 position = make_float3(0, 0, 0);
-		float kind = 0;
 		float3 velocity = make_float3(0, 0, 0);
-
-		int hash;
 
 		__device__ __host__
 			Particle() {
 
 		}
 		Particle(float3 pos) :position(pos) {
-
-		}
-		Particle(float3 pos, float tag) :position(pos), kind(tag) {
 
 		}
 	};
@@ -118,7 +112,7 @@ namespace Fluid_3D_FLIP{
 
 		virtual void init(std::shared_ptr<FluidConfig> config) override;
 
-		void createParticles(std::vector <Particle>& particlesHost, float3 centerPos, float tag = 0);
+		int createParticlesAt(std::vector <Particle>& particlesHost, float3 centerPos,std::function<bool(float3)> filter);
 
 		void createSquareFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp, float3 minPos,float3 maxPos, int startIndex = 0);
 

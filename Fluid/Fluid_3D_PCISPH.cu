@@ -171,33 +171,35 @@ namespace Fluid_3D_PCISPH {
 
 		float bounce = -0.0;
 
-		if (pos.x < spacing) {
-			pos.x = spacing;
+		float minDistanceFromWall = spacing / 2;
+
+		if (pos.x < minDistanceFromWall) {
+			pos.x = minDistanceFromWall;
 			vel.x *= bounce;;
 		}
 
-		if (pos.x > gridDimension.x - spacing) {
-			pos.x = gridDimension.x - spacing;
+		if (pos.x > gridDimension.x - minDistanceFromWall) {
+			pos.x = gridDimension.x - minDistanceFromWall;
 			vel.x *= bounce;;
 		}
 
-		if (pos.y < spacing) {
-			pos.y = spacing;
+		if (pos.y < minDistanceFromWall) {
+			pos.y = minDistanceFromWall;
 			vel.y *= bounce;;
 		}
 
-		if (pos.y > gridDimension.y - spacing) {
-			pos.y = gridDimension.y - spacing;
+		if (pos.y > gridDimension.y - minDistanceFromWall) {
+			pos.y = gridDimension.y - minDistanceFromWall;
 			vel.y *= bounce;;
 		}
 
-		if (pos.z < spacing) {
-			pos.z = spacing;
+		if (pos.z < minDistanceFromWall) {
+			pos.z = minDistanceFromWall;
 			vel.z *= bounce;;
 		}
 
-		if (pos.z > gridDimension.z - spacing) {
-			pos.z = gridDimension.z - spacing;
+		if (pos.z > gridDimension.z - minDistanceFromWall) {
+			pos.z = gridDimension.z - minDistanceFromWall;
 			vel.z *= bounce;;
 		}
 
@@ -366,13 +368,17 @@ namespace Fluid_3D_PCISPH {
 			maxPos.z* gridDimension.z,
 		};
 		maxPhysicalPos -= make_float3(1, 1, 1) * particleSpacing*0.5;
-		for (float x = minPhysicalPos.x ; x < maxPhysicalPos.x ; x += particleSpacing) {
-			for (float y = minPhysicalPos.y; y < maxPhysicalPos.y; y += particleSpacing) {
-				for (float z = minPhysicalPos.z; z < maxPhysicalPos.z; z += particleSpacing) {
+		for (float x = minPhysicalPos.x ; x <= maxPhysicalPos.x; x += particleSpacing) {
+			for (float y = minPhysicalPos.y; y <= maxPhysicalPos.y ; y += particleSpacing) {
+				for (float z = minPhysicalPos.z; z <= maxPhysicalPos.z ; z += particleSpacing) {
+					float jitterMagnitude = 0;
+					float3 jitter;
+					jitter.x = (random0to1() - 0.5);
+					jitter.y = (random0to1() - 0.5);
+					jitter.z = (random0to1() - 0.5);
+					jitter *= jitterMagnitude;
+					particlesVec.emplace_back(make_float3(x, y, z) + jitter);
 
-
-
-					particlesVec.emplace_back(make_float3(x, y, z));
 				}
 			}
 		}

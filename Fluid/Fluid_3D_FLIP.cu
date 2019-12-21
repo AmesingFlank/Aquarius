@@ -288,13 +288,11 @@ namespace Fluid_3D_FLIP {
 
 		//destPos = beginPos+particle.velocity*timeStep;
 
-		float epsilon = 1e-3;
+		float minDistanceFromWall = cellPhysicalSize / 4;
 
-		destPos.x = max(0.0 + epsilon, min(sizeX * cellPhysicalSize - epsilon, destPos.x));
-		//destPos.y = max(0.0 + epsilon,  destPos.y );
-
-		destPos.y = max(0.0 + epsilon, min(sizeY * cellPhysicalSize - epsilon, destPos.y));
-		destPos.z = max(0.0 + epsilon, min(sizeZ * cellPhysicalSize - epsilon, destPos.z));
+		destPos.x = max(0.0 + minDistanceFromWall, min(sizeX * cellPhysicalSize - minDistanceFromWall, destPos.x));
+		destPos.y = max(0.0 + minDistanceFromWall, min(sizeY * cellPhysicalSize - minDistanceFromWall, destPos.y));
+		destPos.z = max(0.0 + minDistanceFromWall, min(sizeZ * cellPhysicalSize - minDistanceFromWall, destPos.z));
 
 
 		particle.position = destPos;
@@ -502,8 +500,8 @@ namespace Fluid_3D_FLIP {
 	}
 
 
-	void Fluid::createParticles(std::vector <Particle>& particlesHost, float3 centerPos, float tag ) {
-
+	int Fluid::createParticlesAt(std::vector <Particle>& particlesHost, float3 centerPos, std::function<bool(float3)> filter) {
+		int createdCount = 0;
 		for (float dx = 0; dx <= 1; ++dx) {
 			for (float dy = 0; dy <= 1; ++dy) {
 				for (float dz = 0; dz <= 1; ++dz) {
@@ -512,10 +510,22 @@ namespace Fluid_3D_FLIP {
 					float yBias = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
 					float zBias = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
 					float3 particlePos = subcellCenter + make_float3(xBias, yBias, zBias);
-					particlesHost.emplace_back(particlePos, tag);
+
+					float minDistanceFromWall = cellPhysicalSize / 4;
+
+					particlePos.x = max(0.0 + minDistanceFromWall, min(sizeX * cellPhysicalSize - minDistanceFromWall, particlePos.x));
+					particlePos.y = max(0.0 + minDistanceFromWall, min(sizeY * cellPhysicalSize - minDistanceFromWall, particlePos.y));
+					particlePos.z = max(0.0 + minDistanceFromWall, min(sizeZ * cellPhysicalSize - minDistanceFromWall, particlePos.z));
+
+					if (filter(particlePos)) {
+						particlesHost.emplace_back(particlePos);
+						++createdCount;
+					}
+					
 				}
 			}
 		}
+		return createdCount;
 	}
 
 	bool checkCoordValid(float3 c) {
@@ -547,7 +557,7 @@ namespace Fluid_3D_FLIP {
 					thisCell.fluidIndex = index;
 					++index;
 					float3 thisPos = MAC_Grid_3D::getPhysicalPos(x, y, z, cellPhysicalSize);
-					createParticles(particlesHost, thisPos, 0);
+					createParticlesAt(particlesHost, thisPos, [](float3 p) {return true; });
 				}
 			}
 		}
@@ -560,14 +570,22 @@ namespace Fluid_3D_FLIP {
 		if (!checkCoordValid(center)) {
 			return;
 		}
+		float3 centerPos;
+		centerPos.x = center.x * sizeX * cellPhysicalSize;
+		centerPos.y = center.y * sizeY * cellPhysicalSize;
+		centerPos.z = center.z * sizeZ * cellPhysicalSize;
+
+		std::function <bool(float3)> filter = [&](float3 pos) {
+			return length(pos - centerPos) < radius * cellPhysicalSize * sizeY;
+		};
+
 		for (int y = 0 * sizeY; y < 1 * sizeY; ++y) {
 			for (int x = 0 * sizeX; x < 1 * sizeX; ++x) {
 				for (int z = 0 * sizeZ; z < 1 * sizeZ; ++z) {
-					if (pow(x - center.x * sizeX, 2) 
-						+ pow(y - center.y * sizeY, 2) 
-						+ pow(z - center.z * sizeZ, 2) 
-						<= pow(radius * sizeY, 2)) {
-						//if ( x==20 && y==20 && z==20 ) {
+					float3 thisPos = MAC_Grid_3D::getPhysicalPos(x, y, z, cellPhysicalSize);
+					int createdCount = createParticlesAt(particlesHost, thisPos, filter);
+
+					if (createdCount > 0) {
 						Cell3D& thisCell = get3D(cellsTemp, x, y, z);
 
 						thisCell.velocity = make_float3(0, 0, 0);
@@ -575,8 +593,7 @@ namespace Fluid_3D_FLIP {
 						thisCell.content = CONTENT_FLUID;
 						thisCell.fluidIndex = index;
 						++index;
-						float3 thisPos = MAC_Grid_3D::getPhysicalPos(x, y, z, cellPhysicalSize);
-						createParticles(particlesHost, thisPos, 0);
+
 					}
 				}
 			}
