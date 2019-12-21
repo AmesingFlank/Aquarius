@@ -84,7 +84,7 @@ namespace Fluid_3D_FLIP{
 		int* cellEnd;
 
 
-		Skybox skybox = Skybox("resources/Park2/", ".jpg");
+		Skybox skybox = Skybox("resources/Skyboxes/GamlaStan2/", ".jpg");
 
 		std::shared_ptr<PointSprites> pointSprites;
 		std::shared_ptr<Container> container;

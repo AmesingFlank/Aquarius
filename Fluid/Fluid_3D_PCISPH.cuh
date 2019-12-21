@@ -100,7 +100,7 @@ namespace Fluid_3D_PCISPH {
 
 		Container container = Container(glm::vec3(gridDimension.x, gridDimension.y, gridDimension.z));
 
-		Skybox skybox = Skybox("resources/Park2/",".jpg");
+		Skybox skybox = Skybox("resources/Skyboxes/GamlaStan2/",".jpg");
 
 		std::shared_ptr<Mesher> mesher;
 		std::shared_ptr<FluidMeshRenderer> meshRenderer;

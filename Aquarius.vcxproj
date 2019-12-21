@@ -126,6 +126,7 @@
     <CudaCompile Include="Rendering\Renderer3D\Mesher.cu" />
     <CudaCompile Include="Rendering\Renderer3D\PointSprites.cu" />
     <CudaCompile Include="Rendering\Renderer3D\ScreenSpaceNormal.cu" />
+    <CudaCompile Include="Rendering\Renderer3D\Skybox.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Fluid\Fluid.h" />
