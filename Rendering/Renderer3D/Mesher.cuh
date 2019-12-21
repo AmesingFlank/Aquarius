@@ -6,11 +6,11 @@
 #include <thread>
 
 __global__
-void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, int sizeX_mesh, int sizeY_mesh, int sizeZ_mesh, float cellPhysicalSize_mesh,unsigned int* occupiedCellIndex);
+void marchingCubes(float* output, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, int sizeX_mesh, int sizeY_mesh, int sizeZ_mesh, float cellPhysicalSize_mesh,unsigned int* occupiedCellIndex,cudaTextureObject_t sdfTexture);
 
 template<typename Particle>
 __global__
-inline void computeSDF(Particle* particles, int particleCount,float particleRadius,int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart,int* cellEnd,float* sdf,int* hasSDF,float3* meanXCell,float3* anistropy) {
+inline void computeSDF(Particle* particles, int particleCount,float particleRadius,int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart,int* cellEnd,int* hasSDF,float3* meanXCell,float3* anistropy,cudaSurfaceObject_t sdfSurface) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
 	int cellCount = (sizeX) * (sizeY) * (sizeZ);
@@ -23,8 +23,8 @@ inline void computeSDF(Particle* particles, int particleCount,float particleRadi
 
 	
 	// set to some postive value first. this means that, by default, all cells are not occupied.
-	sdf[index] = cellPhysicalSize;
 	hasSDF[index] = 0;
+	surf3Dwrite<float>(cellPhysicalSize, sdfSurface, x * sizeof(float), y, z);
 
 	float3 sumX = { 0,0,0 };
 	float sumWeight = 0;
@@ -61,7 +61,8 @@ inline void computeSDF(Particle* particles, int particleCount,float particleRadi
 	if (sumWeight>0) {
 		float3 meanX = sumX / sumWeight;
 		float thisSDF = length(centerPos - meanX) - particleRadius;
-		sdf[index] = thisSDF;
+		surf3Dwrite<float>(thisSDF,sdfSurface, x * sizeof(float), y, z);
+
 		hasSDF[index] = 1;
 		meanXCell[index] = meanX;
 	}
@@ -71,11 +72,7 @@ inline void computeSDF(Particle* particles, int particleCount,float particleRadi
 
 
 __global__
-void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float particleRadius,float* sdf, int* hasSDF,float3* meanXCell);
-
-__global__
-void smoothSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float particleRadius, float* sdf, int* hasSDF, float sigma);
-
+void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float particleRadius,int* hasSDF,float3* meanXCell,cudaSurfaceObject_t sdfSurface);
 
 
 
@@ -248,7 +245,7 @@ inline void computeAnistropy(Particle* particles, int particleCount, float parti
 }
 template<typename Particle>
 __global__
-inline void computeSDF2(Particle* particles, int particleCount, float particleRadius, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd, float* sdf, int* hasSDF, float3* meanXCell, float3* anistropy) {
+inline void computeSDF2(Particle* particles, int particleCount, float particleRadius, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd,  int* hasSDF, float3* meanXCell, float3* anistropy,cudaSurfaceObject_t sdfSurface) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
 	int cellCount = (sizeX) * (sizeY) * (sizeZ);
@@ -261,7 +258,8 @@ inline void computeSDF2(Particle* particles, int particleCount, float particleRa
 
 
 	// set to some postive value first. this means that, by default, all cells are not occupied.
-	sdf[index] = cellPhysicalSize;
+	surf3Dwrite<float>(cellPhysicalSize, sdfSurface, x * sizeof(float), y, z);
+	hasSDF[index] = 0;
 
 	float3 sumX = { 0,0,0 };
 	float sumWeight = 0;
@@ -270,11 +268,11 @@ inline void computeSDF2(Particle* particles, int particleCount, float particleRa
 
 
 #pragma unroll
-	for (int dx = -1; dx <= 1; ++dx) {
+	for (int dx = -2; dx <= 2; ++dx) {
 #pragma unroll
-		for (int dy = -1; dy <= 1; ++dy) {
+		for (int dy = -2; dy <= 2; ++dy) {
 #pragma unroll
-			for (int dz = -1; dz <= 1; ++dz) {
+			for (int dz = -2; dz <= 2; ++dz) {
 				int cell = (x + dx) * sizeY * sizeZ + (y + dy) * sizeZ + z + dz;
 
 				if (cell >= 0 && cell < cellCount) {
@@ -283,7 +281,7 @@ inline void computeSDF2(Particle* particles, int particleCount, float particleRa
 						if (j >= 0 && j < particleCount) {
 
 							const Particle& p = particles[j];
-							float thisWeight = Bcubic((p.position - centerPos) / anistropy[j].x, cellPhysicalSize);
+							float thisWeight = Bcubic((p.position - centerPos), cellPhysicalSize*2);
 							sumWeight += thisWeight;
 
 							sumX += thisWeight * p.position;
@@ -299,16 +297,14 @@ inline void computeSDF2(Particle* particles, int particleCount, float particleRa
 	if (sumWeight != 0) {
 		float3 meanX = sumX / sumWeight;
 		float thisSDF = length(meanX-centerPos) - particleRadius;
-		sdf[index] = thisSDF;
+		//thisSDF = zhu05Kernel(make_float3(particleRadius,0,0),cellPhysicalSize) - sumWeight ; //blobby
+		surf3Dwrite<float>(thisSDF, sdfSurface, x * sizeof(float), y, z);
 		hasSDF[index] = 1;
 		meanXCell[index] = meanX;
 	}
 
 }
 
-__global__ inline void setOccupiedCellIndexToZero(unsigned int* addr) {
-	atomicAnd(addr, 0);
-}
 struct Mesher {
 
 	// two grids:
@@ -337,7 +333,9 @@ struct Mesher {
 
 	int* cellEnd;
 
-	float* sdf;
+	cudaArray* sdfTextureArray;
+	cudaTextureObject_t sdfTexture;
+	cudaSurfaceObject_t sdfSurface;
 
 	int* hasSDF;
 
@@ -365,14 +363,17 @@ struct Mesher {
 
 		float f = 1;
 
-		cellPhysicalSize_SDF = particleSpacing * 2;
+		cellPhysicalSize_SDF = particleSpacing ;
 		particleRadius = particleSpacing;
 
+		std::cout << "mesher particle radius " << particleRadius << std::endl;
 		cellPhysicalSize_mesh = containerSize.x / (float)(sizeX_mesh - 2);
 
 		sizeX_SDF = 1 + containerSize.x / cellPhysicalSize_SDF;
 		sizeY_SDF = 1 + containerSize.y / cellPhysicalSize_SDF;
 		sizeZ_SDF = 1 + containerSize.z / cellPhysicalSize_SDF;
+
+		std::cout << "mesher sizeX_SDF " << sizeX_SDF << std::endl;
 
 		cellCount_SDF = sizeX_SDF * sizeY_SDF * sizeZ_SDF;
 
@@ -389,7 +390,6 @@ struct Mesher {
 		HANDLE_ERROR(cudaMalloc(&cellStart, cellCount_SDF * sizeof(*cellStart)));
 		HANDLE_ERROR(cudaMalloc(&cellEnd, cellCount_SDF * sizeof(*cellEnd)));
 
-		HANDLE_ERROR(cudaMalloc(&sdf, cellCount_SDF * sizeof(*sdf)));
 		HANDLE_ERROR(cudaMalloc(&hasSDF, cellCount_SDF * sizeof(*hasSDF)));
 		HANDLE_ERROR(cudaMalloc(&meanXCell, cellCount_SDF * sizeof(*meanXCell)));
 
@@ -399,24 +399,59 @@ struct Mesher {
 		HANDLE_ERROR(cudaMalloc(&meanXParticle, particleCount * sizeof(*meanXParticle)));
 		HANDLE_ERROR(cudaMalloc(&anistropy, particleCount * sizeof(*anistropy)));
 
+
+
+		cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
+		cudaExtent extent = { sizeX_SDF,sizeY_SDF,sizeZ_SDF };
+		HANDLE_ERROR(cudaMalloc3DArray(&sdfTextureArray, &channelDesc, extent, cudaArraySurfaceLoadStore));
+		
+		cudaResourceDesc resDesc;
+		memset(&resDesc, 0, sizeof(resDesc));
+		resDesc.resType = cudaResourceTypeArray;
+		resDesc.res.array.array = sdfTextureArray;
+
+		cudaTextureDesc texDesc;
+		memset(&texDesc, 0, sizeof(texDesc));
+		texDesc.addressMode[0] = cudaAddressModeBorder;
+		texDesc.addressMode[1] = cudaAddressModeBorder;
+		texDesc.addressMode[2] = cudaAddressModeBorder;
+		texDesc.filterMode = cudaFilterModeLinear;
+		texDesc.readMode = cudaReadModeElementType;
+		texDesc.normalizedCoords = 1;
+
+		HANDLE_ERROR(cudaCreateTextureObject(&sdfTexture, &resDesc, &texDesc, nullptr));
+
+		HANDLE_ERROR(cudaCreateSurfaceObject(&sdfSurface, &resDesc));
+
+
 	}
+
+	int hhh = 0;
 
 	template<typename Particle>
 	void mesh(Particle*& particles, Particle*& particlesCopy,int* particleHashes, int* particleIndices, float* output) {
 
 		cudaDeviceSynchronize(); //make sure all atomic calls to occupiedCellIndex finishes
 		HANDLE_ERROR(cudaMemset(occupiedCellIndex, 0, sizeof(unsigned int)));
+		HANDLE_ERROR(cudaMemset(hasSDF, 0, cellCount_SDF * sizeof(*hasSDF)));
 		cudaDeviceSynchronize(); //make sure memset finishes before the atomics start
 		
 
 		HANDLE_ERROR(cudaMemset(output, 0, triangleCount * 3 * 6 * sizeof(float)));
 
 
+		if (true) {
+			float beforeHashing = glfwGetTime();
 
+			performSpatialHashing2(particleIndices, particleHashes, particles, particlesCopy, particleCount, cellPhysicalSize_SDF, sizeX_SDF, sizeY_SDF, sizeZ_SDF, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount_SDF);
 
-		performSpatialHashing2(particleIndices, particleHashes, particles, particlesCopy, particleCount, cellPhysicalSize_SDF, sizeX_SDF, sizeY_SDF, sizeZ_SDF, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount_SDF);
+			hhh = 1;
+			float afterHashing = glfwGetTime();
+			//std::cout << "hasing toook " << afterHashing - beforeHashing << std::endl;
+		}
 
-
+		
+		auto beforeMeshing = std::chrono::system_clock::now();;
 
 		computeMeanXParticle << <numBlocksParticle, numThreadsParticle >> > (particles, particleCount, particleRadius, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, cellStart, cellEnd, meanXParticle);
 		CHECK_CUDA_ERROR("compute meanX");
@@ -431,26 +466,22 @@ struct Mesher {
 		
 		
 
-		computeSDF2 << <numBlocksCell_SDF, numThreadsCell_SDF >> > (particles, particleCount, particleRadius, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, cellStart, cellEnd, sdf, hasSDF,meanXCell,anistropy);
+		computeSDF2 << <numBlocksCell_SDF, numThreadsCell_SDF >> > (particles, particleCount, particleRadius, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, cellStart, cellEnd, hasSDF,meanXCell,anistropy,sdfSurface);
 		CHECK_CUDA_ERROR("compute sdf");
 		
 		
 		
-		extrapolateSDF << <numBlocksCell_SDF, numThreadsCell_SDF >> > (sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, particleRadius, sdf, hasSDF, meanXCell);
+		extrapolateSDF << <numBlocksCell_SDF, numThreadsCell_SDF >> > (sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, particleRadius, hasSDF, meanXCell,sdfSurface);
 		CHECK_CUDA_ERROR("extrapolate sdf");
 
-		for (int i = 0; i < 0; ++i) {
-			smoothSDF << <numBlocksCell_SDF, numThreadsCell_SDF >> > (sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, particleRadius, sdf, hasSDF, 1);
-			CHECK_CUDA_ERROR("smooth sdf");
-		}
-
-
-		marchingCubes<<<numBlocksCell_mesh,numThreadsCell_mesh >>>(output, sdf, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF,sizeX_mesh, sizeY_mesh,sizeZ_mesh, cellPhysicalSize_mesh,occupiedCellIndex);
+		marchingCubes<<<numBlocksCell_mesh,numThreadsCell_mesh >>>(output, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF,sizeX_mesh, sizeY_mesh,sizeZ_mesh, cellPhysicalSize_mesh,occupiedCellIndex,sdfTexture);
 		CHECK_CUDA_ERROR("marching cubes");
 
+		cudaDeviceSynchronize();
 
-		
-
+		auto afterMeshing = std::chrono::system_clock::now();;
+		std::chrono::duration<double> elapsed_seconds = afterMeshing - beforeMeshing;
+		//std::cout << "meshing toook " << elapsed_seconds.count() << std::endl;
 	}
 	
 };

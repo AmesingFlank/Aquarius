@@ -412,11 +412,12 @@ namespace Fluid_3D_FLIP {
 
 		if (drawCommand.renderMode == RenderMode::Mesh) {
 
+
 			mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
 
 			cudaDeviceSynchronize();
-			meshRenderer->draw(drawCommand,skybox.texSkyBox);
 
+			meshRenderer->draw(drawCommand,skybox.texSkyBox);
 		}
 		else {
 			float renderRadius = cellPhysicalSize / pow(particlesPerCell, 1.0 / 3.0);

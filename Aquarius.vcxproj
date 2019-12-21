@@ -114,6 +114,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="Fluid\FluidConfig.cu" />
+    <CudaCompile Include="Fluid\Fluid_2D_kernels.cu" />
     <CudaCompile Include="Fluid\Fluid_2D_kernels.cuh" />
     <CudaCompile Include="Fluid\Fluid_3D_common.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_FLIP.cu" />

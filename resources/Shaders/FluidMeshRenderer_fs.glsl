@@ -36,7 +36,7 @@ void main()
 	vec3 viewSpaceNormal = texture(normalTexture, texCoords).rgb;
 	vec3 normal = mat3(inverseView) * viewSpaceNormal;
 
-	//normal = fragNormal;
+	normal = fragNormal;
 
 	color.rgb = normal;
 
@@ -60,7 +60,7 @@ void main()
 
 	color = vec4(mix(refractColor, reflectColor, mixFactor), 1);
 
-	return;
+	//return;
 
 
 	vec3 lightDir = vec3(0, 1, 0);

@@ -1,6 +1,144 @@
 #include "Fluid_3D_PCISPH.cuh"
 
+#define SIMULATE_PARTICLES_NOT_FLUID 0
+
 namespace Fluid_3D_PCISPH {
+	// this is not for PCISPH.
+	// It is used for a pure particle simulation, same as the one in CUDA samples
+	__global__ void collide(Particle* particles, float cellSize, int particleCount, int* cellBegin, int* cellEnd, int3 gridSize, float kernelRadius, float timestep, float spacing) {
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		if (index >= particleCount) return;
+
+
+		Particle& particle = particles[index];
+
+		float3 pos = particle.position;
+		int3 thisCell;
+
+		thisCell.x = pos.x / cellSize;
+		thisCell.y = pos.y / cellSize;
+		thisCell.z = pos.z / cellSize;
+
+		float3 force = { 0,0,0 };
+
+		float collideDist = spacing;;
+
+#pragma unroll
+		for (int dx = -1; dx <= 1; ++dx) {
+#pragma unroll
+			for (int dy = -1; dy <= 1; ++dy) {
+#pragma unroll
+				for (int dz = -1; dz <= 1; ++dz) {
+					int x = thisCell.x + dx;
+					int y = thisCell.y + dy;
+					int z = thisCell.z + dz;
+					if (x < 0 || x >= gridSize.x || y < 0 || y >= gridSize.y || z < 0 || z >= gridSize.z) {
+						continue;
+					}
+					int hash = x * gridSize.y * gridSize.z + y * gridSize.z + z;
+					if (cellBegin[hash] == -1) {
+						continue;
+					}
+					for (int j = cellBegin[hash]; j <= cellEnd[hash]; ++j) {
+
+						if (j != index) {
+							Particle& that = particles[j];
+							float3 relPos = that.position - particle.position;
+							float dist = length(relPos);
+
+							if (dist < collideDist) {
+								float3 norm = relPos / dist;
+
+								// relative velocity
+								float3 relVel = that.velosity - particle.velosity;
+
+								// relative tangential velocity
+								float3 tanVel = relVel - (dot(relVel, norm) * norm);
+
+								// spring force
+								force += -0.5 * (collideDist - dist) * norm;
+								// dashpot (damping) force
+								force += 0.02 * relVel;
+								// tangential shear force
+								force += 0.1 * tanVel;
+							}
+
+						}
+
+					}
+				}
+			}
+		}
+
+		particle.velosity += force;
+	}
+	// this is not for PCISPH.
+	// It is used for a pure particle simulation, same as the one in CUDA samples
+	__global__ void integrate(Particle* particles, float cellSize, int particleCount, int* cellBegin, int* cellEnd, int3 gridSize, float3 gridDimension, float kernelRadius, float timestep, float spacing) {
+		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		if (index >= particleCount) return;
+
+
+		Particle& particle = particles[index];
+
+		particle.velosity += make_float3(0, -0.0003, 0) * timestep;
+
+		float3 pos = particle.position;
+		float3 vel = particle.velosity;
+
+		pos += timestep * vel;
+
+		float bounce = -0.5;
+
+		if (pos.x < spacing) {
+			pos.x = spacing;
+			vel.x *= bounce;;
+		}
+
+		if (pos.x > gridDimension.x - spacing) {
+			pos.x = gridDimension.x - spacing;
+			vel.x *= bounce;;
+		}
+
+		if (pos.y < spacing) {
+			pos.y = spacing;
+			vel.y *= bounce;;
+		}
+
+		if (pos.y > gridDimension.y - spacing) {
+			pos.y = gridDimension.y - spacing;
+			vel.y *= bounce;;
+		}
+
+		if (pos.z < spacing) {
+			pos.z = spacing;
+			vel.z *= bounce;;
+		}
+
+		if (pos.z > gridDimension.z - spacing) {
+			pos.z = gridDimension.z - spacing;
+			vel.z *= bounce;;
+		}
+
+
+
+		particle.position = pos;
+		particle.velosity = vel;
+
+	}
+
+
+
+
+
+
+
+
+
+
+
+
+
 	__global__ void computeExternalForcesImpl(Particle* particles, int particleCount) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
 		if (index >= particleCount) return;
@@ -210,7 +348,7 @@ namespace Fluid_3D_PCISPH {
 		}
 		else {
 			updatePositionsVBO << <numBlocks, numThreads >> > (particles, pointSprites->positionsDevice, particleCount);
-			pointSprites->draw(drawCommand, particleSpacing, skybox.texSkyBox);
+			pointSprites->draw(drawCommand, particleSpacing/2, skybox.texSkyBox);
 		}
 
 	}
@@ -231,6 +369,9 @@ namespace Fluid_3D_PCISPH {
 		for (float x = minPhysicalPos.x ; x < maxPhysicalPos.x ; x += particleSpacing) {
 			for (float y = minPhysicalPos.y; y < maxPhysicalPos.y; y += particleSpacing) {
 				for (float z = minPhysicalPos.z; z < maxPhysicalPos.z; z += particleSpacing) {
+
+
+
 					particlesVec.emplace_back(make_float3(x, y, z));
 				}
 			}
@@ -258,9 +399,20 @@ namespace Fluid_3D_PCISPH {
 				for (float z = minPhysicalPos.z; z < maxPhysicalPos.z; z += particleSpacing) {
 
 					float3 pos = make_float3(x, y, z);
+					float3 jitter = make_float3(1, 1, 1);
+					jitter.x *= (random0to1() - 0.5)*particleSpacing*0.01;
+					jitter.y *= (random0to1() - 0.5) * particleSpacing * 0.01;
+					jitter.z *= (random0to1() - 0.5) * particleSpacing * 0.01;
+
+#if  SIMULATE_PARTICLES_NOT_FLUID
+					pos += jitter;
+#endif //  SIMULATE_PARTICLES_NOT_FLUID
+
+
 					
 					if (length(pos-physicalCenter) < physicalRadius) {
-						particlesVec.emplace_back(make_float3(x, y, z));
+						
+						particlesVec.emplace_back(pos);
 					}
 				}
 			}
@@ -268,10 +420,18 @@ namespace Fluid_3D_PCISPH {
 	}
 
 	void Fluid::init(std::shared_ptr<FluidConfig> config) {
+
+#if SIMULATE_PARTICLES_NOT_FLUID
+
+		kernelRadius = gridDimension.x / 64;
+		particleSpacing = kernelRadius / 2;
+		
+#else
 		particleSpacing = pow(gridDimension.x * gridDimension.y * gridDimension.z / particleCountWhenFull, 1.0 / 3.0);
-
 		kernelRadius = particleSpacing * kernelRadiusToSpacingRatio;
+#endif
 
+		
 
 		std::vector<Particle> particlesVec;
 
@@ -343,6 +503,8 @@ namespace Fluid_3D_PCISPH {
 		std::cout << "rho0 : " << restDensity << std::endl;
 
 		std::cout << "variance : " << variance << std::endl;
+		std::cout << "gridSize.x : " << gridSize.x << std::endl;
+
 
 
 		mesher = std::make_shared<Mesher>(gridDimension, particleSpacing, particleCount, numBlocks, numThreads);
@@ -358,16 +520,39 @@ namespace Fluid_3D_PCISPH {
 	}
 
 
+	void Fluid::simulateAsParticles() {
+		for (int j = 0; j < 1; ++j) {
+			float particlesTimestep = 0.5;
+
+			float beforeHashing = glfwGetTime();
+
+			performSpatialHashing(particleHashes, particles, particleCount, kernelRadius, gridSize.x, gridSize.y, gridSize.z, numBlocks, numThreads, cellBegin, cellEnd, cellCount);
+
+			float afterHashing = glfwGetTime();
+
+			integrate << <numBlocks, numThreads >> > (particles, kernelRadius, particleCount, cellBegin, cellEnd, gridSize, gridDimension, kernelRadius, particlesTimestep, particleSpacing);
+
+			collide << <numBlocks, numThreads >> > (particles, kernelRadius, particleCount, cellBegin, cellEnd, gridSize, kernelRadius, particlesTimestep, particleSpacing);
+		}
+	}
+
+	
 	void Fluid::simulationStep() {
+
+#if SIMULATE_PARTICLES_NOT_FLUID
+		simulateAsParticles(); return;
+#endif
+
 		for (int i = 0; i < substeps; ++i) {
 
 			performSpatialHashing(particleHashes, particles, particleCount, kernelRadius, gridSize.x, gridSize.y, gridSize.z, numBlocks, numThreads, cellBegin, cellEnd, cellCount);
+
 			computeExternalForces();
 			initPressure();
 
 			int iter = 0;
 			while (iter < minIterations || hasBigError()) {
-				if (iter > maxIterations) {
+				if (iter > 4) {
 					//std::cout << "hit max iters" << std::endl;
 					break;
 				}

@@ -49,12 +49,16 @@ void FluidMeshRenderer::draw(const DrawCommand& drawCommand,GLuint skybox) {
 	glm::mat4  model = glm::mat4(1.0);
 
 	
-	GLuint screenSpaceNormalTexture = screenSpaceNormal.generateNormalTexture(
+	/*
+	screenSpaceNormal.generateNormalTexture(
 		[&](){
 			drawDepth(drawCommand);
 		},
 		6, 5, 6, 0.1, drawCommand
 	);
+	*/
+
+	GLuint screenSpaceNormalTexture = screenSpaceNormal.normalTexture;
  
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

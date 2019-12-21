@@ -292,139 +292,41 @@ float3 edgeToCoord[12] = {
 
 
 // Get SDF using grid coordinates;
-__device__ __host__
-float getSDF(int x, int y, int z, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, int sizeX_mesh, int sizeY_mesh, int sizeZ_mesh, float cellPhysicalSize_mesh, float* sdf) {
-	if (x == 0 || y == 0 || z == 0 || x >= sizeX_mesh - 1 || y >= sizeY_mesh - 1 || z >= sizeZ_mesh - 1) {
-		return cellPhysicalSize_mesh;
+__device__ __forceinline__
+float getSDF(int x, int y, int z, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, int sizeX_mesh, int sizeY_mesh, int sizeZ_mesh, float cellPhysicalSize_mesh,cudaTextureObject_t sdfTexture) {
+
+	if (x == 0 || y == 0 || z == 0 || x > sizeX_mesh-1 || y > sizeY_mesh-1 || z > sizeZ_mesh-1) {
+		return 0;
 	}
+	
 	float3 position = make_float3(x-1, y-1, z-1) * cellPhysicalSize_mesh;
 	float3 sdfGridPosition = position / cellPhysicalSize_SDF;
+	float3 coord = {
+		sdfGridPosition.x / (sizeX_SDF - 1),
+		sdfGridPosition.y / (sizeY_SDF - 1),
+		sdfGridPosition.z / (sizeZ_SDF - 1),
+	};
+	return tex3D<float>(sdfTexture, coord.x, coord.y, coord.z);
 
-	const int i = floor(sdfGridPosition.x);
-	const int j = floor(sdfGridPosition.y);
-	const int k = floor(sdfGridPosition.z);
-
-
-
-	float u[2];
-	float v[2];
-	float w[2];
-	float weight[2][2][2];
-
-	// interpolant 
-	float sx = sdfGridPosition.x - i;
-	float sy = sdfGridPosition.y - j;
-	float sz = sdfGridPosition.z - k;
-
-	u[0] = 1.f - sx;
-	v[0] = 1.f - sy;
-	w[0] = 1.f - sz;
-
-	u[1] = sx;
-	v[1] = sy;
-	w[1] = sz;
-
-	
-
-	for (int a = 0; a < 2; ++a) {
-		for (int b = 0; b < 2; ++b) {
-			for (int c = 0; c < 2; ++c) {
-				weight[a][b][c] = u[a] * v[b] * w[c];
-			}
-		}
-	}
-
-#define getPhi(x_,y_,z_) (sdf[ (x_) *sizeY_SDF*sizeZ_SDF + (y_) * sizeZ_SDF + (z_)  ])
-
-
-	float result = 
-		weight[0][0][0] * getPhi(i, j , k) +
-		weight[1][0][0] * getPhi(i+1, j, k) +
-		weight[0][1][0] * getPhi( i, j + 1, k) +
-		weight[1][1][0] * getPhi( i + 1, j + 1, k) +
-		weight[0][0][1] * getPhi( i, j, k + 1) +
-		weight[1][0][1] * getPhi( i + 1, j, k + 1) +
-		weight[0][1][1] * getPhi( i, j + 1, k + 1) +
-		weight[1][1][1] * getPhi( i + 1, j + 1, k + 1)
-		;
-
-	return result;
-
-#undef getPhi
 }
 
 // get sdf using world space coordinates
-__device__ __host__
-float getSDF(float3 position, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, float* sdf) {
+__device__ __forceinline__
+float getSDF(float3 position, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, cudaTextureObject_t sdfTexture) {
 	
 	float3 sdfGridPosition = position / cellPhysicalSize_SDF;
-
-	int i = floor(sdfGridPosition.x);
-	int j = floor(sdfGridPosition.y);
-	int k = floor(sdfGridPosition.z);
-
-	i = max(0, min(sizeX_SDF - 2, i));
-	j = max(0, min(sizeY_SDF - 2, j));
-	k = max(0, min(sizeZ_SDF - 2, k));
-
-
-	float u[2];
-	float v[2];
-	float w[2];
-	float weight[2][2][2];
-
-	// interpolant 
-	float sx = sdfGridPosition.x - i;
-	float sy = sdfGridPosition.y - j;
-	float sz = sdfGridPosition.z - k;
-
-	u[0] = 1.f - sx;
-	v[0] = 1.f - sy;
-	w[0] = 1.f - sz;
-
-	u[1] = sx;
-	v[1] = sy;
-	w[1] = sz;
-
-
-
-	for (int a = 0; a < 2; ++a) {
-		for (int b = 0; b < 2; ++b) {
-			for (int c = 0; c < 2; ++c) {
-				weight[a][b][c] = u[a] * v[b] * w[c];
-			}
-		}
-	}
-
-#define getPhi(x_,y_,z_) (sdf[ (x_) *sizeY_SDF*sizeZ_SDF + (y_) * sizeZ_SDF + (z_)  ])
-
-
-	float result =
-		weight[0][0][0] * getPhi(i, j, k) +
-		weight[1][0][0] * getPhi(i + 1, j, k) +
-		weight[0][1][0] * getPhi(i, j + 1, k) +
-		weight[1][1][0] * getPhi(i + 1, j + 1, k) +
-		weight[0][0][1] * getPhi(i, j, k + 1) +
-		weight[1][0][1] * getPhi(i + 1, j, k + 1) +
-		weight[0][1][1] * getPhi(i, j + 1, k + 1) +
-		weight[1][1][1] * getPhi(i + 1, j + 1, k + 1)
-		;
-
-	return result;
-
-#undef getPhi
+	float3 coord = {
+		sdfGridPosition.x / (sizeX_SDF - 1),
+		sdfGridPosition.y / (sizeY_SDF - 1),
+		sdfGridPosition.z / (sizeZ_SDF - 1),
+	};
+	return tex3D<float>(sdfTexture, coord.x, coord.y, coord.z);
 }
 
-
-
-__device__
-float getSDF2(float* sdf) {
-	return sdf[0];
-}
 
 
 __global__
-void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, int sizeX_mesh, int sizeY_mesh, int sizeZ_mesh, float cellPhysicalSize_mesh,unsigned int* occupiedCellIndex) {
+void marchingCubes(float* output, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, int sizeX_mesh, int sizeY_mesh, int sizeZ_mesh, float cellPhysicalSize_mesh,unsigned int* occupiedCellIndex, cudaTextureObject_t sdfTexture) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
 	if (index >= (sizeX_mesh) * (sizeY_mesh) * (sizeZ_mesh) ) return;
@@ -434,7 +336,7 @@ void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int 
 	int z = index - x * ((sizeY_mesh) * (sizeZ_mesh)) - y * ((sizeZ_mesh));
 
 
-#define getIsFluid(x_,y_,z_) (getSDF(x_,y_,z_,sizeX_SDF,sizeY_SDF,sizeZ_SDF,cellPhysicalSize_SDF,sizeX_mesh,sizeY_mesh,sizeZ_mesh,cellPhysicalSize_mesh,sdf)<0)
+#define getIsFluid(x_,y_,z_) (getSDF(x_,y_,z_,sizeX_SDF,sizeY_SDF,sizeZ_SDF,cellPhysicalSize_SDF,sizeX_mesh,sizeY_mesh,sizeZ_mesh,cellPhysicalSize_mesh,sdfTexture)<0)
 
 //#define getIsFluid(x,y,z) (!(x == 0 || y == 0 || z == 0 || x >= sizeX_mesh - 1 || y >= sizeY_mesh - 1 || z >= sizeZ_mesh - 1))
 
@@ -490,8 +392,8 @@ void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int 
 			float3 posA = make_float3(coordsA);
 			float3 posB = make_float3(coordsB);
 
-			float sdfA = getSDF(coordsA.x + x, coordsA.y+y,coordsA.z+z, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sizeX_mesh, sizeY_mesh, sizeZ_mesh, cellPhysicalSize_mesh,sdf);
-			float sdfB = getSDF(coordsB.x + x, coordsB.y + y, coordsB.z + z, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sizeX_mesh, sizeY_mesh, sizeZ_mesh, cellPhysicalSize_mesh,sdf);
+			float sdfA = getSDF(coordsA.x + x, coordsA.y+y,coordsA.z+z, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sizeX_mesh, sizeY_mesh, sizeZ_mesh, cellPhysicalSize_mesh,sdfTexture);
+			float sdfB = getSDF(coordsB.x + x, coordsB.y + y, coordsB.z + z, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sizeX_mesh, sizeY_mesh, sizeZ_mesh, cellPhysicalSize_mesh,sdfTexture);
 
 			
 			float factor = -sdfA / (sdfB - sdfA);
@@ -503,20 +405,20 @@ void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int 
 
 			*position = pos;
 
-			float dx = cellPhysicalSize_mesh / 4;
+			float dx = cellPhysicalSize_mesh ;
 
 			float sdfLeft = 
-				getSDF(pos + make_float3(-dx, 0, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdf);
+				getSDF(pos + make_float3(-dx,0, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF,  sdfTexture);
 			float sdfRight =
-				getSDF(pos + make_float3(dx, 0, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdf);
+				getSDF(pos + make_float3(dx, 0, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF,  sdfTexture);
 			float sdfUp =
-				getSDF(pos + make_float3(0, dx, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdf);
+				getSDF(pos + make_float3(0, dx, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF,  sdfTexture);
 			float sdfDown =
-				getSDF(pos + make_float3(0, -dx, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdf);
+				getSDF(pos + make_float3(0,-dx, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF,  sdfTexture);
 			float sdfFront =
-				getSDF(pos + make_float3(0, 0, dx), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdf);
+				getSDF(pos + make_float3(0, 0, dx), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF,  sdfTexture);
 			float sdfBack =
-				getSDF(pos + make_float3(0, 0, -dx), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdf);
+				getSDF(pos + make_float3(0, 0, -dx), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdfTexture);
 
 			float3 norm = make_float3(sdfRight - sdfLeft, sdfUp - sdfDown, sdfFront - sdfBack);
 			*normal = normalize(norm);
@@ -542,7 +444,7 @@ void marchingCubes(float* output, float* sdf, int sizeX_SDF, int sizeY_SDF, int 
 
 
 __global__
-void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float particleRadius,float* sdf, int* hasSDF,float3* meanXCell) {
+void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float particleRadius,int* hasSDF,float3* meanXCell,cudaSurfaceObject_t sdfSurface) {
 
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -565,15 +467,21 @@ void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, flo
 
 	float3 centerPos = make_float3(x,y,z) * cellPhysicalSize;
 
+	int3 newSDFOrigin;
+
 #pragma unroll
 	for (int dx = -1; dx <= 1; ++dx) {
 #pragma unroll
-		for (int dy = -3; dy <= 1; ++dy) {
+		for (int dy = -1; dy <= 1; ++dy) {
 #pragma unroll
 			for (int dz = -1; dz <= 1; ++dz) {
-				int cell = (x + dx) * sizeY * sizeZ + (y + dy) * sizeZ + z + dz;
+				int thatX = x + dx;
+				int thatY = y + dy;
+				int thatZ = z + dz;
 
-				if (cell >= 0 && cell < cellCount) {
+				int cell = thatX * sizeY * sizeZ + thatY * sizeZ + thatZ;
+
+				if (thatX >= 0 && thatX < sizeX && thatY>=0 && thatY<sizeY && thatZ>=0 && thatZ< sizeZ) {
 					if (hasSDF[cell]) {
 						float3 thatMeanX = meanXCell[cell];
 						float potentialNewSDF = length(thatMeanX - centerPos) - particleRadius;
@@ -581,6 +489,10 @@ void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, flo
 							hasNewSDF = true;
 							newSDF = potentialNewSDF;
 							newMeanX = thatMeanX;
+							
+							newSDFOrigin.x = x + dx;
+							newSDFOrigin.y = y + dy;
+							newSDFOrigin.z = z + dz;
 						}
 					}
 				}
@@ -589,60 +501,13 @@ void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, flo
 	}
 
 	if (hasNewSDF) {
-		hasSDF[index] = true;
-		sdf[index] = newSDF;
-		meanXCell[index] = newMeanX;
-	}
-
-}
-
-
-__global__
-void smoothSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float particleRadius, float* sdf, int* hasSDF, float sigma) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-
-	int cellCount = (sizeX) * (sizeY) * (sizeZ);
-
-	if (index >= cellCount) return;
-
-	int x = index / (sizeY * sizeZ);
-	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
-
-
-	if (!hasSDF[index]) {
-		return;
-	}
-
-	float newSDF = 0;
-
-	float originalSDF = sdf[index];
-
-	float3 centerPos = make_float3(x, y, z) * cellPhysicalSize;
-
-	float commonWeight = 0.0639 / sigma;  //= 1.0 / (pow(2 * M_PI, 3.0 / 2.0) * sigma);
-
-#pragma unroll
-	for (int dx = -1; dx <= 1; ++dx) {
-#pragma unroll
-		for (int dy = -1; dy <= 1; ++dy) {
-#pragma unroll
-			for (int dz = -1; dz <= 1; ++dz) {
-				int cell = (x + dx) * sizeY * sizeZ + (y + dy) * sizeZ + z + dz;
-				float3 thatPos = make_float3(x+dx, y+dy, z+dz) * cellPhysicalSize;
-				float weight = commonWeight * exp(-length(thatPos - centerPos) / (2*sigma*sigma));
-				if (cell >= 0 && cell < cellCount && hasSDF[cell]) {
-					float thatSDF = sdf[cell];
-					newSDF += thatSDF * weight;
-				}
-				else {
-					newSDF += originalSDF * weight;
-				}
-			}
+		if (newSDF >= 9) {
+			printf("new sdf %f for %d %d %d from %d %d %d\n", newSDF, x,y,z,newSDFOrigin.x,newSDFOrigin.y,newSDFOrigin.z);
 		}
+		
+		//hasSDF[index] = true;
+		surf3Dwrite<float>(newSDF, sdfSurface, x * sizeof(float), y, z);
+		//meanXCell[index] = newMeanX;
 	}
-
-	if(newSDF * originalSDF > 0)
-	sdf[index] = newSDF;
 
 }

@@ -72,7 +72,7 @@ int main( void ) {
 
 	RenderMode renderMode = RenderMode::Mesh;
 
-	bool paused = false;
+	bool paused = true;
 
     while(!glfwWindowShouldClose(window)){
 
@@ -113,7 +113,7 @@ int main( void ) {
 		}
 		else {
 			// There's still a bug that, when paused, the meshed rendering doesn't work, unless sleep for a while..
-			std::this_thread::sleep_for(std::chrono::milliseconds(16));
+			//std::this_thread::sleep_for(std::chrono::milliseconds(16));
 		}
 		
 		fluid->draw(drawCommand);
@@ -123,6 +123,8 @@ int main( void ) {
         if(currentTime-lastSecond>=1){
             double FPS = (double)framesSinceLast/(currentTime-lastSecond);
             std::cout<<"FPS: "<<FPS<<std::endl;
+			std::string fpsText = "Aquarius  " + std::to_string(FPS) + " FPS";
+			glfwSetWindowTitle(window, fpsText.c_str());
             lastSecond = currentTime;
             framesSinceLast = 0;
         }

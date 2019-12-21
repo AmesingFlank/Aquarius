@@ -289,7 +289,7 @@ inline GLFWwindow* createWindowOpenGL(int screenWidth,int screenHeight){
         throw std::runtime_error("glew Init failed");
 
     printGLError();
-    glfwSwapInterval(1);
+    glfwSwapInterval(0);
 
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);

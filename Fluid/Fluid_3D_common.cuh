@@ -23,6 +23,7 @@ void inline performSpatialHashing(int* particleHashes, Particle* particles, int 
 // particles become result.
 template<typename Particle>
 void inline performSpatialHashing2(int* particleIndices, int* particleHashes, Particle*& particles, Particle*& result,int particleCount, float cellPhysicalSize, float sizeX, float sizeY, float sizeZ, int numBlocksParticle, int numThreadsParticle, int* cellStart, int* cellEnd, int cellCount) {
+	
 	writeIndicesImpl << <numBlocksParticle, numThreadsParticle >> > (particleIndices, particleCount);
 	calcHashImpl << < numBlocksParticle, numThreadsParticle >> > (particleHashes, particles, particleCount, cellPhysicalSize, sizeX, sizeY, sizeZ);
 	//cudaDeviceSynchronize();

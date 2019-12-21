@@ -81,7 +81,7 @@ namespace Fluid_3D_PCISPH {
 
 		float particleCountWhenFull = 3e5;
 
-		float kernelRadiusToSpacingRatio = 3.5;
+		float kernelRadiusToSpacingRatio = 2;
 
 		float stiffness = 15;
 
@@ -131,6 +131,10 @@ namespace Fluid_3D_PCISPH {
 
 		void createSquareFluid(std::vector<Particle>& particlesVec, float3 minPos, float3 maxPos);
 		void createSphereFluid(std::vector<Particle>& particlesVec, float3 center, float radius);
+
+
+		//simulate as particles (same as the one in cuda samples). For debugging only.
+		void simulateAsParticles();
 
 
 	};
