@@ -15,23 +15,19 @@
 #include "../Rendering/Renderer3D/PointSprites.h"
 #include "../Rendering/Renderer3D/Container.h"
 #include "../Rendering/Renderer3D/Skybox.h"
+#include "../Rendering/Renderer3D/Mesher.cuh"
+#include "../Rendering/Renderer3D/FluidMeshRenderer.cuh"
 
 namespace Fluid_3D_FLIP{
 	__device__ __host__ struct Particle {
 		float3 position = make_float3(0, 0, 0);
-		float kind = 0;
 		float3 velocity = make_float3(0, 0, 0);
-
-		int hash;
 
 		__device__ __host__
 			Particle() {
 
 		}
 		Particle(float3 pos) :position(pos) {
-
-		}
-		Particle(float3 pos, float tag) :position(pos), kind(tag) {
 
 		}
 	};
@@ -56,7 +52,7 @@ namespace Fluid_3D_FLIP{
 
 	
 
-	class Fluid :Fluid_3D {
+	class Fluid :public Fluid_3D {
 	public:
 
 		int sizeX;
@@ -73,13 +69,13 @@ namespace Fluid_3D_FLIP{
 		const float density = 1;
 
 		Particle* particles;
-		Particle* particlesOld;
+		Particle* particlesCopy; //used for fast spatial hashing only
 		int particleCount;
 
 		int numThreadsParticle, numBlocksParticle;
 		int numThreadsCell, numBlocksCell;
 
-		const int particlesPerCell = 16;
+		const int particlesPerCell = 8;
 
 		int* particleHashes;
 		int* particleIndices;
@@ -88,11 +84,14 @@ namespace Fluid_3D_FLIP{
 		int* cellEnd;
 
 
-		Skybox skybox = Skybox("resources/Park2/", ".jpg");
+		Skybox skybox = Skybox("resources/Skyboxes/GamlaStan2/", ".jpg");
 
 		std::shared_ptr<PointSprites> pointSprites;
 		std::shared_ptr<Container> container;
 		std::shared_ptr<MAC_Grid_3D> grid;
+
+		std::shared_ptr<Mesher> mesher;
+		std::shared_ptr<FluidMeshRenderer> meshRenderer;
 
 		Fluid();
 
@@ -113,7 +112,7 @@ namespace Fluid_3D_FLIP{
 
 		virtual void init(std::shared_ptr<FluidConfig> config) override;
 
-		void createParticles(std::vector <Particle>& particlesHost, float3 centerPos, float tag = 0);
+		int createParticlesAt(std::vector <Particle>& particlesHost, float3 centerPos,std::function<bool(float3)> filter);
 
 		void createSquareFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp, float3 minPos,float3 maxPos, int startIndex = 0);
 

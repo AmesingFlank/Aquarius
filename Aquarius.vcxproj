@@ -114,12 +114,19 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="Fluid\FluidConfig.cu" />
+    <CudaCompile Include="Fluid\Fluid_2D_kernels.cu" />
     <CudaCompile Include="Fluid\Fluid_2D_kernels.cuh" />
     <CudaCompile Include="Fluid\Fluid_3D_common.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_FLIP.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_kernels.cu" />
+    <CudaCompile Include="Fluid\Fluid_3D_PCISPH.cu" />
+    <CudaCompile Include="Fluid\SVD.cu" />
     <CudaCompile Include="main.cu" />
+    <CudaCompile Include="Rendering\Renderer3D\FluidMeshRenderer.cu" />
+    <CudaCompile Include="Rendering\Renderer3D\Mesher.cu" />
     <CudaCompile Include="Rendering\Renderer3D\PointSprites.cu" />
+    <CudaCompile Include="Rendering\Renderer3D\ScreenSpaceNormal.cu" />
+    <CudaCompile Include="Rendering\Renderer3D\Skybox.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Fluid\Fluid.h" />
@@ -137,6 +144,7 @@
     <ClInclude Include="Fluid\Fluid_3D_PCISPH.cuh" />
     <ClInclude Include="Fluid\Fluid_3D_SPH.cuh" />
     <ClInclude Include="Fluid\PressureEquation.cuh" />
+    <ClInclude Include="Fluid\SVD.cuh" />
     <ClInclude Include="GpuCommons.h" />
     <ClInclude Include="InputHandler.h" />
     <ClInclude Include="Fluid\MAC_Grid_2D.cuh" />
@@ -147,8 +155,10 @@
     <ClInclude Include="Rendering\Quad.h" />
     <ClInclude Include="Rendering\Renderer3D\camera.h" />
     <ClInclude Include="Rendering\Renderer3D\Container.h" />
+    <ClInclude Include="Rendering\Renderer3D\FluidMeshRenderer.cuh" />
+    <ClInclude Include="Rendering\Renderer3D\Mesher.cuh" />
     <ClInclude Include="Rendering\Renderer3D\PointSprites.h" />
-    <ClInclude Include="Rendering\Renderer3D\Renderer3D.h" />
+    <ClInclude Include="Rendering\Renderer3D\ScreenSpaceNormal.cuh" />
     <ClInclude Include="Rendering\Renderer3D\Skybox.h" />
     <ClInclude Include="Rendering\Shader.h" />
     <ClInclude Include="Rendering\stb_image.h" />
@@ -159,15 +169,18 @@
   <ItemGroup>
     <None Include="README.md" />
     <None Include="resources\LaunchConfigs.json" />
+    <None Include="resources\Shaders\FluidMeshRenderer_depth_fs.glsl" />
+    <None Include="resources\Shaders\FluidMeshRenderer_fs.glsl" />
+    <None Include="resources\Shaders\FluidMeshRenderer_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_depth_fs.glsl" />
     <None Include="resources\Shaders\PointSprites_depth_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_fs.glsl" />
-    <None Include="resources\Shaders\PointSprites_normal_fs.glsl" />
-    <None Include="resources\Shaders\PointSprites_normal_vs.glsl" />
+    <None Include="resources\Shaders\ScreenSpaceNormal_normal_fs.glsl" />
+    <None Include="resources\Shaders\ScreenSpaceNormal_normal_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_render_fs.glsl" />
     <None Include="resources\Shaders\PointSprites_render_vs.glsl" />
-    <None Include="resources\Shaders\PointSprites_smooth_fs.glsl" />
-    <None Include="resources\Shaders\PointSprites_smooth_vs.glsl" />
+    <None Include="resources\Shaders\ScreenSpaceNormal_smooth_fs.glsl" />
+    <None Include="resources\Shaders\ScreenSpaceNormal_smooth_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_thickness_fs.glsl" />
     <None Include="resources\Shaders\PointSprites_thickness_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_vs.glsl" />

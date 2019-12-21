@@ -10,6 +10,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "../WindowInfo.h"
 #include "../DrawCommand.h"
+#include "ScreenSpaceNormal.cuh"
 
 struct PointSprites {
 	int count;
@@ -38,19 +39,16 @@ struct PointSprites {
 	GLuint FBO;
 
 	GLuint depthTextureNDC;
-	// view space
-	GLuint depthTextureA;
-	GLuint depthTextureB;
-	GLuint lastDepthTexture;
 
-	GLuint normalTexture;
 	GLuint thicknessTexture;
 
 	Shader* depthShader;
 	Shader* renderShader;
-	Shader* normalShader;
+
 	Shader* thicknessShader;
-	Shader* smoothShader;
+
+
+	ScreenSpaceNormal screenSpaceNormal;
 
 	glm::mat4  model = glm::mat4(1.0);
 
@@ -59,11 +57,9 @@ struct PointSprites {
 	
 
 	void renderDepth(const DrawCommand& drawCommand, float radius);
-	void smoothDepth(const DrawCommand& drawCommand, int iterations, int smoothRadius, float sigma_d, float sigma_r);
 
-	void renderNormal(const DrawCommand& drawCommand);
 	void renderThickness(const DrawCommand& drawCommand, float radius);
-	void renderFinal(const DrawCommand& drawCommand, int skybox);
+	void renderFinal(const DrawCommand& drawCommand, int skybox,GLuint normalTexture,GLuint depthTexture);
 
 	PointSprites(int count_);
 

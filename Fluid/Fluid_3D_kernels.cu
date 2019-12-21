@@ -410,7 +410,15 @@ __global__  void computeDivergenceImpl(Cell3D* cells, int sizeX, int sizeY, int 
 
 	float div = (upCell.newVelocity.y - thisCell.newVelocity.y + rightCell.newVelocity.x - thisCell.newVelocity.x + frontCell.newVelocity.z - thisCell.newVelocity.z);
 
-	div -= max((thisCell.density - restParticlesPerCell) * 1.0, 0.0); //volume conservation
+	//div -= max((thisCell.density - restParticlesPerCell) * 1.0, 0.0); //volume conservation
+	//div -= (thisCell.density - restParticlesPerCell) * 1.0; //volume conservation
+
+	if (thisCell.density > restParticlesPerCell) {
+		div -= (thisCell.density - restParticlesPerCell) * 1.0;
+	}
+	else if (thisCell.density <= restParticlesPerCell / 4) {
+		//div -= (thisCell.density - restParticlesPerCell) * 1.0;
+	}
 
 	thisCell.divergence = div;
 
@@ -500,3 +508,13 @@ __global__  void jacobiImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, floa
 
 	thisCell.pressure = newPressure;
 }
+
+
+__global__  void writeIndicesImpl(int* particleIndices, int particleCount) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (index >= particleCount) return;
+
+	particleIndices[index] = index;
+}
+

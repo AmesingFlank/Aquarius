@@ -23,7 +23,6 @@ __global__  inline void calcHashImpl(int* particleHashes,  // output
 	int z = pos.z / cellPhysicalSize;
 	int hash = x * (sizeY*sizeZ)+y*(sizeZ)+z;
 
-
 	particleHashes[index] = hash;
 }
 
@@ -75,3 +74,15 @@ __global__ inline void updatePositionsVBO(Particle* particles, float* positionsV
 	base[1] = particle.position.y;
 	base[2] = particle.position.z;
 }
+
+__global__  void writeIndicesImpl(int* particleIndices, int particleCount);
+
+template<typename Particle>
+__global__  void applySortImpl(Particle* src, Particle* dest, int particleCount, int* particleIndices) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (index >= particleCount) return;
+
+	dest[index] = src[particleIndices[index]];
+}
+

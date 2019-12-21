@@ -10,10 +10,10 @@
 
 
 #include "Fluid/Fluid_3D_FLIP.cuh"
+#include "Fluid/Fluid_3D_PCISPH.cuh"
 
 
 
-#include "Rendering/Renderer3D/Renderer3D.h"
 #include "Rendering/Renderer3D/camera.h"
 #include "InputHandler.h"
 #include "Rendering/Renderer3D/PointSprites.h"
@@ -56,10 +56,26 @@ int main( void ) {
 
 
 	std::shared_ptr<FluidConfig> config = getConfig();
-	Fluid_3D_FLIP::Fluid fluid;
-	fluid.init(config);
+	std::shared_ptr<Fluid> fluid;
+	if (config->method == "Fluid_3D_FLIP") {
+		fluid = std::static_pointer_cast<Fluid,Fluid_3D_FLIP::Fluid>(std::make_shared<Fluid_3D_FLIP::Fluid>());
+	}
+	else if (config->method == "Fluid_3D_PCISPH") {
+		fluid = std::static_pointer_cast<Fluid, Fluid_3D_PCISPH::Fluid>(std::make_shared<Fluid_3D_PCISPH::Fluid>());
+	}
+	else {
+		std::cout << "unsupported method in config file" << std::endl;
+		exit(1);
+	}
+
+	fluid->init(config);
+
+	RenderMode renderMode = RenderMode::Mesh;
+
+	bool paused = true;
 
     while(!glfwWindowShouldClose(window)){
+
 
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LESS);
@@ -68,6 +84,14 @@ int main( void ) {
         glClearColor(0.25f,0.38f,0.5f,0.f);
         glfwPollEvents();
         InputHandler::Do_Movement();
+		if (InputHandler::keys[GLFW_KEY_SPACE]) {
+			InputHandler::keys[GLFW_KEY_SPACE] = false;
+			paused = !paused;
+		}
+		if (InputHandler::keys[GLFW_KEY_RIGHT_SHIFT]) {
+			InputHandler::keys[GLFW_KEY_RIGHT_SHIFT] = false;
+			renderMode = (RenderMode)(((int)renderMode + 1) % (int)RenderMode::MAX);
+		}
 
 		float near = 0.1;
 		float far = 1000;
@@ -77,20 +101,30 @@ int main( void ) {
         glm::mat4 projection = glm::perspective(camera->Zoom, widthHeightRatio, near,far);
 
 		DrawCommand drawCommand = {
-			view,projection,camera->Position,windowInfo.windowWidth,windowInfo.windowHeight,camera->Zoom,near,far
+			view,projection,camera->Position,windowInfo.windowWidth,windowInfo.windowHeight,camera->Zoom,near,far,
+			renderMode
 		};
 
 
         double currentTime = glfwGetTime();
 
-		fluid.simulationStep();
-		fluid.draw(drawCommand);
+		if (!paused) {
+			fluid->simulationStep();
+		}
+		else {
+			// There's still a bug that, when paused, the meshed rendering doesn't work, unless sleep for a while..
+			//std::this_thread::sleep_for(std::chrono::milliseconds(16));
+		}
+		
+		fluid->draw(drawCommand);
 
         ++framesSinceLast;
 
         if(currentTime-lastSecond>=1){
             double FPS = (double)framesSinceLast/(currentTime-lastSecond);
             std::cout<<"FPS: "<<FPS<<std::endl;
+			std::string fpsText = "Aquarius  " + std::to_string(FPS) + " FPS";
+			glfwSetWindowTitle(window, fpsText.c_str());
             lastSecond = currentTime;
             framesSinceLast = 0;
         }

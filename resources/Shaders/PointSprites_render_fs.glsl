@@ -73,7 +73,6 @@ void main() {
 	
 	if(depth>=0){
 		discard;return;
-		FragColor = vec4(depth/30, 1, 0, 1); return;
 	}
 
 	gl_FragDepth = projectZ(depth);

@@ -9,7 +9,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
-
+#include "../GpuCommons.h"
 class Shader
 {
 public:
