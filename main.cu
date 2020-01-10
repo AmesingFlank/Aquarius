@@ -11,6 +11,7 @@
 
 #include "Fluid/Fluid_3D_FLIP.cuh"
 #include "Fluid/Fluid_3D_PCISPH.cuh"
+#include "Fluid/Fluid_3D_PBF.cuh"
 
 
 
@@ -62,6 +63,9 @@ int main( void ) {
 	}
 	else if (config->method == "Fluid_3D_PCISPH") {
 		fluid = std::static_pointer_cast<Fluid, Fluid_3D_PCISPH::Fluid>(std::make_shared<Fluid_3D_PCISPH::Fluid>());
+	}
+	else if (config->method == "Fluid_3D_PBF") {
+		fluid = std::static_pointer_cast<Fluid, Fluid_3D_PBF::Fluid>(std::make_shared<Fluid_3D_PBF::Fluid>());
 	}
 	else {
 		std::cout << "unsupported method in config file" << std::endl;

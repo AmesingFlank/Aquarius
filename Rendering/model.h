@@ -2,16 +2,15 @@
 #define STRIXEBETA_MODEL_H
 
 #pragma once
-// Std. Includes
+
 #include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <map>
 #include <vector>
-using namespace std;
-// GL Includes
-#include <GL/glew.h> // Contains all the necessery OpenGL includes
+
+#include <GL/glew.h> 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -22,23 +21,22 @@ using namespace std;
 #include "mesh.h"
 #include <stb_image.h>
 
-static GLint TextureFromFile(const char* path, string directory, bool gamma = false);
+static GLint TextureFromFile(const char* path, std::string directory, bool gamma = false);
 
 class Model 
 {
 public:
-    /*  Model Data */
-    vector<Texture> textures_loaded;	// Stores all the textures loaded so far, optimization to make sure textures aren't loaded more than once.
-    vector<Mesh> meshes;
-    vector<Vertex> Triangles;
-    string directory;
+
+    std::vector<Texture> textures_loaded;	
+    std::vector<Mesh> meshes;
+    std::vector<Vertex> Triangles;
+    std::string directory;
     bool gammaCorrection;
 
 	glm::vec3 scale = glm::vec3(1, 1, 1);
 	glm::vec3 translate = glm::vec3(0, 0, 0);
-    /*  Functions   */
-    // Constructor, expects a filepath to a 3D SceneModel.
-    Model(string const & path, glm::vec3 scale = glm::vec3(1,1,1),glm::vec3 translate = glm::vec3(0,0,0),bool gamma = false ) : gammaCorrection(gamma)
+
+    Model(std::string const & path, glm::vec3 scale = glm::vec3(1,1,1),glm::vec3 translate = glm::vec3(0,0,0),bool gamma = false ) : gammaCorrection(gamma)
     {
         glm::mat4 ident(1.0);
 		this->scale = scale;
@@ -68,7 +66,7 @@ public:
 private:
     /*  Functions   */
     // Loads a SceneModel with supported ASSIMP extensions from file and stores the resulting meshes in the meshes vector.
-    void loadModel(string path)
+    void loadModel(std::string path)
     {
         // Read file via ASSIMP
         Assimp::Importer importer;
@@ -76,7 +74,7 @@ private:
         // Check for errors
         if(!scene || scene->mFlags == AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) // if is Not Zero
         {
-            cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << endl;
+            std::cout << "ERROR::ASSIMP:: " << importer.GetErrorString() << std::endl;
             return;
         }
         // Retrieve the directory path of the filepath
@@ -108,9 +106,9 @@ private:
     Mesh processMesh(aiMesh* mesh, const aiScene* scene)
     {
         // Data to fill
-        vector<Vertex> vertices;
-        vector<GLuint> indices;
-        vector<Texture> textures;
+        std::vector<Vertex> vertices;
+        std::vector<GLuint> indices;
+        std::vector<Texture> textures;
         bool noBTN = true;
         // Walk through each of the mesh's vertices
         for(GLuint i = 0; i < mesh->mNumVertices; i++)
@@ -175,10 +173,10 @@ private:
             // Normal: texture_normalN
 
             // 1. Diffuse maps
-            vector<Texture> diffuseMaps = this->loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
+            std::vector<Texture> diffuseMaps = this->loadMaterialTextures(material, aiTextureType_DIFFUSE, "texture_diffuse");
             textures.insert(textures.end(), diffuseMaps.begin(), diffuseMaps.end());
             // 2. Specular maps
-            vector<Texture> specularMaps = this->loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
+            std::vector<Texture> specularMaps = this->loadMaterialTextures(material, aiTextureType_SPECULAR, "texture_specular");
             textures.insert(textures.end(), specularMaps.begin(), specularMaps.end());
             // 3. Normal maps
             std::vector<Texture> normalMaps = this->loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
@@ -194,9 +192,9 @@ private:
 
     // Checks all material textures of a given type and loads the textures if they're not loaded yet.
     // The required info is returned as a Texture struct.
-    vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, string typeName)
+    std::vector<Texture> loadMaterialTextures(aiMaterial* mat, aiTextureType type, std::string typeName)
     {
-        vector<Texture> textures;
+        std::vector<Texture> textures;
         for(GLuint i = 0; i < mat->GetTextureCount(type); i++)
         {
             aiString str;
@@ -229,10 +227,10 @@ private:
 
 
 
-GLint TextureFromFile(const char* path, string directory, bool gamma)
+GLint TextureFromFile(const char* path, std::string directory, bool gamma)
 {
      //Generate texture ID and load texture data 
-    string filename = string(path);
+    std::string filename = std:: string(path);
     filename = directory + '/' + filename;
     GLuint textureID=0;
     glGenTextures(1, &textureID);

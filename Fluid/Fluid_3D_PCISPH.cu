@@ -74,7 +74,7 @@ namespace Fluid_3D_PCISPH {
 	}
 	// this is not for PCISPH.
 	// It is used for a pure particle simulation, same as the one in CUDA samples
-	__global__ void integrate(Particle* particles, float cellSize, int particleCount, int* cellBegin, int* cellEnd, int3 gridSize, float3 gridDimension, float kernelRadius, float timestep, float spacing) {
+	__global__ void integrate(Particle* particles, float cellSize, int particleCount, int* cellBegin, int* cellEnd, int3 gridSize, float3 gridPhysicalSize, float kernelRadius, float timestep, float spacing) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
 		if (index >= particleCount) return;
 
@@ -95,8 +95,8 @@ namespace Fluid_3D_PCISPH {
 			vel.x *= bounce;;
 		}
 
-		if (pos.x > gridDimension.x - spacing) {
-			pos.x = gridDimension.x - spacing;
+		if (pos.x > gridPhysicalSize.x - spacing) {
+			pos.x = gridPhysicalSize.x - spacing;
 			vel.x *= bounce;;
 		}
 
@@ -105,8 +105,8 @@ namespace Fluid_3D_PCISPH {
 			vel.y *= bounce;;
 		}
 
-		if (pos.y > gridDimension.y - spacing) {
-			pos.y = gridDimension.y - spacing;
+		if (pos.y > gridPhysicalSize.y - spacing) {
+			pos.y = gridPhysicalSize.y - spacing;
 			vel.y *= bounce;;
 		}
 
@@ -115,8 +115,8 @@ namespace Fluid_3D_PCISPH {
 			vel.z *= bounce;;
 		}
 
-		if (pos.z > gridDimension.z - spacing) {
-			pos.z = gridDimension.z - spacing;
+		if (pos.z > gridPhysicalSize.z - spacing) {
+			pos.z = gridPhysicalSize.z - spacing;
 			vel.z *= bounce;;
 		}
 
@@ -159,7 +159,7 @@ namespace Fluid_3D_PCISPH {
 	}
 
 
-	__global__ void predictVelocityAndPositionImpl(Particle* particles, int particleCount, float timestep, bool setAsActual, float spacing, float3 gridDimension) {
+	__global__ void predictVelocityAndPositionImpl(Particle* particles, int particleCount, float timestep, bool setAsActual, float spacing, float3 gridPhysicalSize) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
 		if (index >= particleCount) return;
 
@@ -178,8 +178,8 @@ namespace Fluid_3D_PCISPH {
 			vel.x *= bounce;;
 		}
 
-		if (pos.x > gridDimension.x - minDistanceFromWall) {
-			pos.x = gridDimension.x - minDistanceFromWall;
+		if (pos.x > gridPhysicalSize.x - minDistanceFromWall) {
+			pos.x = gridPhysicalSize.x - minDistanceFromWall;
 			vel.x *= bounce;;
 		}
 
@@ -188,8 +188,8 @@ namespace Fluid_3D_PCISPH {
 			vel.y *= bounce;;
 		}
 
-		if (pos.y > gridDimension.y - minDistanceFromWall) {
-			pos.y = gridDimension.y - minDistanceFromWall;
+		if (pos.y > gridPhysicalSize.y - minDistanceFromWall) {
+			pos.y = gridPhysicalSize.y - minDistanceFromWall;
 			vel.y *= bounce;;
 		}
 
@@ -198,14 +198,15 @@ namespace Fluid_3D_PCISPH {
 			vel.z *= bounce;;
 		}
 
-		if (pos.z > gridDimension.z - minDistanceFromWall) {
-			pos.z = gridDimension.z - minDistanceFromWall;
+		if (pos.z > gridPhysicalSize.z - minDistanceFromWall) {
+			pos.z = gridPhysicalSize.z - minDistanceFromWall;
 			vel.z *= bounce;;
 		}
 
 		if (setAsActual) {
 			particle.position = pos;
 			particle.velosity = vel;
+
 		}
 		else {
 			particle.predictedPosition = pos;
@@ -214,7 +215,7 @@ namespace Fluid_3D_PCISPH {
 
 	}
 
-	__global__ void predictDensityAndPressureImpl(Particle* particles, float cellSize, int particleCount, int* cellBegin, int* cellEnd, int3 gridSize, float kernelRadius, bool setAsRest, float timestep) {
+	__global__ void predictDensityAndPressureImpl(Particle* particles,int particleCount, int* cellBegin, int* cellEnd, int3 gridSize, float kernelRadius,float kernelRadius2,float kernelRadius6,float kernelRadius9, bool setAsRest, float timestep) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
 		if (index >= particleCount) return;
 
@@ -224,9 +225,9 @@ namespace Fluid_3D_PCISPH {
 		float3 pos = particle.position;
 		int3 thisCell;
 
-		thisCell.x = pos.x / cellSize;
-		thisCell.y = pos.y / cellSize;
-		thisCell.z = pos.z / cellSize;
+		thisCell.x = pos.x / kernelRadius;
+		thisCell.y = pos.y / kernelRadius;
+		thisCell.z = pos.z / kernelRadius;
 
 		float rho0 = particle.restDensity;
 
@@ -236,6 +237,7 @@ namespace Fluid_3D_PCISPH {
 
 		float3 sumGradW = make_float3(0, 0, 0);
 		float sumGradWDot = 0;
+
 
 #pragma unroll
 		for (int dx = -1; dx <= 1; ++dx) {
@@ -256,8 +258,14 @@ namespace Fluid_3D_PCISPH {
 					for (int j = cellBegin[hash]; j <= cellEnd[hash]; ++j) {
 						Particle& that = particles[j];
 						float3 posDiff = particle.predictedPosition - that.predictedPosition;
-						density += poly6(posDiff, kernelRadius);
-						float3 gradW = spikey_grad(posDiff, kernelRadius);
+						float thisDensityContribution = poly6(posDiff, kernelRadius2,kernelRadius9);
+
+
+
+						density += thisDensityContribution;
+
+
+						float3 gradW = spikey_grad(posDiff, kernelRadius,kernelRadius6);
 						sumGradW += gradW;
 						sumGradWDot += dot(gradW, gradW);
 					}
@@ -268,6 +276,7 @@ namespace Fluid_3D_PCISPH {
 
 		if (setAsRest) {
 			particle.restDensity = density;
+			
 		}
 
 
@@ -279,13 +288,10 @@ namespace Fluid_3D_PCISPH {
 		float pressureCorrection = correctionCoeff * rhoError;
 		particle.pressure += pressureCorrection;
 
-		if (index == 666) {
-			//printf("rho: %f \n", density);
-			//printf("stiff: %f \n", correctionCoeff);
-		}
+
 	}
 
-	__global__ void computePressureForceImpl(Particle* particles, float cellSize, int particleCount, int* cellBegin, int* cellEnd, int3 gridSize, float kernelRadius) {
+	__global__ void computePressureForceImpl(Particle* particles, int particleCount, int* cellBegin, int* cellEnd, int3 gridSize, float kernelRadius,float kernelRadius2, float kernelRadius6, float kernelRadius9 ) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
 		if (index >= particleCount) return;
 
@@ -295,9 +301,9 @@ namespace Fluid_3D_PCISPH {
 		float3 pos = particle.position;
 		int3 thisCell;
 
-		thisCell.x = pos.x / cellSize;
-		thisCell.y = pos.y / cellSize;
-		thisCell.z = pos.z / cellSize;
+		thisCell.x = pos.x / kernelRadius;
+		thisCell.y = pos.y / kernelRadius;
+		thisCell.z = pos.z / kernelRadius;
 
 		float3 force = make_float3(0, 0, 0);
 
@@ -319,7 +325,7 @@ namespace Fluid_3D_PCISPH {
 					}
 					for (int j = cellBegin[hash]; j <= cellEnd[hash]; ++j) {
 						Particle that = particles[j];
-						force -= spikey_grad(particle.predictedPosition - that.predictedPosition, kernelRadius)
+						force -= spikey_grad(particle.predictedPosition - that.predictedPosition, kernelRadius,kernelRadius6)
 							* ((that.pressure / (that.density * that.density)) + (particle.pressure / (particle.density * particle.density)));
 					}
 				}
@@ -341,43 +347,58 @@ namespace Fluid_3D_PCISPH {
 
 	void Fluid::draw(const DrawCommand& drawCommand){
 		skybox.draw(drawCommand);
-		container.draw(drawCommand);
+		//container.draw(drawCommand);
+
 
 		if (drawCommand.renderMode == RenderMode::Mesh) {
+			cudaDeviceSynchronize();
 			mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
 			cudaDeviceSynchronize();
 			meshRenderer->draw(drawCommand, skybox.texSkyBox);
 		}
 		else {
 			updatePositionsVBO << <numBlocks, numThreads >> > (particles, pointSprites->positionsDevice, particleCount);
+			cudaDeviceSynchronize();
 			pointSprites->draw(drawCommand, particleSpacing/2, skybox.texSkyBox);
 		}
 
 	}
 
 	void Fluid::createSquareFluid(std::vector<Particle>& particlesVec, float3 minPos, float3 maxPos) {
+		float minDistanceFromWall = particleSpacing / 2.f;
+
 		float3 minPhysicalPos = {
-			minPos.x * gridDimension.x,
-			minPos.y* gridDimension.y,
-			minPos.z* gridDimension.z,
+			minPos.x * gridPhysicalSize.x,
+			minPos.y* gridPhysicalSize.y,
+			minPos.z* gridPhysicalSize.z,
 		};
-		minPhysicalPos += make_float3(1, 1, 1) * particleSpacing*0.5;
+		minPhysicalPos += make_float3(1, 1, 1) * minDistanceFromWall;
 		float3 maxPhysicalPos = {
-			maxPos.x* gridDimension.x,
-			maxPos.y* gridDimension.y,
-			maxPos.z* gridDimension.z,
+			maxPos.x* gridPhysicalSize.x,
+			maxPos.y* gridPhysicalSize.y,
+			maxPos.z* gridPhysicalSize.z,
 		};
-		maxPhysicalPos -= make_float3(1, 1, 1) * particleSpacing*0.5;
+		maxPhysicalPos -= make_float3(1, 1, 1) * (minDistanceFromWall - 1e-3);
 		for (float x = minPhysicalPos.x ; x <= maxPhysicalPos.x; x += particleSpacing) {
 			for (float y = minPhysicalPos.y; y <= maxPhysicalPos.y ; y += particleSpacing) {
 				for (float z = minPhysicalPos.z; z <= maxPhysicalPos.z ; z += particleSpacing) {
-					float jitterMagnitude = 0;
+					float jitterMagnitude = particleSpacing/2.f;
 					float3 jitter;
 					jitter.x = (random0to1() - 0.5);
 					jitter.y = (random0to1() - 0.5);
 					jitter.z = (random0to1() - 0.5);
 					jitter *= jitterMagnitude;
-					particlesVec.emplace_back(make_float3(x, y, z) + jitter);
+					float3 pos = make_float3(x, y, z);
+					pos += jitter;
+
+
+					
+					
+					pos.x = min(gridPhysicalSize.x - minDistanceFromWall, max(minDistanceFromWall, pos.x));
+					pos.y = min(gridPhysicalSize.y - minDistanceFromWall, max(minDistanceFromWall, pos.y));
+					pos.z = min(gridPhysicalSize.z - minDistanceFromWall, max(minDistanceFromWall, pos.z));
+
+					particlesVec.emplace_back(pos);
 
 				}
 			}
@@ -389,16 +410,16 @@ namespace Fluid_3D_PCISPH {
 			0,0,0
 		};
 		minPhysicalPos += make_float3(1, 1, 1) * particleSpacing * 0.5;
-		float3 maxPhysicalPos = gridDimension;
+		float3 maxPhysicalPos = gridPhysicalSize;
 		maxPhysicalPos -= make_float3(1, 1, 1) * particleSpacing * 0.5;
 
 		float3 physicalCenter = {
-			center.x * gridDimension.x,
-			center.y * gridDimension.y,
-			center.z * gridDimension.z
+			center.x * gridPhysicalSize.x,
+			center.y * gridPhysicalSize.y,
+			center.z * gridPhysicalSize.z
 		};
 
-		float physicalRadius = radius * gridDimension.y;
+		float physicalRadius = radius * gridPhysicalSize.y;
 
 		for (float x = minPhysicalPos.x; x < maxPhysicalPos.x; x += particleSpacing) {
 			for (float y = minPhysicalPos.y; y < maxPhysicalPos.y; y += particleSpacing) {
@@ -429,12 +450,18 @@ namespace Fluid_3D_PCISPH {
 
 #if SIMULATE_PARTICLES_NOT_FLUID
 
-		kernelRadius = gridDimension.x / 64;
+		kernelRadius = gridPhysicalSize.x / 64;
 		particleSpacing = kernelRadius / 2;
 		
 #else
-		particleSpacing = pow(gridDimension.x * gridDimension.y * gridDimension.z / particleCountWhenFull, 1.0 / 3.0);
+		particleSpacing = pow(gridPhysicalSize.x * gridPhysicalSize.y * gridPhysicalSize.z / particleCountWhenFull, 1.0 / 3.0);
+
+		particleSpacing = gridPhysicalSize.x / ceil(gridPhysicalSize.x / particleSpacing); // so that gridPhysicalSize is exact multiple.
+
 		kernelRadius = particleSpacing * kernelRadiusToSpacingRatio;
+		kernelRadius2 = kernelRadius * kernelRadius;
+		kernelRadius6 = kernelRadius2 * kernelRadius2 * kernelRadius2;
+		kernelRadius9 = kernelRadius6 * kernelRadius2 * kernelRadius;
 #endif
 
 		
@@ -465,9 +492,9 @@ namespace Fluid_3D_PCISPH {
 		numThreads = min(1024, particleCount);
 		numBlocks = divUp(particleCount, numThreads);
 
-		gridSize.x = ceil(gridDimension.x / kernelRadius);
-		gridSize.y = ceil(gridDimension.y / kernelRadius);
-		gridSize.z = ceil(gridDimension.z / kernelRadius);
+		gridSize.x = ceil(gridPhysicalSize.x / kernelRadius);
+		gridSize.y = ceil(gridPhysicalSize.y / kernelRadius);
+		gridSize.z = ceil(gridPhysicalSize.z / kernelRadius);
 
 		cellCount = gridSize.x * gridSize.y * gridSize.z;
 
@@ -479,9 +506,8 @@ namespace Fluid_3D_PCISPH {
 
 
 
-		pointSprites = new PointSprites(particleCount);
+		pointSprites = std::make_shared<PointSprites>(particleCount);
 
-		std::cout << "particle count : " << particleCount << std::endl;
 
 		computeRestDensity();
 		HANDLE_ERROR(cudaMemcpy(particlesVec.data(), particles, particleCount * sizeof(Particle), cudaMemcpyDeviceToHost));
@@ -503,6 +529,8 @@ namespace Fluid_3D_PCISPH {
 		}
 		variance /= (float)particleCount;
 
+		std::cout << "particle count : " << particleCount << std::endl;
+
 
 		std::cout << "spacing : " << particleSpacing << std::endl;
 		std::cout << "kernel radius : " << kernelRadius << std::endl;
@@ -513,7 +541,7 @@ namespace Fluid_3D_PCISPH {
 
 
 
-		mesher = std::make_shared<Mesher>(gridDimension, particleSpacing, particleCount, numBlocks, numThreads);
+		mesher = std::make_shared<Mesher>(gridPhysicalSize, particleSpacing, particleCount, numBlocks, numThreads);
 		meshRenderer = std::make_shared<FluidMeshRenderer>(mesher->triangleCount);
 	}
 
@@ -521,7 +549,7 @@ namespace Fluid_3D_PCISPH {
 		performSpatialHashing2(particleIndices, particleHashes, particles, particlesCopy, particleCount, kernelRadius, gridSize.x, gridSize.y, gridSize.z, numBlocks, numThreads, cellBegin, cellEnd, cellCount);
 
 		predictDensityAndPressureImpl << <numBlocks, numThreads >> >
-			(particles, kernelRadius, particleCount, cellBegin, cellEnd, gridSize, kernelRadius, true, timestep / (float)substeps);
+			(particles,particleCount, cellBegin, cellEnd, gridSize, kernelRadius, kernelRadius2, kernelRadius6, kernelRadius9, true, timestep / (float)substeps);
 
 	}
 
@@ -536,7 +564,7 @@ namespace Fluid_3D_PCISPH {
 
 			float afterHashing = glfwGetTime();
 
-			integrate << <numBlocks, numThreads >> > (particles, kernelRadius, particleCount, cellBegin, cellEnd, gridSize, gridDimension, kernelRadius, particlesTimestep, particleSpacing);
+			integrate << <numBlocks, numThreads >> > (particles, kernelRadius, particleCount, cellBegin, cellEnd, gridSize, gridPhysicalSize, kernelRadius, particlesTimestep, particleSpacing);
 
 			collide << <numBlocks, numThreads >> > (particles, kernelRadius, particleCount, cellBegin, cellEnd, gridSize, kernelRadius, particlesTimestep, particleSpacing);
 		}
@@ -551,7 +579,7 @@ namespace Fluid_3D_PCISPH {
 
 		for (int i = 0; i < substeps; ++i) {
 
-			performSpatialHashing(particleHashes, particles, particleCount, kernelRadius, gridSize.x, gridSize.y, gridSize.z, numBlocks, numThreads, cellBegin, cellEnd, cellCount);
+			performSpatialHashing2(particleIndices,particleHashes, particles, particlesCopy, particleCount, kernelRadius, gridSize.x, gridSize.y, gridSize.z, numBlocks, numThreads, cellBegin, cellEnd, cellCount);
 
 			computeExternalForces();
 			initPressure();
@@ -589,21 +617,21 @@ namespace Fluid_3D_PCISPH {
 
 	void Fluid::predictVelocityAndPosition() {
 		predictVelocityAndPositionImpl << <numBlocks, numThreads >> >
-			(particles, particleCount, timestep / (float)substeps, false, particleSpacing, gridDimension);
+			(particles, particleCount, timestep / (float)substeps, false, particleSpacing, gridPhysicalSize);
 	}
 
 	void Fluid::predictDensityAndPressure() {
 		predictDensityAndPressureImpl << <numBlocks, numThreads >> >
-			(particles, kernelRadius, particleCount, cellBegin, cellEnd, gridSize, kernelRadius, false, timestep / (float)substeps);
+			(particles, particleCount, cellBegin, cellEnd, gridSize, kernelRadius, kernelRadius2, kernelRadius6, kernelRadius9, false, timestep / (float)substeps);
 	}
 
 	void Fluid::computePressureForce() {
 		computePressureForceImpl << <numBlocks, numThreads >> >
-			(particles, kernelRadius, particleCount, cellBegin, cellEnd, gridSize, kernelRadius);
+			(particles,  particleCount, cellBegin, cellEnd, gridSize, kernelRadius, kernelRadius2, kernelRadius6, kernelRadius9 );
 	}
 
 	void Fluid::computeNewVelocityAndPosition() {
 		predictVelocityAndPositionImpl << <numBlocks, numThreads >> >
-			(particles, particleCount, timestep / (float)substeps, true, particleSpacing, gridDimension);
+			(particles, particleCount, timestep / (float)substeps, true, particleSpacing, gridPhysicalSize);
 	}
 }

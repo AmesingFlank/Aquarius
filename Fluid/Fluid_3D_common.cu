@@ -48,9 +48,7 @@ void  computeDivergence(MAC_Grid_3D& grid, float restParticlesPerCell) {
 
 void  solvePressureJacobi(float timeStep, MAC_Grid_3D& grid, int iterations) {
 
-	resetPressureImpl << < grid.numBlocksCell, grid.numThreadsCell >> > (grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ);
-	precomputeNeighbors << < grid.numBlocksCell, grid.numThreadsCell >> >
-		(grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ);
+	//resetPressureImpl << < grid.numBlocksCell, grid.numThreadsCell >> > (grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ);
 
 	for (int i = 0; i < iterations; ++i) {
 		jacobiImpl << < grid.numBlocksCell, grid.numThreadsCell >> >

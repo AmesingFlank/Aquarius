@@ -8,7 +8,7 @@
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 #include <iostream>
-#include "WeightKernels.h"
+#include "WeightKernels.cuh"
 #include "Fluid_2D.h"
 
 #include "FLuid_2D_common.cuh"

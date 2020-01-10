@@ -1,8 +1,5 @@
 #pragma once
 
-#ifndef FLUID_3D_PCISPH
-#define FLUID_3D_PCISPH
-
 #include "../GpuCommons.h"
 #include <vector>
 #include <algorithm>
@@ -19,36 +16,34 @@
 #include "../Rendering/Renderer3D/FluidMeshRenderer.cuh"
 
 
-namespace Fluid_3D_PCISPH {
+namespace Fluid_3D_PBF {
 
 	__host__ __device__ struct Particle {
 		float3 position;
+		float3 lastPosition;
+		float3 deltaPosition;
+
 		float3 velosity = make_float3(0, 0, 0);
+
+		float lambda;
+
 		float density;
-		float pressure = 0;
 		float restDensity;
 
-		float3 pressureForces = make_float3(0, 0, 0);
-		float3 acceleration = make_float3(0, 0, 0);
+		float s_corr;
 
-		float3 predictedPosition;
-		float3 predictedVelocity = make_float3(0, 0, 0);
-
-		float mass = 1;
-
-		__host__ __device__ Particle(float3 position_) :position(position_),predictedPosition(position_) {
+		__host__ __device__ Particle(float3 position_) :position(position_), lastPosition(position_) {
 
 		}
-		
+
 		__host__ __device__ Particle() {
 
 		}
 	};
-	
 
 
 
-	class Fluid : public Fluid_3D{
+	class Fluid : public Fluid_3D {
 	public:
 		int particleCount;
 		int cellCount;
@@ -60,8 +55,8 @@ namespace Fluid_3D_PCISPH {
 		int* cellBegin;
 		int* cellEnd;
 
-		float timestep = 0.005;
-		float substeps = 1;
+		float timestep = 0.016;
+		float substeps = 3;
 
 		float3 gridPhysicalSize = make_float3(10.f, 10.f, 10.f);
 
@@ -71,65 +66,63 @@ namespace Fluid_3D_PCISPH {
 
 		float particleCountWhenFull = 3e5;
 
-		float kernelRadiusToSpacingRatio = 2;
-
-		float stiffness = 15;
+		float kernelRadiusToSpacingRatio = 2.01;
 
 		float kernelRadius;
 		float kernelRadius2;
+		float kernelRadius3;
+		float kernelRadius5;
 		float kernelRadius6;
 		float kernelRadius9;
 
 		float particleSpacing;
 
-		float minIterations = 4;
 
-		float maxIterations = 10;
-
+		float solverIterations = 5;
 
 
+
+		
 		int numThreads, numBlocks;
 
 		Container container = Container(glm::vec3(gridPhysicalSize.x, gridPhysicalSize.y, gridPhysicalSize.z));
 
-		Skybox skybox = Skybox("resources/Skyboxes/GamlaStan2/",".jpg");
+		Skybox skybox = Skybox("resources/Skyboxes/GamlaStan2/", ".jpg");
 
 		std::shared_ptr<Mesher> mesher;
 		std::shared_ptr<FluidMeshRenderer> meshRenderer;
 		std::shared_ptr<PointSprites> pointSprites;
+
+
 
 		Fluid();
 
 
 		virtual void draw(const DrawCommand& drawCommand) override;
 
-		virtual void init(std::shared_ptr<FluidConfig> config);
-
-		void computeRestDensity();
+		virtual void init(std::shared_ptr<FluidConfig> config) override;
 
 		virtual void simulationStep() override;
 
-		void computeExternalForces();
 
-		void initPressure();
-		bool hasBigError();
-		void predictVelocityAndPosition();
-		void predictDensityAndPressure();
+		void computeRestDensity();
+		void applyForces();
+		void predictPosition();
 
-		void computePressureForce();
+		void computeDensityAndLambda(bool setDensityAsRestDensity);
+		void computeDeltaPosition();
+		void applyDeltaPosition();
 
-		void computeNewVelocityAndPosition();
+
+		void updateVelocityAndPosition();
+
+
 
 
 		void createSquareFluid(std::vector<Particle>& particlesVec, float3 minPos, float3 maxPos);
 		void createSphereFluid(std::vector<Particle>& particlesVec, float3 center, float radius);
 
 
-		//simulate as particles (same as the one in cuda samples). For debugging only.
-		void simulateAsParticles();
-
 
 	};
 }
-
-#endif

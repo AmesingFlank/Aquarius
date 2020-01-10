@@ -6,7 +6,7 @@
 #include <memory>
 #include "../GpuCommons.h"
 #include <cmath>
-#include "WeightKernels.h"
+#include "WeightKernels.cuh"
 #include <thrust/functional.h>
 
 

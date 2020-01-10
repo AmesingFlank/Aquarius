@@ -265,9 +265,14 @@ namespace Fluid_3D_FLIP {
 		float3 newGridVelocity = MAC_Grid_3D::getPointNewVelocity(particle.position, cellPhysicalSize, sizeX, sizeY, sizeZ, cells);
 		float3 oldGridVelocity = MAC_Grid_3D::getPointVelocity(particle.position, cellPhysicalSize, sizeX, sizeY, sizeZ, cells);
 		float3 velocityChange = newGridVelocity - oldGridVelocity;
-		particle.velocity += velocityChange; //FLIP
+		
+		float3 FLIP = particle.velocity + velocityChange;
+		float3 PIC = newGridVelocity;
 
-		//particle.velocity = newGridVelocity; //PIC
+		float FLIP_coeff = 0.9;
+		
+
+		particle.velocity = FLIP_coeff * FLIP + (1.0f - FLIP_coeff) * PIC;
 
 
 	}
@@ -441,6 +446,8 @@ namespace Fluid_3D_FLIP {
 
 
 		grid = std::make_shared<MAC_Grid_3D>(sizeX, sizeY, sizeZ, cellPhysicalSize);
+		precomputeNeighbors << < grid->numBlocksCell, grid->numThreadsCell >> >
+			(grid->cells, grid->sizeX, grid->sizeY, grid->sizeZ);
 		container = std::make_shared<Container>(glm::vec3(sizeX, sizeY, sizeZ) * cellPhysicalSize);
 
 		Cell3D* cellsTemp = grid->copyCellsToHost();
@@ -506,10 +513,14 @@ namespace Fluid_3D_FLIP {
 			for (float dy = 0; dy <= 1; ++dy) {
 				for (float dz = 0; dz <= 1; ++dz) {
 					float3 subcellCenter = make_float3(dx - 0.5, dy - 0.5, dz - 0.5) * 0.5 * cellPhysicalSize + centerPos;
-					float xBias = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
-					float yBias = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
-					float zBias = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
-					float3 particlePos = subcellCenter + make_float3(xBias, yBias, zBias);
+
+					float xJitter = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
+					float yJitter = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
+					float zJitter = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
+					float3 jitter = make_float3(xJitter, yJitter, zJitter);
+
+					float3 particlePos = subcellCenter;
+					particlePos += jitter;
 
 					float minDistanceFromWall = cellPhysicalSize / 4;
 

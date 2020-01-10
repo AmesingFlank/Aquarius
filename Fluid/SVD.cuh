@@ -77,6 +77,18 @@ void computeSVD(Mat3x3 mat, float3& eVals, float3& v0, float3& v1, float3& v2) {
 	eVals.y = x2 * sqrt(p) / 3 - c2 / 3.0;
 	eVals.z = x3 * sqrt(p) / 3 - c2 / 3.0;
 
+	if (eVals.y < eVals.z) {
+		float temp = eVals.y;
+		eVals.y = eVals.z;
+		eVals.z = temp;
+	}
+
+	if (eVals.x < eVals.y) {
+		float temp = eVals.x;
+		eVals.x = eVals.y;
+		eVals.y = temp;
+	}
+
 	float3 A1 = { a11,a21,a31 };
 	float3 A2 = { a12,a22,a32 };
 	float3 e1 = { 1,0,0 };

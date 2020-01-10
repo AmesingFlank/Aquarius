@@ -9,7 +9,7 @@
 #include <thrust/sort.h>
 #include <thrust/execution_policy.h>
 #include <iostream>
-#include "WeightKernels.h"
+#include "WeightKernels.cuh"
 #include "Rendering/Renderer3D/PointSprites.h"
 #include "Rendering/Renderer3D/Container.h"
 
@@ -76,7 +76,7 @@ namespace Fluid_3D_SPH{
 
 	}
 
-	__global__ void updatePositionImpl(Particle* particles, int particleCount, float3 gridDimension,float spacing,float timeStep) {
+	__global__ void updatePositionImpl(Particle* particles, int particleCount, float3 gridPhysicalSize,float spacing,float timeStep) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
 		if (index >= particleCount) return;
 
@@ -90,8 +90,8 @@ namespace Fluid_3D_SPH{
 			particle.velosity.x *= bounce;;
 		}
 
-		if (particle.position.x > gridDimension.x-spacing) {
-			particle.position.x = gridDimension.x - spacing;
+		if (particle.position.x > gridPhysicalSize.x-spacing) {
+			particle.position.x = gridPhysicalSize.x - spacing;
 			particle.velosity.x *= bounce;;
 		}
 
@@ -100,8 +100,8 @@ namespace Fluid_3D_SPH{
 			particle.velosity.y *= bounce;;
 		}
 
-		if (particle.position.y > gridDimension.y - spacing) {
-			particle.position.y = gridDimension.y - spacing;
+		if (particle.position.y > gridPhysicalSize.y - spacing) {
+			particle.position.y = gridPhysicalSize.y - spacing;
 			particle.velosity.y *= bounce;;
 		}
 
@@ -110,8 +110,8 @@ namespace Fluid_3D_SPH{
 			particle.velosity.z *= bounce;;
 		}
 
-		if (particle.position.z > gridDimension.z - spacing) {
-			particle.position.z = gridDimension.z - spacing;
+		if (particle.position.z > gridPhysicalSize.z - spacing) {
+			particle.position.z = gridPhysicalSize.z - spacing;
 			particle.velosity.z *= bounce;;
 		}
 	}
@@ -252,7 +252,7 @@ namespace Fluid_3D_SPH{
 		float timestep = 1e-2;
 		float substeps = 10;
 
-		float3 gridDimension = make_float3(10.f, 10.f, 10.f);
+		float3 gridPhysicalSize = make_float3(10.f, 10.f, 10.f);
 
 		int3 gridSize;
 
@@ -272,7 +272,7 @@ namespace Fluid_3D_SPH{
 
 		int numThreads, numBlocks;
 
-		Container container = Container(glm::vec3(gridDimension.x,gridDimension.y,gridDimension.z));
+		Container container = Container(glm::vec3(gridPhysicalSize.x,gridPhysicalSize.y,gridPhysicalSize.z));
 
 
 		Fluid() {
@@ -343,18 +343,18 @@ namespace Fluid_3D_SPH{
 		*/
 
 		void initFluid() {
-			particleSpacing = pow(gridDimension.x * gridDimension.y * gridDimension.z / particleCountWhenFull, 1.0 / 3.0);
+			particleSpacing = pow(gridPhysicalSize.x * gridPhysicalSize.y * gridPhysicalSize.z / particleCountWhenFull, 1.0 / 3.0);
 
 			kernelRadius = particleSpacing * kernelRadiusToSpacingRatio;
 
 			std::vector<Particle> particlesVec;
-			for (float x = particleSpacing; x < gridDimension.x - particleSpacing; x+=particleSpacing) {
-				for (float y = particleSpacing; y < gridDimension.y - particleSpacing; y+=particleSpacing) {
-					for (float z = particleSpacing; z < gridDimension.z - particleSpacing; z += particleSpacing) {
-						if (x <= gridDimension.x  && y <= gridDimension.y/2  && z <= gridDimension.z ) {
+			for (float x = particleSpacing; x < gridPhysicalSize.x - particleSpacing; x+=particleSpacing) {
+				for (float y = particleSpacing; y < gridPhysicalSize.y - particleSpacing; y+=particleSpacing) {
+					for (float z = particleSpacing; z < gridPhysicalSize.z - particleSpacing; z += particleSpacing) {
+						if (x <= gridPhysicalSize.x  && y <= gridPhysicalSize.y/2  && z <= gridPhysicalSize.z ) {
 							particlesVec.emplace_back(make_float3(x, y, z));
 						}
-						else if (length(make_float3(x-gridDimension.x*0.5,y-gridDimension.y*0.75,z-gridDimension.z*0.5)) < gridDimension.x*0.2) {
+						else if (length(make_float3(x-gridPhysicalSize.x*0.5,y-gridPhysicalSize.y*0.75,z-gridPhysicalSize.z*0.5)) < gridPhysicalSize.x*0.2) {
 							//particlesVec.emplace_back(make_float3(x, y, z));
 						}
 					}
@@ -368,9 +368,9 @@ namespace Fluid_3D_SPH{
 			numThreads = min(1024, particleCount);
 			numBlocks = divUp(particleCount, numThreads);
 
-			gridSize.x = ceil(gridDimension.x / kernelRadius);
-			gridSize.y = ceil(gridDimension.y / kernelRadius);
-			gridSize.z = ceil(gridDimension.z / kernelRadius);
+			gridSize.x = ceil(gridPhysicalSize.x / kernelRadius);
+			gridSize.y = ceil(gridPhysicalSize.y / kernelRadius);
+			gridSize.z = ceil(gridPhysicalSize.z / kernelRadius);
 
 			cellCount = gridSize.x * gridSize.y * gridSize.z;
 
@@ -452,7 +452,7 @@ namespace Fluid_3D_SPH{
 
 		void updatePosition() {
 			updatePositionImpl << <numBlocks, numThreads >> >
-				(particles, particleCount, gridDimension, particleSpacing,timestep / substeps);
+				(particles, particleCount, gridPhysicalSize, particleSpacing,timestep / substeps);
 		}
 
 		void updateVelocity() {

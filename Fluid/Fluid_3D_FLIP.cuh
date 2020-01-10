@@ -32,24 +32,6 @@ namespace Fluid_3D_FLIP{
 		}
 	};
 
-
-	__global__  void transferToCellAccumPhase(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd,
-		Particle* particles, int particleCount);
-
-	__global__  void transferToCellDividePhase(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd,
-		Particle* particles, int particleCount);
-
-
-	__global__  void calcDensityImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd,
-		Particle* particles, int particleCount);
-
-
-	__global__  void transferToParticlesImpl(Cell3D* cells, Particle* particles, int particleCount, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize);
-
-	__global__  void moveParticlesImpl(float timeStep, Cell3D* cells, Particle* particles, int particleCount, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize);
-
-	__global__  void resetAllCells(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float content);
-
 	
 
 	class Fluid :public Fluid_3D {

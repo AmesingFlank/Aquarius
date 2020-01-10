@@ -445,7 +445,6 @@ void marchingCubes(float* output, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, f
 
 __global__
 void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float particleRadius,int* hasSDF,float3* meanXCell,cudaSurfaceObject_t sdfSurface) {
-
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
 	int cellCount = (sizeX) * (sizeY) * (sizeZ);
@@ -509,5 +508,74 @@ void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, flo
 		surf3Dwrite<float>(newSDF, sdfSurface, x * sizeof(float), y, z);
 		//meanXCell[index] = newMeanX;
 	}
+
+}
+
+
+
+__global__
+void smoothSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float particleRadius, cudaSurfaceObject_t sdfSurface, int* hasSDF, float sigma) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+	sigma = 1;
+
+	int cellCount = (sizeX) * (sizeY) * (sizeZ);
+
+	if (index >= cellCount) return;
+
+	int x = index / (sizeY * sizeZ);
+	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
+	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
+
+
+	if (!hasSDF[index]) {
+		return;
+	}
+
+	float newSDF = 0;
+
+	float originalSDF = surf3Dread<float>( sdfSurface, x * sizeof(float), y, z);
+
+	
+
+	float3 centerPos = make_float3(x-1, y-1, z-1) * cellPhysicalSize;
+
+	float commonWeight = 0.0639 / sigma;  //= 1.0 / (pow(2 * M_PI, 3.0 / 2.0) * sigma);
+
+	float sumWeight = 0;
+
+#pragma unroll
+	for (int dx = -1; dx <= 1; ++dx) {
+#pragma unroll
+		for (int dy = -1; dy <= 1; ++dy) {
+#pragma unroll
+			for (int dz = -1; dz <= 1; ++dz) {
+
+				int thatX = x + dx;
+				int thatY = y + dy;
+				int thatZ = z + dz;
+
+
+				int cell = thatX * sizeY * sizeZ + thatY * sizeZ + thatZ;
+
+				float3 thatPos = centerPos + make_float3( dx,   dy,  dz) * cellPhysicalSize;
+				float weight = commonWeight * exp(-length(thatPos - centerPos) / (2 * sigma * sigma));
+
+				if (thatX >= 0 && thatX < sizeX && thatY>0 && thatY<sizeY && thatZ > 0 && thatZ<sizeZ && hasSDF[cell]) {
+					float thatSDF = surf3Dread<float>( sdfSurface, thatX* sizeof(float), thatY,thatZ);
+					newSDF += thatSDF * weight;
+				}
+				else {
+					newSDF += originalSDF * weight;
+				}
+
+				sumWeight += weight;
+			}
+		}
+	}
+
+	newSDF /= sumWeight;
+
+	surf3Dwrite<float>(newSDF, sdfSurface, x * sizeof(float), y, z);
 
 }
