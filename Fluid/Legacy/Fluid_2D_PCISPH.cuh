@@ -2,7 +2,7 @@
 #ifndef AQUARIUS_FLUID_2D_PCISPH_CUH
 #define AQUARIUS_FLUID_2D_PCISPH_CUH
 
-#include "../GpuCommons.h"
+#include "../Common/GpuCommons.h"
 #include <vector>
 #include <algorithm>
 #include <thrust/sort.h>

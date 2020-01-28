@@ -4,7 +4,7 @@
 
 #include <stdlib.h>
 #include <memory>
-#include "../GpuCommons.h"
+#include "../Common/GpuCommons.h"
 #include <cmath>
 #include "WeightKernels.cuh"
 #include <thrust/functional.h>

@@ -1,98 +1,8 @@
 #include "Fluid_3D_FLIP.cuh"
 #include "MAC_Grid_3D.cuh"
-#include "../GpuCommons.h"
+#include "../Common/GpuCommons.h"
 #include <thread>
 namespace Fluid_3D_FLIP {
-	__global__  void transferToCellAccumPhase2(Cell3D* cells, Particle* particles, int particleCount, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize) {
-		int index = blockIdx.x * blockDim.x + threadIdx.x;
-		if (index >= particleCount) return;
-
-
-		Particle& particle = particles[index];
-		float3 pos = particle.position;
-		float3 vel = particle.velocity;
-		int x = (pos.x / cellPhysicalSize);
-		int y = (pos.y / cellPhysicalSize);
-		int z = (pos.z / cellPhysicalSize);
-
-		float3 velocityPos;
-		float weight;
-
-		Cell3D& thisCell = get3D(cells, x, y, z);
-		Cell3D& rightCell = get3D(cells, x + 1, y, z);
-		Cell3D& upCell = get3D(cells, x, y + 1, z);
-		Cell3D& frontCell = get3D(cells, x, y, z + 1);
-
-		thisCell.content = CONTENT_FLUID;
-
-		velocityPos = make_float3(x, (y + 0.5), (z + 0.5)) * cellPhysicalSize;
-		weight = trilinearHatKernel(pos - velocityPos, cellPhysicalSize);
-		atomicAdd(&thisCell.weight.x, weight);
-		atomicAdd(&thisCell.velocity.x, vel.x*weight);
-		
-
-		velocityPos = make_float3((x + 0.5), y, (z + 0.5)) * cellPhysicalSize;
-		weight = trilinearHatKernel(pos - velocityPos, cellPhysicalSize);
-		atomicAdd(&thisCell.weight.y, weight);
-		atomicAdd(&thisCell.velocity.y, vel.y * weight);
-
-		velocityPos = make_float3((x + 0.5), y + 0.5, z) * cellPhysicalSize;
-		weight = trilinearHatKernel(pos - velocityPos, cellPhysicalSize);
-		atomicAdd(&thisCell.weight.z, weight);
-		atomicAdd(&thisCell.velocity.z, vel.z * weight);
-
-
-		velocityPos = make_float3(x+1, (y + 0.5), (z + 0.5)) * cellPhysicalSize;
-		weight = trilinearHatKernel(pos - velocityPos, cellPhysicalSize);
-		atomicAdd(&rightCell.weight.x, weight);
-		atomicAdd(&rightCell.velocity.x, vel.x * weight);
-
-
-		velocityPos = make_float3((x + 0.5), y+1, (z + 0.5)) * cellPhysicalSize;
-		weight = trilinearHatKernel(pos - velocityPos, cellPhysicalSize);
-		atomicAdd(&upCell.weight.y, weight);
-		atomicAdd(&upCell.velocity.y, vel.y * weight);
-
-		velocityPos = make_float3((x + 0.5), y + 0.5, z+1) * cellPhysicalSize;
-		weight = trilinearHatKernel(pos - velocityPos, cellPhysicalSize);
-		atomicAdd(&frontCell.weight.z, weight);
-		atomicAdd(&frontCell.velocity.z, vel.z * weight);
-		
-
-	}
-
-	__global__  void transferToCellDividePhase2(Cell3D* cells, int sizeX, int sizeY, int sizeZ) {
-
-		int index = blockIdx.x * blockDim.x + threadIdx.x;
-
-		if (index >= sizeX * sizeY * sizeZ) return;
-
-		int x = index / (sizeY * sizeZ);
-		int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-		int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
-
-		Cell3D& thisCell = get3D(cells, x, y, z);
-
-
-		if (thisCell.weight.x > 0) {
-			thisCell.velocity.x /= thisCell.weight.x;
-			thisCell.hasVelocityX = true;
-		}
-
-		if (thisCell.weight.y > 0) {
-			thisCell.velocity.y /= thisCell.weight.y;
-			thisCell.hasVelocityY = true;
-		}
-
-		if (thisCell.weight.z > 0) {
-			thisCell.velocity.z /= thisCell.weight.z;
-			thisCell.hasVelocityZ = true;
-		}
-
-		thisCell.newVelocity = thisCell.velocity;
-
-
-	}
 
 	__global__  void transferToCellAccumPhase(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd,
 		Particle* particles, int particleCount) {
@@ -226,6 +136,8 @@ namespace Fluid_3D_FLIP {
 
 		float totalWeight = 0;
 
+		/*
+
 #pragma unroll
 		for (int dx = -1; dx <= 1; ++dx) {
 #pragma unroll
@@ -249,7 +161,9 @@ namespace Fluid_3D_FLIP {
 
 				}
 			}
-		}
+		}*/
+
+		totalWeight = cellEnd[index] - cellStart[index];
 
 		thisCell.density = totalWeight;
 	}
@@ -269,11 +183,10 @@ namespace Fluid_3D_FLIP {
 		float3 FLIP = particle.velocity + velocityChange;
 		float3 PIC = newGridVelocity;
 
-		float FLIP_coeff = 0.9;
+		float FLIP_coeff = 0.95;
 		
 
 		particle.velocity = FLIP_coeff * FLIP + (1.0f - FLIP_coeff) * PIC;
-
 
 	}
 
@@ -295,9 +208,39 @@ namespace Fluid_3D_FLIP {
 
 		float minDistanceFromWall = cellPhysicalSize / 4;
 
-		destPos.x = max(0.0 + minDistanceFromWall, min(sizeX * cellPhysicalSize - minDistanceFromWall, destPos.x));
-		destPos.y = max(0.0 + minDistanceFromWall, min(sizeY * cellPhysicalSize - minDistanceFromWall, destPos.y));
-		destPos.z = max(0.0 + minDistanceFromWall, min(sizeZ * cellPhysicalSize - minDistanceFromWall, destPos.z));
+		float3 gridPhysicalSize = make_float3(sizeX, sizeY, sizeZ) * cellPhysicalSize;
+
+		float bounce = -0.5;
+
+		if (destPos.x < minDistanceFromWall) {
+			destPos.x = minDistanceFromWall;
+			particle.velocity.x *= bounce;;
+		}
+
+		if (destPos.x > gridPhysicalSize.x - minDistanceFromWall) {
+			destPos.x = gridPhysicalSize.x - minDistanceFromWall;
+			particle.velocity.x *= bounce;;
+		}
+
+		if (destPos.y < minDistanceFromWall) {
+			destPos.y = minDistanceFromWall;
+			particle.velocity.y *= bounce;;
+		}
+
+		if (destPos.y > gridPhysicalSize.y - minDistanceFromWall) {
+			destPos.y = gridPhysicalSize.y - minDistanceFromWall;
+			particle.velocity.y *= bounce;;
+		}
+
+		if (destPos.z < minDistanceFromWall) {
+			destPos.z = minDistanceFromWall;
+			particle.velocity.z *= bounce;;
+		}
+
+		if (destPos.z > gridPhysicalSize.z - minDistanceFromWall) {
+			destPos.z = gridPhysicalSize.z - minDistanceFromWall;
+			particle.velocity.z *= bounce;;
+		}
 
 
 		particle.position = destPos;
@@ -340,7 +283,7 @@ namespace Fluid_3D_FLIP {
 
 
 	void Fluid::simulationStep() {
-		float thisTimeStep = 0.016f;
+		float thisTimeStep = 0.033f;
 
 		transferToGrid();
 		grid->updateFluidCount();
@@ -514,10 +457,10 @@ namespace Fluid_3D_FLIP {
 				for (float dz = 0; dz <= 1; ++dz) {
 					float3 subcellCenter = make_float3(dx - 0.5, dy - 0.5, dz - 0.5) * 0.5 * cellPhysicalSize + centerPos;
 
-					float xJitter = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
-					float yJitter = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
-					float zJitter = (random0to1() - 0.5f) * cellPhysicalSize*0.5;
-					float3 jitter = make_float3(xJitter, yJitter, zJitter);
+					float xJitter = (random0to1() - 0.5f) ;
+					float yJitter = (random0to1() - 0.5f) ;
+					float zJitter = (random0to1() - 0.5f) ;
+					float3 jitter = make_float3(xJitter, yJitter, zJitter) * cellPhysicalSize * 0.25;
 
 					float3 particlePos = subcellCenter;
 					particlePos += jitter;

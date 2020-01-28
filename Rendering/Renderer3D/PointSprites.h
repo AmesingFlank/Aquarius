@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../GpuCommons.h"
+#include "../../Common/GpuCommons.h"
 
 
 #include "../Shader.h"

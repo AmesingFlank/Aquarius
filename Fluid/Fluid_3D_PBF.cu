@@ -219,30 +219,50 @@ namespace Fluid_3D_PBF {
 		float3 pos = particle.position;
 		float3& vel = particle.velosity;
 
-		float bounce = minDistanceFromWall / (timestep * 1e2);
+		float leaveWall = minDistanceFromWall / (timestep * 1e2);
+
+		float bounce = -0.5;
 
 		if (pos.x == minDistanceFromWall) {
-			vel.x = bounce;;
+			if (vel.x == 0) 
+				vel.x = leaveWall;
+			else 
+				vel.x *= bounce;
 		}
 
 		if (pos.x >= gridPhysicalSize.x - minDistanceFromWall) {
-			vel.x = -bounce;;
+			if (vel.x == 0) 
+				vel.x = -leaveWall;
+			else 
+				vel.x *= bounce;;
 		}
 
 		if (pos.y <= minDistanceFromWall) {
-			vel.y = bounce;;
+			if (vel.y == 0)
+				vel.y = leaveWall;
+			else
+				vel.y *= bounce;
 		}
 
 		if (pos.y >= gridPhysicalSize.y - minDistanceFromWall) {
-			vel.y = -bounce;;
+			if (vel.y == 0)
+				vel.y = -leaveWall;
+			else
+				vel.y *= bounce;;
 		}
 
 		if (pos.z <= minDistanceFromWall) {
-			vel.z = bounce;;
+			if (vel.z == 0)
+				vel.z = leaveWall;
+			else
+				vel.z *= bounce;
 		}
 
 		if (pos.z >= gridPhysicalSize.z - minDistanceFromWall) {
-			vel.z = -bounce;;
+			if (vel.z == 0)
+				vel.z = -leaveWall;
+			else
+				vel.z *= bounce;;
 		}
 	}
 

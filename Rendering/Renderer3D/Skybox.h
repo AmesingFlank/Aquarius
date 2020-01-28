@@ -9,7 +9,7 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-#include "../../GpuCommons.h"
+#include "../../Common/GpuCommons.h"
 #include "../DrawCommand.h"
 #include <vector>
 #include <string>

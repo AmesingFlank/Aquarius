@@ -9,7 +9,7 @@
 #include <rapidjson/reader.h>
 #include <rapidjson/document.h>
 #include <memory>
-#include "../GpuCommons.h"
+#include "../Common/GpuCommons.h"
 
 enum class ShapeType {
 	Sphere,Square

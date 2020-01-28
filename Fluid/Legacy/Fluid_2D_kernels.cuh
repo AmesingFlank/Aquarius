@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../GpuCommons.h"
-#include "PressureEquation.cuh"
+#include "../../Common/GpuCommons.h"
+#include "../PressureEquation.cuh"
 #include "MAC_Grid_2D.cuh"
 
 template<typename Particle>
@@ -23,13 +23,6 @@ __global__ inline void calcHashImpl(int* particleHashes,  // output
 
 	particleHashes[index] = hash;
 }
-
-
-
-
-__global__ void findCellStartEndImpl(int* particleHashes,
-	int* cellStart, int* cellEnd,
-	int particleCount);
 
 
 __global__ void applyGravityImpl(Cell2D* cells, int sizeX, int sizeY, float timeStep, float gravitationalAcceleration);

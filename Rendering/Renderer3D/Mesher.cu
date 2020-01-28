@@ -445,6 +445,7 @@ void marchingCubes(float* output, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, f
 
 __global__
 void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float particleRadius,int* hasSDF,float3* meanXCell,cudaSurfaceObject_t sdfSurface) {
+	return;
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
 	int cellCount = (sizeX) * (sizeY) * (sizeZ);
@@ -500,9 +501,6 @@ void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, flo
 	}
 
 	if (hasNewSDF) {
-		if (newSDF >= 9) {
-			printf("new sdf %f for %d %d %d from %d %d %d\n", newSDF, x,y,z,newSDFOrigin.x,newSDFOrigin.y,newSDFOrigin.z);
-		}
 		
 		//hasSDF[index] = true;
 		surf3Dwrite<float>(newSDF, sdfSurface, x * sizeof(float), y, z);

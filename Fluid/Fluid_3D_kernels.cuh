@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../GpuCommons.h"
+#include "../Common/GpuCommons.h"
 #include "PressureEquation.cuh"
 #include "MAC_Grid_3D.cuh"
-#include "Fluid_2D_kernels.cuh"
+
 
 template<typename Particle>
 __global__  inline void calcHashImpl(int* particleHashes,  // output
@@ -86,3 +86,8 @@ __global__  void applySortImpl(Particle* src, Particle* dest, int particleCount,
 	dest[index] = src[particleIndices[index]];
 }
 
+
+
+__global__ void findCellStartEndImpl(int* particleHashes,
+	int* cellStart, int* cellEnd,
+	int particleCount);

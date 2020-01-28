@@ -1,5 +1,5 @@
 #pragma once
-#include "../GpuCommons.h"
+#include "../Common/GpuCommons.h"
 
 __device__ __host__
 struct Mat3x3 {

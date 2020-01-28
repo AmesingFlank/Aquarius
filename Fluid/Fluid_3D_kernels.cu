@@ -414,10 +414,10 @@ __global__  void computeDivergenceImpl(Cell3D* cells, int sizeX, int sizeY, int 
 	//div -= (thisCell.density - restParticlesPerCell) * 1.0; //volume conservation
 
 	if (thisCell.density > restParticlesPerCell) {
-		div -= (thisCell.density - restParticlesPerCell) * 1.0;
+		div -= (thisCell.density - restParticlesPerCell) * 0.01;
 	}
-	else if (thisCell.density <= restParticlesPerCell / 4) {
-		//div -= (thisCell.density - restParticlesPerCell) * 1.0;
+	else if (thisCell.density <= restParticlesPerCell) {
+		div -= (thisCell.density - restParticlesPerCell) * 0.01;
 	}
 
 	thisCell.divergence = div;
@@ -517,4 +517,6 @@ __global__  void writeIndicesImpl(int* particleIndices, int particleCount) {
 
 	particleIndices[index] = index;
 }
+
+
 

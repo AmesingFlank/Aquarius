@@ -6,7 +6,7 @@
 
 
 
-#include "GpuCommons.h"
+#include "Common/GpuCommons.h"
 
 
 #include "Fluid/Fluid_3D_FLIP.cuh"
@@ -16,7 +16,7 @@
 
 
 #include "Rendering/Renderer3D/camera.h"
-#include "InputHandler.h"
+#include "Common/InputHandler.h"
 #include "Rendering/Renderer3D/PointSprites.h"
 
 #include "Rendering/DrawCommand.h"

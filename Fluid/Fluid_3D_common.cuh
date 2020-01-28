@@ -1,5 +1,7 @@
 #pragma once
 #include "Fluid_3D_kernels.cuh"
+#include "Fluid_kernels.cuh"
+
 
 template<typename Particle>
 void inline performSpatialHashing(int* particleHashes, Particle* particles, int particleCount, float cellPhysicalSize, float sizeX, float sizeY, float sizeZ,int numBlocksParticle, int numThreadsParticle, int* cellStart, int* cellEnd, int cellCount) {

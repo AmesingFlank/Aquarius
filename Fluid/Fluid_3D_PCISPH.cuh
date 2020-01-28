@@ -3,7 +3,7 @@
 #ifndef FLUID_3D_PCISPH
 #define FLUID_3D_PCISPH
 
-#include "../GpuCommons.h"
+#include "../Common/GpuCommons.h"
 #include <vector>
 #include <algorithm>
 #include <thrust/sort.h>

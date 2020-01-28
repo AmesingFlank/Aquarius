@@ -6,7 +6,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
-#include "../GpuCommons.h"
+#include "../Common/GpuCommons.h"
 class Shader
 {
 public:

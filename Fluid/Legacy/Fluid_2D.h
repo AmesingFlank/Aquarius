@@ -4,11 +4,10 @@
 
 #include <vector>
 #include <utility>
-#include "../GpuCommons.h"
+#include "../Common/GpuCommons.h"
 #include <unordered_map>
 #include "Fluid.h"
 #include "../Rendering/Quad.h"
-
 
 
 class Fluid_2D : public Fluid{

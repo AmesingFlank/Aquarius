@@ -8,7 +8,7 @@
 #include "SPD_Solver.h"
 #include <vector>
 #include <utility>
-#include "../GpuCommons.h"
+#include "../Common/GpuCommons.h"
 #include "Fluid_2D.h"
 #include <unordered_map>
 #include <thrust/functional.h>

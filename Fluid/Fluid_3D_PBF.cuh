@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../GpuCommons.h"
+#include "../Common/GpuCommons.h"
 #include <vector>
 #include <algorithm>
 #include <thrust/sort.h>
@@ -55,8 +55,8 @@ namespace Fluid_3D_PBF {
 		int* cellBegin;
 		int* cellEnd;
 
-		float timestep = 0.016;
-		float substeps = 3;
+		float timestep = 0.033;
+		float substeps = 4;
 
 		float3 gridPhysicalSize = make_float3(10.f, 10.f, 10.f);
 
@@ -78,7 +78,7 @@ namespace Fluid_3D_PBF {
 		float particleSpacing;
 
 
-		float solverIterations = 5;
+		float solverIterations = 4;
 
 
 

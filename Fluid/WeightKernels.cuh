@@ -175,26 +175,23 @@ __device__ __host__
 float inline zhu05Kernel(float3 r, float support) {
 	float r2 = dot(r, r);
 	float h2 = support * support;
-	return max(0.0,pow((1.0-r2/h2),3));
+	float temp = 1.f - r2 / h2 ;
+	return max(0.f,temp*temp*temp);
+}
+
+__device__ __host__
+float inline dunfanKernel(float3 r, float support) {
+	float r2 = dot(r, r);
+	float h2 = support * support;
+	if (r2 > h2) return 0;
+	float temp = 1.f - r2 / (h2 * 3.f);
+	return max(0.f, temp * temp * temp);
 }
 
 __device__ __host__
 float inline pcaKernel(float3 r, float support) {
 	return max(0.f,1.f - pow(length(r) / support, 3.f));
 }
-
-__device__ __host__
-float inline Bcubic(float3 r, float support) {
-	float s = length(r) / support;
-	if (s < 1) {
-		return (1 - s * s * 3.f / 2.f + s * s * s * 3.f / 4.f) / M_PI;
-	}
-	else if (s < 2) {
-		return pow(2 - s, 3) / (4.0 * M_PI);
-	}
-	return 0;
-}
-
 
 __device__  __host__
 float static inline cubic_spline_kernel(const float r, const float radius,const float radius3)
@@ -203,7 +200,7 @@ float static inline cubic_spline_kernel(const float r, const float radius,const 
 
 	if (q > 2.0f ) return 0.0f;
 	else {
-		const float a = 0.25f / (3.1415 * radius3);
+		const float a = 0.25f / (PI * radius3);
 		return a * ((q > 1.0f) ? (2.0f - q) * (2.0f - q) * (2.0f - q) : ((3.0f * q - 6.0f) * q * q + 4.0f));
 	}
 }
