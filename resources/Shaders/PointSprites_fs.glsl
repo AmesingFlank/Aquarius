@@ -1,6 +1,8 @@
 #version 330 core
 in vec3 TexCoords;
-out vec4 color;
+in vec3 Color;
+
+out vec4 FragColor;
 
 in vec3 debug;
 
@@ -32,7 +34,7 @@ void main()
 
 	float diffuse = max(0.0, dot(lightDir, coordInSphere));
 	diffuse = 0.5 + diffuse / 2 ;
-	color = vec4(diffuse * vec3(0,0,1),1);
+	FragColor = vec4(diffuse * Color,1);
 
 	float depth = (posToCamera.z / posToCamera.w) + zInSphere * sphereRadius;
 

@@ -217,21 +217,26 @@ void PointSprites::renderFinal(const DrawCommand& drawCommand, int skybox,GLuint
 
 PointSprites::PointSprites(int count_) :count(count_) {
 
-	positionsHost = new float[count * 3];
+	pointsVBO_host = new float[count * 7];
 
 	basicShader = new Shader(Shader::SHADERS_PATH("PointSprites_vs.glsl").c_str(), Shader::SHADERS_PATH("PointSprites_fs.glsl").c_str(), nullptr);
 
-	points_vPos_location = glGetAttribLocation(basicShader->Program, "position");
-
+	// used by multiple shaders. location specified as common value in all shader code
+	GLint pointsPositionLocation = glGetAttribLocation(basicShader->Program, "position");
+	GLint pointsColorLocation = glGetAttribLocation(basicShader->Program, "color");
 
 
 	glGenVertexArrays(1, &pointsVAO);
 	glGenBuffers(1, &pointsVBO);
 	glBindVertexArray(pointsVAO);
 	glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * count * 3, positionsHost, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(points_vPos_location);
-	glVertexAttribPointer(points_vPos_location, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * count *  7, pointsVBO_host, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(pointsPositionLocation);
+	glVertexAttribPointer(pointsPositionLocation, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 7, 0);
+
+	glEnableVertexAttribArray(pointsColorLocation);
+	glVertexAttribPointer(pointsColorLocation, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (void*) (sizeof(float) * 3) );
 
 	HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaResourceVBO, pointsVBO, cudaGraphicsMapFlagsNone));
 

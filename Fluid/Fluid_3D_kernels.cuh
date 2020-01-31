@@ -66,13 +66,37 @@ __global__ inline void updatePositionsVBO(Particle* particles, float* positionsV
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= particleCount) return;
 
-	float* base = positionsVBO + index * 3;
+	float* base = positionsVBO + index * 7;
 	Particle& particle = particles[index];
 
 
 	base[0] = particle.position.x;
 	base[1] = particle.position.y;
 	base[2] = particle.position.z;
+}
+
+template<typename Particle>
+__global__ inline void updatePositionsAndColorsVBO(Particle* particles, float* VBO, int particleCount,int phaseCount,float4* phaseToColor) {
+	int index = blockIdx.x * blockDim.x + threadIdx.x;
+	if (index >= particleCount) return;
+
+	float* base = VBO + index * 7;
+	Particle& particle = particles[index];
+
+	base[0] = particle.position.x;
+	base[1] = particle.position.y;
+	base[2] = particle.position.z;
+
+	float4 color = make_float4(0,0, 0, 0);
+	for (int i = 0; i < phaseCount; ++i) {
+		float fraction = particle.volumeFractions[i];
+		float4 thisColor = phaseToColor[i];
+		color += fraction * thisColor;
+	}
+	base[3] = color.x;
+	base[4] = color.y;
+	base[5] = color.z;
+	base[6] = color.w;
 }
 
 __global__  void writeIndicesImpl(int* particleIndices, int particleCount);

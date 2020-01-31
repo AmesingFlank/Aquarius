@@ -15,6 +15,7 @@
 #include "../Rendering/Renderer3D/Mesher.cuh"
 #include "../Rendering/Renderer3D/FluidMeshRenderer.cuh"
 
+#define PBF_MAX_PHASES 4
 
 namespace Fluid_3D_PBF {
 
@@ -32,8 +33,13 @@ namespace Fluid_3D_PBF {
 
 		float s_corr;
 
-		__host__ __device__ Particle(float3 position_) :position(position_), lastPosition(position_) {
+		float volumeFractions[PBF_MAX_PHASES] = { 1 };
 
+		__host__ __device__ Particle(float3 position_,int phase) :position(position_), lastPosition(position_) {
+			for (int i = 0; i < PBF_MAX_PHASES;++i) {
+				volumeFractions[i] = 0;
+			}
+			volumeFractions[phase] = 1;
 		}
 
 		__host__ __device__ Particle() {
@@ -93,7 +99,9 @@ namespace Fluid_3D_PBF {
 		std::shared_ptr<FluidMeshRenderer> meshRenderer;
 		std::shared_ptr<PointSprites> pointSprites;
 
+		std::shared_ptr<FluidConfig3D> fluidConfig;
 
+		int phaseCount;
 
 		Fluid();
 
@@ -119,8 +127,8 @@ namespace Fluid_3D_PBF {
 
 
 
-		void createSquareFluid(std::vector<Particle>& particlesVec, float3 minPos, float3 maxPos);
-		void createSphereFluid(std::vector<Particle>& particlesVec, float3 center, float radius);
+		void createSquareFluid(std::vector<Particle>& particlesVec, float3 minPos, float3 maxPos, int phase, int phaseCount);
+		void createSphereFluid(std::vector<Particle>& particlesVec, float3 center, float radius, int phase, int phaseCount);
 
 
 

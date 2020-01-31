@@ -12,11 +12,12 @@
 #include "../DrawCommand.h"
 #include "ScreenSpaceNormal.cuh"
 
+
 struct PointSprites {
 	int count;
-	float* positionsHost;
+	float* pointsVBO_host;
 	GLuint pointsVAO, pointsVBO;
-	GLint points_vPos_location; // used by multiple shaders. location specified as common value in all shaders
+	
 
 	cudaGraphicsResource* cudaResourceVBO;
 	float* positionsDevice;
