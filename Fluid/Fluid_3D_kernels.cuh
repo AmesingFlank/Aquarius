@@ -62,11 +62,11 @@ __global__  void precomputeNeighbors(Cell3D* cells, int sizeX, int sizeY, int si
 
 
 template<typename Particle>
-__global__ inline void updatePositionsVBO(Particle* particles, float* positionsVBO, int particleCount) {
+__global__ inline void updatePositionsVBO(Particle* particles, float* positionsVBO, int particleCount,int stride) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= particleCount) return;
 
-	float* base = positionsVBO + index * 7;
+	float* base = positionsVBO + index * stride;
 	Particle& particle = particles[index];
 
 

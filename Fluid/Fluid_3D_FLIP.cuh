@@ -37,6 +37,8 @@ namespace Fluid_3D_FLIP{
 	class Fluid :public Fluid_3D {
 	public:
 
+		float timestep = 0.033f;
+
 		int sizeX;
 		int sizeY;
 		int sizeZ;
@@ -69,11 +71,24 @@ namespace Fluid_3D_FLIP{
 		Skybox skybox = Skybox("resources/Skyboxes/GamlaStan2/", ".jpg");
 
 		std::shared_ptr<PointSprites> pointSprites;
+
+		
+
 		std::shared_ptr<Container> container;
 		std::shared_ptr<MAC_Grid_3D> grid;
 
 		std::shared_ptr<Mesher> mesher;
 		std::shared_ptr<FluidMeshRenderer> meshRenderer;
+
+
+		std::shared_ptr<FluidConfig3D> fluidConfig;
+
+
+		float inkParticlesSpacing;
+		Particle* inkParticles;
+		int inkParticleCount;
+		std::shared_ptr<PointSprites> pointSpritesInk;
+		int numThreadsInkParticle, numBlocksInkParticle;
 
 		Fluid();
 
@@ -94,13 +109,27 @@ namespace Fluid_3D_FLIP{
 
 		virtual void init(std::shared_ptr<FluidConfig> config) override;
 
-		int createParticlesAt(std::vector <Particle>& particlesHost, float3 centerPos,std::function<bool(float3)> filter);
-
-		void createSquareFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp, float3 minPos,float3 maxPos, int startIndex = 0);
-
-		void createSphereFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp,float3 center,float radius, int startIndex = 0);
 
 
+		int createParticlesAt(std::vector <Particle>& particlesHost, float3 centerPos,std::function<bool(float3)> filter,float particleSpacing);
+
+		void createSquareFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp, float3 minPos,float3 maxPos, int startIndex);
+
+		void createSphereFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp,float3 center,float radius, int startIndex);
+
+
+
+
+
+		void createSquareInk(std::vector <Particle>& particlesHost, float3 minPos, float3 maxPos,float spacing);
+
+		void createSphereInk(std::vector <Particle>& particlesHost, float3 center, float radius, float spacing);
+
+		void initInkRenderer();
+
+		void drawInk(const DrawCommand& drawCommand);
+		void transferToInkParticles();
+		void moveInkParticles(float timeStep);
 
 	};
 }

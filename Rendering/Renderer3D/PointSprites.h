@@ -17,12 +17,14 @@ struct PointSprites {
 	int count;
 	float* pointsVBO_host;
 	GLuint pointsVAO, pointsVBO;
+
+	int stride = 7;
 	
 
 	cudaGraphicsResource* cudaResourceVBO;
 	float* positionsDevice;
 
-	Shader* basicShader;
+	Shader* pointsShader;
 
 	float quadVertices[24] = { 
 		// positions   // texCoords
@@ -48,13 +50,15 @@ struct PointSprites {
 
 	Shader* thicknessShader;
 
+	Shader* inkShader;
+
 
 	ScreenSpaceNormal screenSpaceNormal;
 
 	glm::mat4  model = glm::mat4(1.0);
 
 
-	void initScreenSpaceRenderer();
+	void initRenderer();
 	
 
 	void renderDepth(const DrawCommand& drawCommand, float radius);
@@ -68,4 +72,8 @@ struct PointSprites {
 	void draw(const DrawCommand& drawCommand, float radius, int skybox);
 
 	void drawSimple(const DrawCommand& drawCommand, float radius);
+	void drawInk(const DrawCommand& drawCommand, float radius);
+
+
+	
 };

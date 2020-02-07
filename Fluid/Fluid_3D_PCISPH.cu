@@ -357,7 +357,7 @@ namespace Fluid_3D_PCISPH {
 			meshRenderer->draw(drawCommand, skybox.texSkyBox);
 		}
 		else {
-			updatePositionsVBO << <numBlocks, numThreads >> > (particles, pointSprites->positionsDevice, particleCount);
+			updatePositionsVBO << <numBlocks, numThreads >> > (particles, pointSprites->positionsDevice, particleCount, pointSprites->stride);
 			cudaDeviceSynchronize();
 			pointSprites->draw(drawCommand, particleSpacing/2, skybox.texSkyBox);
 		}

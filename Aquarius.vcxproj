@@ -160,6 +160,7 @@
     <ClInclude Include="Rendering\Renderer3D\Container.h" />
     <ClInclude Include="Rendering\Renderer3D\FluidMeshRenderer.cuh" />
     <ClInclude Include="Rendering\Renderer3D\Mesher.cuh" />
+    <ClInclude Include="Rendering\Renderer3D\InkRendererParticle.cuh" />
     <ClInclude Include="Rendering\Renderer3D\PointSprites.h" />
     <ClInclude Include="Rendering\Renderer3D\ScreenSpaceNormal.cuh" />
     <ClInclude Include="Rendering\Renderer3D\Skybox.h" />
@@ -167,6 +168,7 @@
     <ClInclude Include="Fluid\SPD_Solver.h" />
     <ClInclude Include="Fluid\WeightKernels.cuh" />
     <ClInclude Include="Rendering\WindowInfo.h" />
+    <ClInclude Include="resources\Shaders\PointSprites_ink_fs.glsl" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -176,7 +178,7 @@
     <None Include="resources\Shaders\FluidMeshRenderer_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_depth_fs.glsl" />
     <None Include="resources\Shaders\PointSprites_depth_vs.glsl" />
-    <None Include="resources\Shaders\PointSprites_fs.glsl" />
+    <None Include="resources\Shaders\PointSprites_points_fs.glsl" />
     <None Include="resources\Shaders\ScreenSpaceNormal_normal_fs.glsl" />
     <None Include="resources\Shaders\ScreenSpaceNormal_normal_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_render_fs.glsl" />
@@ -185,7 +187,7 @@
     <None Include="resources\Shaders\ScreenSpaceNormal_smooth_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_thickness_fs.glsl" />
     <None Include="resources\Shaders\PointSprites_thickness_vs.glsl" />
-    <None Include="resources\Shaders\PointSprites_vs.glsl" />
+    <None Include="resources\Shaders\PointSprites_points_vs.glsl" />
     <None Include="resources\Shaders\Container_fs.glsl" />
     <None Include="resources\Shaders\Container_vs.glsl" />
     <None Include="resources\Shaders\Quad_fs.glsl" />

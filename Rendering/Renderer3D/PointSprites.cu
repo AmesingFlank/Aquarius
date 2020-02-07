@@ -20,7 +20,42 @@ void PointSprites::draw(const DrawCommand& drawCommand, float radius, int skybox
 	printGLError();
 }
 
-void PointSprites::initScreenSpaceRenderer() {
+void PointSprites::initRenderer() {
+
+	pointsVBO_host = new float[count * stride];
+
+	pointsShader = new Shader(Shader::SHADERS_PATH("PointSprites_points_vs.glsl").c_str(), Shader::SHADERS_PATH("PointSprites_points_fs.glsl").c_str(), nullptr);
+
+	inkShader = new Shader(Shader::SHADERS_PATH("PointSprites_points_vs.glsl").c_str(), Shader::SHADERS_PATH("PointSprites_ink_fs.glsl").c_str(), nullptr);
+
+
+	// used by multiple shaders. location specified as common value in all shader code
+	GLint pointsPositionLocation = glGetAttribLocation(pointsShader->Program, "position");
+	GLint pointsColorLocation = glGetAttribLocation(pointsShader->Program, "color");
+
+
+	glGenVertexArrays(1, &pointsVAO);
+	glGenBuffers(1, &pointsVBO);
+	glBindVertexArray(pointsVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * count * 7, pointsVBO_host, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(pointsPositionLocation);
+	glVertexAttribPointer(pointsPositionLocation, 3, GL_FLOAT, GL_FALSE, sizeof(float) * stride, 0);
+
+	glEnableVertexAttribArray(pointsColorLocation);
+	glVertexAttribPointer(pointsColorLocation, 4, GL_FLOAT, GL_FALSE, sizeof(float) * stride, (void*)(sizeof(float) * 3));
+
+	HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaResourceVBO, pointsVBO, cudaGraphicsMapFlagsNone));
+
+	size_t  size;
+	HANDLE_ERROR(cudaGraphicsMapResources(1, &cudaResourceVBO, NULL));
+	HANDLE_ERROR(cudaGraphicsResourceGetMappedPointer((void**)&positionsDevice, &size, cudaResourceVBO));
+
+	glBindVertexArray(0);
+
+
+
 
 
 	glGenTextures(1, &depthTextureNDC);
@@ -217,36 +252,9 @@ void PointSprites::renderFinal(const DrawCommand& drawCommand, int skybox,GLuint
 
 PointSprites::PointSprites(int count_) :count(count_) {
 
-	pointsVBO_host = new float[count * 7];
+	
 
-	basicShader = new Shader(Shader::SHADERS_PATH("PointSprites_vs.glsl").c_str(), Shader::SHADERS_PATH("PointSprites_fs.glsl").c_str(), nullptr);
-
-	// used by multiple shaders. location specified as common value in all shader code
-	GLint pointsPositionLocation = glGetAttribLocation(basicShader->Program, "position");
-	GLint pointsColorLocation = glGetAttribLocation(basicShader->Program, "color");
-
-
-	glGenVertexArrays(1, &pointsVAO);
-	glGenBuffers(1, &pointsVBO);
-	glBindVertexArray(pointsVAO);
-	glBindBuffer(GL_ARRAY_BUFFER, pointsVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * count *  7, pointsVBO_host, GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(pointsPositionLocation);
-	glVertexAttribPointer(pointsPositionLocation, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 7, 0);
-
-	glEnableVertexAttribArray(pointsColorLocation);
-	glVertexAttribPointer(pointsColorLocation, 4, GL_FLOAT, GL_FALSE, sizeof(float) * 7, (void*) (sizeof(float) * 3) );
-
-	HANDLE_ERROR(cudaGraphicsGLRegisterBuffer(&cudaResourceVBO, pointsVBO, cudaGraphicsMapFlagsNone));
-
-	size_t  size;
-	HANDLE_ERROR(cudaGraphicsMapResources(1, &cudaResourceVBO, NULL));
-	HANDLE_ERROR(cudaGraphicsResourceGetMappedPointer((void**)&positionsDevice, &size, cudaResourceVBO));
-
-	glBindVertexArray(0);
-
-	initScreenSpaceRenderer();
+	initRenderer();
 
 };
 
@@ -266,21 +274,21 @@ void PointSprites::drawSimple(const DrawCommand& drawCommand, float radius) {
 	glm::mat4 projection = drawCommand.projection;
 	glm::vec3 cameraPos = drawCommand.cameraPosition;
 
-	basicShader->Use();
-	GLuint modelLocation = glGetUniformLocation(basicShader->Program, "model");
-	GLuint viewLocation = glGetUniformLocation(basicShader->Program, "view");
-	GLuint projectionLocation = glGetUniformLocation(basicShader->Program, "projection");
+	pointsShader->Use();
+	GLuint modelLocation = glGetUniformLocation(pointsShader->Program, "model");
+	GLuint viewLocation = glGetUniformLocation(pointsShader->Program, "view");
+	GLuint projectionLocation = glGetUniformLocation(pointsShader->Program, "projection");
 
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(model));
 	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(view));
 	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(projection));
 
-	glUniform1f(glGetUniformLocation(basicShader->Program, "windowWidth"), drawCommand.windowWidth);
-	glUniform1f(glGetUniformLocation(basicShader->Program, "windowHeight"), drawCommand.windowHeight);
+	glUniform1f(glGetUniformLocation(pointsShader->Program, "windowWidth"), drawCommand.windowWidth);
+	glUniform1f(glGetUniformLocation(pointsShader->Program, "windowHeight"), drawCommand.windowHeight);
 
-	glUniform1f(glGetUniformLocation(basicShader->Program, "radius"), radius);
+	glUniform1f(glGetUniformLocation(pointsShader->Program, "radius"), radius);
 
-	glUniform3f(glGetUniformLocation(basicShader->Program, "cameraPosition"), cameraPos.x, cameraPos.y, cameraPos.z);
+	glUniform3f(glGetUniformLocation(pointsShader->Program, "cameraPosition"), cameraPos.x, cameraPos.y, cameraPos.z);
 
 
 	glBindVertexArray(pointsVAO);
@@ -292,3 +300,44 @@ void PointSprites::drawSimple(const DrawCommand& drawCommand, float radius) {
 
 
 }
+
+
+void PointSprites::drawInk(const DrawCommand& drawCommand, float radius) {
+
+	glEnable(GL_BLEND);
+	glDisable(GL_DEPTH_TEST);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glBlendEquation(GL_FUNC_ADD);
+
+	glm::mat4 view = drawCommand.view;
+	glm::mat4 projection = drawCommand.projection;
+	glm::vec3 cameraPos = drawCommand.cameraPosition;
+
+	inkShader->Use();
+	GLuint modelLocation = glGetUniformLocation(inkShader->Program, "model");
+	GLuint viewLocation = glGetUniformLocation(inkShader->Program, "view");
+	GLuint projectionLocation = glGetUniformLocation(inkShader->Program, "projection");
+
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(model));
+	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(view));
+	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(projection));
+
+	glUniform1f(glGetUniformLocation(inkShader->Program, "windowWidth"), drawCommand.windowWidth);
+	glUniform1f(glGetUniformLocation(inkShader->Program, "windowHeight"), drawCommand.windowHeight);
+
+	glUniform1f(glGetUniformLocation(inkShader->Program, "radius"), radius);
+
+	glUniform3f(glGetUniformLocation(inkShader->Program, "cameraPosition"), cameraPos.x, cameraPos.y, cameraPos.z);
+
+
+	glBindVertexArray(pointsVAO);
+	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+	glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
+	//glPointSize(50);
+	glDrawArrays(GL_POINTS, 0, count);
+	glEnable(GL_DEPTH_TEST);
+
+
+}
+
