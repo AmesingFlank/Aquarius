@@ -3,6 +3,7 @@
 #include "../Common/GpuCommons.h"
 #include "PressureEquation.cuh"
 #include "MAC_Grid_3D.cuh"
+#include "VolumeData.cuh"
 
 
 template<typename Particle>
@@ -27,38 +28,34 @@ __global__  inline void calcHashImpl(int* particleHashes,  // output
 }
 
 
-__global__  void applyGravityImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float timeStep, float gravitationalAcceleration);
+__global__  void applyGravityImpl(VolumeCollection volumes,int sizeX, int sizeY, int sizeZ, float timeStep, float gravitationalAcceleration);
 
 
 
 
-__global__  void fixBoundaryX(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
-__global__  void fixBoundaryY(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
-__global__  void fixBoundaryZ(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
+__global__  void fixBoundaryX( VolumeCollection volumes, int sizeX, int sizeY, int sizeZ);
+__global__  void fixBoundaryY( VolumeCollection volumes, int sizeX, int sizeY, int sizeZ);
+__global__  void fixBoundaryZ( VolumeCollection volumes, int sizeX, int sizeY, int sizeZ);
 
 
-__device__ __host__  float getNeibourCoefficient(int x, int y, int z,  float u, float& centerCoefficient, float& RHS, Cell3D* cells,
-	int sizeX, int sizeY, int sizeZ);
+__device__  float getNeibourCoefficient(int x, int y, int z,  float u, float& centerCoefficient, float& RHS,  VolumeCollection volumes, int sizeX, int sizeY, int sizeZ);
 
 
 
-__global__  void constructPressureEquations(Cell3D* cells, int sizeX, int sizeY, int sizeZ, PressureEquation3D* equations,  bool* hasNonZeroRHS);
+__global__  void constructPressureEquations( VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, PressureEquation3D* equations,  bool* hasNonZeroRHS);
 
-__global__  void setPressure(Cell3D* cells, int sizeX, int sizeY, int sizeZ, double* pressureResult);
-
-
-__global__  void updateVelocityWithPressureImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
-
-__global__  void extrapolateVelocityByOne(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
+__global__  void setPressure( VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, double* pressureResult);
 
 
-__global__  void computeDivergenceImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float restParticlesPerCell);
+__global__  void updateVelocityWithPressureImpl( VolumeCollection volumes, int sizeX, int sizeY, int sizeZ);
 
-__global__  void resetPressureImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
+__global__  void extrapolateVelocityByOne( VolumeCollection volumes, int sizeX, int sizeY, int sizeZ);
 
-__global__  void jacobiImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ,  float cellPhysicalSize);
 
-__global__  void precomputeNeighbors(Cell3D* cells, int sizeX, int sizeY, int sizeZ);
+__global__  void computeDivergenceImpl( VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float restParticlesPerCell);
+
+
+__global__  void jacobiImpl( VolumeCollection volumes, int sizeX, int sizeY, int sizeZ,  float cellPhysicalSize);
 
 
 template<typename Particle>

@@ -2,18 +2,25 @@
 
 
 
-__global__  void applyGravityImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float timeStep, float gravitationalAcceleration) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= sizeX * sizeY * sizeZ) return;
+__global__  void applyGravityImpl(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float timeStep, float gravitationalAcceleration) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-	int x = index / (sizeY * sizeZ);
-	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
+	if (x >= sizeX || y >= sizeY || z >= sizeZ) return;
 
-	if (get3D(cells, x, y, z).content == CONTENT_FLUID) {
-		get3D(cells, x, y, z).newVelocity.y -= gravitationalAcceleration * timeStep;
-		if (get3D(cells, x, y + 1, z).content == CONTENT_AIR) {
-			get3D(cells, x, y + 1, z).newVelocity.y -= gravitationalAcceleration * timeStep;
+	if (volumes.content.readSurface<int>(x,y,z) == CONTENT_FLUID) {
+		float4 newVelocity = volumes.newVelocity.readSurface<float4>(x, y, z);
+		newVelocity.y -= gravitationalAcceleration * timeStep;
+
+
+		volumes.newVelocity.writeSurface<float4>(newVelocity, x, y, z);
+
+		if (volumes.content.readSurface<int>(x, y+1, z) == CONTENT_AIR) {
+			float4 upNewVelocity = volumes.newVelocity.readSurface<float4>(x, y+1, z);
+			upNewVelocity.y -= gravitationalAcceleration * timeStep;
+			volumes.newVelocity.writeSurface<float4>(upNewVelocity, x, y+1, z);
+
 		}
 	}
 }
@@ -21,63 +28,79 @@ __global__  void applyGravityImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ
 
 
 
-__global__  void fixBoundaryX(Cell3D* cells, int sizeX, int sizeY, int sizeZ) {
+__global__  void fixBoundaryX(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= (sizeY + 1) * (sizeZ + 1)) return;
 
 	int y = index / (sizeZ + 1);
 	int z = index - y * (sizeZ + 1);
 
-	get3D(cells, 0, y, z).newVelocity.x = 0;
-	get3D(cells, sizeX, y, z).newVelocity.x = 0;
-	get3D(cells, 0, y, z).hasVelocityX = true;
-	get3D(cells, sizeX, y, z).hasVelocityX = true;
+	float4 newVelocity0 = volumes.newVelocity.readSurface<float4>(0,y, z);
+	newVelocity0.x = 0;
+	volumes.newVelocity.writeSurface<float4>(newVelocity0, 0,y, z);
 
-	get3D(cells, sizeX, y, z).content = CONTENT_SOLID;
+	float4 upNewVelocity1 = volumes.newVelocity.readSurface<float4>(sizeX,y, z);
+	upNewVelocity1.x = 0;
+	volumes.newVelocity.writeSurface<float4>(upNewVelocity1, sizeX,y, z);
+
+	volumes.content.writeSurface<int>(CONTENT_SOLID, sizeX, y, z);
+
 }
 
-__global__  void fixBoundaryY(Cell3D* cells, int sizeX, int sizeY, int sizeZ) {
+__global__  void fixBoundaryY(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= (sizeX + 1) * (sizeZ + 1)) return;
 
 	int x = index / (sizeZ + 1);
 	int z = index - x * (sizeZ + 1);
 
-	get3D(cells, x, 0, z).newVelocity.y = 0;
-	get3D(cells, x, sizeY, z).newVelocity.y = 0;
-	get3D(cells, x, 0, z).hasVelocityY = true;
-	get3D(cells, x, sizeY, z).hasVelocityY = true;
-	get3D(cells, x, sizeY, z).content = CONTENT_SOLID;
+	float4 newVelocity0 = volumes.newVelocity.readSurface<float4>(x, 0, z);
+	newVelocity0.y = 0;
+	volumes.newVelocity.writeSurface<float4>(newVelocity0, x, 0, z);
+
+	float4 upNewVelocity1 = volumes.newVelocity.readSurface<float4>(x, sizeY, z);
+	upNewVelocity1.y = 0;
+	volumes.newVelocity.writeSurface<float4>(upNewVelocity1, x, sizeY, z);
+
+
+	volumes.content.writeSurface<int>(CONTENT_SOLID, x, sizeY, z);
 }
 
-__global__  void fixBoundaryZ(Cell3D* cells, int sizeX, int sizeY, int sizeZ) {
+__global__  void fixBoundaryZ(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 	if (index >= (sizeX + 1) * (sizeY + 1)) return;
 
 	int x = index / (sizeY + 1);
 	int y = index - x * (sizeY + 1);
 
-	get3D(cells, x, y, 0).newVelocity.z = 0;
-	get3D(cells, x, y, sizeZ).newVelocity.z = 0;
-	get3D(cells, x, y, 0).hasVelocityZ = true;
-	get3D(cells, x, y, sizeZ).hasVelocityZ = true;
+	float4 newVelocity0 = volumes.newVelocity.readSurface<float4>(x, y, 0);
+	newVelocity0.z = 0;
+	volumes.newVelocity.writeSurface<float4>(newVelocity0, x, y,0);
 
-	get3D(cells, x, y, sizeZ).content = CONTENT_SOLID;
+	float4 upNewVelocity1 = volumes.newVelocity.readSurface<float4>(x, y,sizeZ);
+	upNewVelocity1.z = 0;
+	volumes.newVelocity.writeSurface<float4>(upNewVelocity1, x, y,sizeZ);
+
+	volumes.content.writeSurface<int>(CONTENT_SOLID, x, y, sizeZ);
 }
 
 
-__device__ __host__  float getNeibourCoefficient(int x, int y, int z, float u, float& centerCoefficient, float& RHS, Cell3D* cells,
-	int sizeX, int sizeY, int sizeZ) {
-	if (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ && get3D(cells, x, y, z).content == CONTENT_FLUID) {
+__device__ float getNeibourCoefficient(int x, int y, int z, float u, float& centerCoefficient, float& RHS, VolumeCollection volumes,int sizeX, int sizeY, int sizeZ) {
+
+	int neibourContent = volumes.content.readSurface<int>(x, y, z);
+
+	if (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ && 
+		neibourContent == CONTENT_FLUID) {
 		return -1;
 	}
 	else {
-		if (x < 0 || y < 0 || z < 0 || x >= sizeX || y >= sizeY || z >= sizeZ || get3D(cells, x, y, z).content == CONTENT_SOLID) {
+		if (x < 0 || y < 0 || z < 0 || x >= sizeX || y >= sizeY || z >= sizeZ || 
+			neibourContent == CONTENT_SOLID) {
 			centerCoefficient -= 1;
 			//RHS += u;
 			return 0;
 		}
-		else if (get3D(cells, x, y, z).content == CONTENT_AIR) {
+		else if (neibourContent == CONTENT_AIR) {
 			return 0;
 		}
 	}
@@ -85,77 +108,81 @@ __device__ __host__  float getNeibourCoefficient(int x, int y, int z, float u, f
 
 
 
-__global__  void constructPressureEquations(Cell3D* cells, int sizeX, int sizeY, int sizeZ, PressureEquation3D* equations, bool* hasNonZeroRHS) {
+__global__  void constructPressureEquations(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, PressureEquation3D* equations, bool* hasNonZeroRHS) {
 
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= sizeX * sizeY * sizeZ) return;
 
-	int x = index / (sizeY * sizeZ);
-	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-	get3D(cells, x, y, z).pressure = 0;
-	if (get3D(cells, x, y, z).content != CONTENT_FLUID)
+	if (x >= sizeX || y >= sizeY || z >= sizeZ) return;
+
+	volumes.pressure.writeSurface<float>(0.f, x, y, z);
+	
+	if (volumes.content.readSurface<int>(x,y,z) != CONTENT_FLUID)
 		return;
 
-	Cell3D& thisCell = get3D(cells, x, y, z);
-	Cell3D& rightCell = get3D(cells, x + 1, y, z);
-	Cell3D& upCell = get3D(cells, x, y + 1, z);
-	Cell3D& frontCell = get3D(cells, x, y, z + 1);
-
-
 	PressureEquation3D thisEquation;
-	float RHS = -thisCell.divergence;
+	float RHS = -volumes.divergence.readSurface<float>(x, y, z);
 
 	float centerCoeff = 6;
 
-	float leftCoeff = getNeibourCoefficient(x - 1, y, z, thisCell.newVelocity.x, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
-	float rightCoeff = getNeibourCoefficient(x + 1, y, z, rightCell.newVelocity.x, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
-	float downCoeff = getNeibourCoefficient(x, y - 1, z, thisCell.newVelocity.y, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
-	float upCoeff = getNeibourCoefficient(x, y + 1, z,  upCell.newVelocity.y, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
-	float backCoeff = getNeibourCoefficient(x, y, z - 1, thisCell.newVelocity.z, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
-	float frontCoeff = getNeibourCoefficient(x, y, z + 1,  frontCell.newVelocity.z, centerCoeff, RHS, cells, sizeX, sizeY, sizeZ);
+	float4 thisNewVelocity = volumes.newVelocity.readSurface<float4>(x, y, z);
+	float4 rightNewVelocity = volumes.newVelocity.readSurface<float4>(x+1, y, z);
+	float4 upNewVelocity = volumes.newVelocity.readSurface<float4>(x, y+1, z);
+	float4 frontNewVelocity = volumes.newVelocity.readSurface<float4>(x, y, z+1);
+
+	float leftCoeff = getNeibourCoefficient(x - 1, y, z, thisNewVelocity.x, centerCoeff, RHS,volumes, sizeX, sizeY, sizeZ);
+	float rightCoeff = getNeibourCoefficient(x + 1, y, z, rightNewVelocity.x, centerCoeff, RHS, volumes, sizeX, sizeY, sizeZ);
+	float downCoeff = getNeibourCoefficient(x, y - 1, z, thisNewVelocity.y, centerCoeff, RHS, volumes, sizeX, sizeY, sizeZ);
+	float upCoeff = getNeibourCoefficient(x, y + 1, z,  upNewVelocity.y, centerCoeff, RHS, volumes, sizeX, sizeY, sizeZ);
+	float backCoeff = getNeibourCoefficient(x, y, z - 1, thisNewVelocity.z, centerCoeff, RHS, volumes, sizeX, sizeY, sizeZ);
+	float frontCoeff = getNeibourCoefficient(x, y, z + 1,  frontNewVelocity.z, centerCoeff, RHS, volumes, sizeX, sizeY, sizeZ);
 
 	int nnz = 0;
 
 	if (downCoeff) {
-		Cell3D& downCell = get3D(cells, x, y - 1, z);
-		thisEquation.termsIndex[thisEquation.termCount] = downCell.fluidIndex;
+		int downIndex = volumes.fluidIndex.readSurface<int>(x, y - 1, z);
+		thisEquation.termsIndex[thisEquation.termCount] = downIndex;
 		thisEquation.termsCoeff[thisEquation.termCount] = downCoeff;
 		++thisEquation.termCount;
 		++nnz;
 	}
 	if (leftCoeff) {
-		Cell3D& leftCell = get3D(cells, x - 1, y, z);
-		thisEquation.termsIndex[thisEquation.termCount] = leftCell.fluidIndex;
+		int leftIndex = volumes.fluidIndex.readSurface<int>(x-1, y, z);
+		thisEquation.termsIndex[thisEquation.termCount] = leftIndex;
 		thisEquation.termsCoeff[thisEquation.termCount] = leftCoeff;
 		++thisEquation.termCount;
 		++nnz;
 	}
 	if (backCoeff) {
-		Cell3D& backCell = get3D(cells, x, y, z - 1);
-		thisEquation.termsIndex[thisEquation.termCount] = backCell.fluidIndex;
+		int backIndex = volumes.fluidIndex.readSurface<int>(x, y ,z-1);
+		thisEquation.termsIndex[thisEquation.termCount] = backIndex;
 		thisEquation.termsCoeff[thisEquation.termCount] = backCoeff;
 		++thisEquation.termCount;
 		++nnz;
 	}
-	thisEquation.termsIndex[thisEquation.termCount] = thisCell.fluidIndex;
+	int thisIndex = volumes.fluidIndex.readSurface<int>(x, y, z );
+	thisEquation.termsIndex[thisEquation.termCount] = thisIndex;
 	thisEquation.termsCoeff[thisEquation.termCount] = centerCoeff;
 	++thisEquation.termCount;
 	if (rightCoeff) {
-		thisEquation.termsIndex[thisEquation.termCount] = rightCell.fluidIndex;
+		int rightIndex = volumes.fluidIndex.readSurface<int>(x+1, y, z);
+		thisEquation.termsIndex[thisEquation.termCount] = rightIndex;
 		thisEquation.termsCoeff[thisEquation.termCount] = rightCoeff;
 		++thisEquation.termCount;
 		++nnz;
 	}
 	if (upCoeff) {
-		thisEquation.termsIndex[thisEquation.termCount] = upCell.fluidIndex;
+		int upIndex = volumes.fluidIndex.readSurface<int>(x, y+1, z);
+		thisEquation.termsIndex[thisEquation.termCount] = upIndex;
 		thisEquation.termsCoeff[thisEquation.termCount] = upCoeff;
 		++thisEquation.termCount;
 		++nnz;
 	}
 	if (frontCoeff) {
-		thisEquation.termsIndex[thisEquation.termCount] = frontCell.fluidIndex;
+		int frontIndex = volumes.fluidIndex.readSurface<int>(x, y, z+1);
+		thisEquation.termsIndex[thisEquation.termCount] = frontIndex;
 		thisEquation.termsCoeff[thisEquation.termCount] = frontCoeff;
 		++thisEquation.termCount;
 		++nnz;
@@ -168,345 +195,361 @@ __global__  void constructPressureEquations(Cell3D* cells, int sizeX, int sizeY,
 	thisEquation.x = x;
 	thisEquation.y = y;
 	thisEquation.z = z;
-	equations[thisCell.fluidIndex] = thisEquation;
+	equations[thisIndex] = thisEquation;
 
 }
 
-__global__  void setPressure(Cell3D* cells, int sizeX, int sizeY, int sizeZ, double* pressureResult) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= sizeX * sizeY * sizeZ) return;
+__global__  void setPressure(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, double* pressureResult) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-	int x = index / (sizeY * sizeZ);
-	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
+	if (x >= sizeX || y >= sizeY || z >= sizeZ) return;
 
-	if (get3D(cells, x, y, z).content != CONTENT_FLUID)
+	if (volumes.content.readSurface<int>(x, y, z) != CONTENT_FLUID)
 		return;
 
-	get3D(cells, x, y, z).pressure = pressureResult[get3D(cells, x, y, z).fluidIndex];
+	int thisIndex = volumes.fluidIndex.readSurface<int>(x, y, z);
+
+	volumes.pressure.writeSurface<float>(pressureResult[thisIndex], x, y, z);
+
 }
 
 
-__global__  void updateVelocityWithPressureImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= sizeX * sizeY * sizeZ) return;
+__global__  void updateVelocityWithPressureImpl(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-	int x = index / (sizeY * sizeZ);
-	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
+	if (x >= sizeX || y >= sizeY || z >= sizeZ) return;
 
-	Cell3D& thisCell = get3D(cells, x, y, z);
+	
 
-	thisCell.hasVelocityX = false;
-	thisCell.hasVelocityY = false;
-	thisCell.hasVelocityZ = false;
+	int4 hasVelocity = make_int4(0, 0, 0, 0);
+
+	int thisCellContent = volumes.content.readSurface<int>(x, y, z);
+	float thisPressure = volumes.pressure.readSurface<float>(x, y, z);
+
+	float4 thisNewVelocity = volumes.newVelocity.readSurface<float4>(x, y, z);
 
 	if (x > 0) {
-		Cell3D& leftCell = get3D(cells, x - 1, y, z);
-		if (thisCell.content == CONTENT_FLUID || leftCell.content == CONTENT_FLUID) {
-			float uX = thisCell.newVelocity.x -  (thisCell.pressure - leftCell.pressure);
-			thisCell.newVelocity.x = uX;
-			thisCell.hasVelocityX = true;
+		
+
+		int leftContent = volumes.content.readSurface<int>(x-1, y, z);
+		float leftPressure = volumes.pressure.readSurface<float>(x-1, y, z);
+		
+		if (thisCellContent == CONTENT_FLUID || leftContent == CONTENT_FLUID) {
+			float uX = thisNewVelocity.x -  (thisPressure - leftPressure);
+			thisNewVelocity.x = uX;
+			hasVelocity.x = true;
 		}
 	}
 	if (y > 0) {
-		Cell3D& downCell = get3D(cells, x, y - 1, z);
-		if (thisCell.content == CONTENT_FLUID || downCell.content == CONTENT_FLUID) {
-			float uY = thisCell.newVelocity.y -  (thisCell.pressure - downCell.pressure);
-			thisCell.newVelocity.y = uY;
-			thisCell.hasVelocityY = true;
+		
+		int downContent = volumes.content.readSurface<int>(x, y-1, z);
+		float downPressure = volumes.pressure.readSurface<float>(x, y-1, z);
+		if (thisCellContent == CONTENT_FLUID || downContent == CONTENT_FLUID) {
+			float uY = thisNewVelocity.y -  (thisPressure - downPressure);
+			thisNewVelocity.y = uY;
+			hasVelocity.x = true;
 		}
 	}
 	if (z > 0) {
-		Cell3D& backCell = get3D(cells, x, y, z - 1);
-		if (thisCell.content == CONTENT_FLUID || backCell.content == CONTENT_FLUID) {
-			float uZ = thisCell.newVelocity.z -  (thisCell.pressure - backCell.pressure);
-			thisCell.newVelocity.z = uZ;
-			thisCell.hasVelocityZ = true;
+		
+		int backContent = volumes.content.readSurface<int>(x, y, z-1);
+		float backPressure = volumes.pressure.readSurface<float>(x, y, z-1);
+		if (thisCellContent == CONTENT_FLUID || backContent == CONTENT_FLUID) {
+			float uZ = thisNewVelocity.z -  (thisPressure - backPressure);
+			thisNewVelocity.z = uZ;
+			hasVelocity.z = true;
 		}
 	}
+
+	volumes.hasVelocity.writeSurface<int4>(hasVelocity, x, y, z);
+	volumes.newVelocity.writeSurface<float4>(thisNewVelocity, x, y, z);
 }
 
 
-__global__  void extrapolateVelocityByOne(Cell3D* cells, int sizeX, int sizeY, int sizeZ) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= sizeX * sizeY * sizeZ) return;
+__global__  void extrapolateVelocityByOne(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-	int x = index / (sizeY * sizeZ);
-	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
+	if (x >= sizeX || y >= sizeY || z >= sizeZ) return;
 
-	Cell3D& thisCell = get3D(cells, x, y, z);
+
 	const float epsilon = -1 + 1e-6;
-	if (!thisCell.hasVelocityX) {
+
+	int4 thisHasVelocity = volumes.hasVelocity.readSurface<int4>(x, y, z);
+	float4 thisNewVelocity = volumes.newVelocity.readSurface<float4>(x, y, z);
+	
+	
+
+
+	if (!thisHasVelocity.x) {
 		float sumNeighborX = 0;
 		int neighborXCount = 0;
 		if (x > 0) {
-			Cell3D& leftCell = get3D(cells, x - 1, y, z);
-			if (leftCell.hasVelocityX && leftCell.newVelocity.x > epsilon) {
-				sumNeighborX += leftCell.newVelocity.x;
+			
+			int4 leftHasVelocity = volumes.hasVelocity.readSurface<int4>(x - 1, y, z);
+			float4 leftNewVelocity = volumes.newVelocity.readSurface<float4>(x - 1, y, z);
+			if (leftHasVelocity.x && leftNewVelocity.x > epsilon) {
+				sumNeighborX += leftNewVelocity.x;
 				neighborXCount++;
 			}
 		}
 		if (y > 0) {
-			Cell3D& downCell = get3D(cells, x, y - 1, z);
-			if (downCell.hasVelocityX && downCell.newVelocity.y > epsilon) {
-				sumNeighborX += downCell.newVelocity.x;
+			
+			int4 downHasVelocity = volumes.hasVelocity.readSurface<int4>(x, y - 1, z);
+			float4 downNewVelocity = volumes.newVelocity.readSurface<float4>(x , y-1, z);
+			if (downHasVelocity.x && downNewVelocity.y > epsilon) {
+				sumNeighborX += downNewVelocity.x;
 				neighborXCount++;
 			}
 		}
 		if (z > 0) {
-			Cell3D& backCell = get3D(cells, x, y, z - 1);
-			if (backCell.hasVelocityX && backCell.newVelocity.z > epsilon) {
-				sumNeighborX += backCell.newVelocity.x;
+			
+			int4 backHasVelocity = volumes.hasVelocity.readSurface<int4>(x, y, z-1);
+			float4 backNewVelocity = volumes.newVelocity.readSurface<float4>(x, y , z-1);
+			if (backHasVelocity.x && backNewVelocity.z > epsilon) {
+				sumNeighborX += backNewVelocity.x;
 				neighborXCount++;
 			}
 		}
 		if (x < sizeX - 1) {
-			Cell3D& rightCell = get3D(cells, x + 1, y, z);
-			if (rightCell.hasVelocityX && rightCell.newVelocity.x < -epsilon) {
-				sumNeighborX += rightCell.newVelocity.x;
+			
+			int4 rightHasVelocity = volumes.hasVelocity.readSurface<int4>(x + 1, y, z);
+			float4 rightNewVelocity = volumes.newVelocity.readSurface<float4>(x + 1, y, z);
+			if (rightHasVelocity.x && rightNewVelocity.x < -epsilon) {
+				sumNeighborX += rightNewVelocity.x;
 				neighborXCount++;
 			}
 		}
 		if (y < sizeY - 1) {
-			Cell3D& upCell = get3D(cells, x, y + 1, z);
-			if (upCell.hasVelocityX && upCell.newVelocity.y < -epsilon) {
-				sumNeighborX += upCell.newVelocity.x;
+			
+			int4 upHasVelocity = volumes.hasVelocity.readSurface<int4>(x, y+1, z);
+			float4 upNewVelocity = volumes.newVelocity.readSurface<float4>(x, y+1, z);
+			if (upHasVelocity.x && upNewVelocity.y < -epsilon) {
+				sumNeighborX += upNewVelocity.x;
 				neighborXCount++;
 			}
 		}
 		if (z < sizeZ - 1) {
-			Cell3D& frontCell = get3D(cells, x, y, z + 1);
-			if (frontCell.hasVelocityX && frontCell.newVelocity.z < -epsilon) {
-				sumNeighborX += frontCell.newVelocity.x;
+			
+			int4 frontHasVelocity = volumes.hasVelocity.readSurface<int4>(x, y, z + 1);
+			float4 frontNewVelocity = volumes.newVelocity.readSurface<float4>(x, y, z + 1);
+			if (frontHasVelocity.x && frontNewVelocity.z < -epsilon) {
+				sumNeighborX += frontNewVelocity.x;
 				neighborXCount++;
 			}
 		}
 
 		if (neighborXCount > 0) {
-			thisCell.newVelocity.x = sumNeighborX / (float)neighborXCount;
-			thisCell.hasVelocityX = true;
+			thisNewVelocity.x = sumNeighborX / (float)neighborXCount;
+			thisHasVelocity.x = true;
 		}
 	}
 
-	if (!thisCell.hasVelocityY) {
+	if (!thisHasVelocity.y) {
 		float sumNeighborY = 0;
 		int neighborYCount = 0;
 		if (x > 0) {
-			Cell3D& leftCell = get3D(cells, x - 1, y, z);
-			if (leftCell.hasVelocityY && leftCell.newVelocity.x > epsilon) {
-				sumNeighborY += leftCell.newVelocity.y;
+			
+			int4 leftHasVelocity = volumes.hasVelocity.readSurface<int4>(x - 1, y, z);
+			float4 leftNewVelocity = volumes.newVelocity.readSurface<float4>(x - 1, y, z);
+			if (leftHasVelocity.y && leftNewVelocity.x > epsilon) {
+				sumNeighborY += leftNewVelocity.y;
 				neighborYCount++;
 			}
 		}
 		if (y > 0) {
-			Cell3D& downCell = get3D(cells, x, y - 1, z);
-			if (downCell.hasVelocityY && downCell.newVelocity.y > epsilon) {
-				sumNeighborY += downCell.newVelocity.y;
+			
+			float4 downNewVelocity = volumes.newVelocity.readSurface<float4>(x, y - 1, z);
+			int4 downHasVelocity = volumes.hasVelocity.readSurface<int4>(x, y - 1, z);
+			if (downHasVelocity.y && downNewVelocity.y > epsilon) {
+				sumNeighborY += downNewVelocity.y;
 				neighborYCount++;
 			}
 		}
 		if (z > 0) {
-			Cell3D& backCell = get3D(cells, x, y, z - 1);
-			if (backCell.hasVelocityY && backCell.newVelocity.z > epsilon) {
-				sumNeighborY += backCell.newVelocity.y;
+			
+			int4 backHasVelocity = volumes.hasVelocity.readSurface<int4>(x, y, z - 1);
+			float4 backNewVelocity = volumes.newVelocity.readSurface<float4>(x, y, z - 1);
+			if (backHasVelocity.y && backNewVelocity.z > epsilon) {
+				sumNeighborY += backNewVelocity.y;
 				neighborYCount++;
 			}
 		}
 		if (x < sizeX - 1) {
-			Cell3D& rightCell = get3D(cells, x + 1, y, z);
-			if (rightCell.hasVelocityY && rightCell.newVelocity.x < -epsilon) {
-				sumNeighborY += rightCell.newVelocity.y;
+			
+			int4 rightHasVelocity = volumes.hasVelocity.readSurface<int4>(x + 1, y, z);
+			float4 rightNewVelocity = volumes.newVelocity.readSurface<float4>(x + 1, y, z);
+			if (rightHasVelocity.y && rightNewVelocity.x < -epsilon) {
+				sumNeighborY += rightNewVelocity.y;
 				neighborYCount++;
 			}
 		}
 		if (y < sizeY - 1) {
-			Cell3D& upCell = get3D(cells, x, y + 1, z);
-			if (upCell.hasVelocityY && upCell.newVelocity.y < -epsilon) {
-				sumNeighborY += upCell.newVelocity.y;
+			
+			int4 upHasVelocity = volumes.hasVelocity.readSurface<int4>(x, y + 1, z);
+			float4 upNewVelocity = volumes.newVelocity.readSurface<float4>(x, y + 1, z);
+			if (upHasVelocity.y && upNewVelocity.y < -epsilon) {
+				sumNeighborY += upNewVelocity.y;
 				neighborYCount++;
 			}
 		}
 		if (z < sizeZ - 1) {
-			Cell3D& frontCell = get3D(cells, x, y, z + 1);
-			if (frontCell.hasVelocityY && frontCell.newVelocity.z < -epsilon) {
-				sumNeighborY += frontCell.newVelocity.y;
+			
+			int4 frontHasVelocity = volumes.hasVelocity.readSurface<int4>(x, y, z + 1);
+			float4 frontNewVelocity = volumes.newVelocity.readSurface<float4>(x, y, z + 1);
+			if (frontHasVelocity.y && frontNewVelocity.z < -epsilon) {
+				sumNeighborY += frontNewVelocity.y;
 				neighborYCount++;
 			}
 		}
 		if (neighborYCount > 0) {
-			thisCell.newVelocity.y = sumNeighborY / (float)neighborYCount;
-			thisCell.hasVelocityY = true;
+			thisNewVelocity.y = sumNeighborY / (float)neighborYCount;
+			thisHasVelocity.y = true;
 		}
 	}
 
-	if (!thisCell.hasVelocityZ) {
+	if (!thisHasVelocity.z) {
 		float sumNeighborZ = 0;
 		int neighborZCount = 0;
 		if (x > 0) {
-			Cell3D& leftCell = get3D(cells, x - 1, y, z);
-			if (leftCell.hasVelocityZ && leftCell.newVelocity.x > epsilon) {
-				sumNeighborZ += leftCell.newVelocity.z;
+			
+			int4 leftHasVelocity = volumes.hasVelocity.readSurface<int4>(x - 1, y, z);
+			float4 leftNewVelocity = volumes.newVelocity.readSurface<float4>(x - 1, y, z);
+			if (leftHasVelocity.z && leftNewVelocity.x > epsilon) {
+				sumNeighborZ += leftNewVelocity.z;
 				neighborZCount++;
 			}
 		}
 		if (y > 0) {
-			Cell3D& downCell = get3D(cells, x, y - 1, z);
-			if (downCell.hasVelocityZ && downCell.newVelocity.y > epsilon) {
-				sumNeighborZ += downCell.newVelocity.z;
+			
+			float4 downNewVelocity = volumes.newVelocity.readSurface<float4>(x, y - 1, z);
+			int4 downHasVelocity = volumes.hasVelocity.readSurface<int4>(x, y-1, z);
+			if (downHasVelocity.z && downNewVelocity.y > epsilon) {
+				sumNeighborZ += downNewVelocity.z;
 				neighborZCount++;
 			}
 		}
 		if (z > 0) {
-			Cell3D& backCell = get3D(cells, x, y, z - 1);
-			if (backCell.hasVelocityZ && backCell.newVelocity.z > epsilon) {
-				sumNeighborZ += backCell.newVelocity.z;
+			
+			int4 backHasVelocity = volumes.hasVelocity.readSurface<int4>(x, y, z - 1);
+			float4 backNewVelocity = volumes.newVelocity.readSurface<float4>(x, y, z - 1);
+			if (backHasVelocity.z && backNewVelocity.z > epsilon) {
+				sumNeighborZ += backNewVelocity.z;
 				neighborZCount++;
 			}
 		}
 		if (x < sizeX - 1) {
-			Cell3D& rightCell = get3D(cells, x + 1, y, z);
-			if (rightCell.hasVelocityZ && rightCell.newVelocity.x < -epsilon) {
-				sumNeighborZ += rightCell.newVelocity.z;
+			
+			int4 rightHasVelocity = volumes.hasVelocity.readSurface<int4>(x+1, y, z );
+			float4 rightNewVelocity = volumes.newVelocity.readSurface<float4>(x+1, y, z);
+			if (rightHasVelocity.z && rightNewVelocity.x < -epsilon) {
+				sumNeighborZ += rightNewVelocity.z;
 				neighborZCount++;
 			}
 		}
 		if (y < sizeY - 1) {
-			Cell3D& upCell = get3D(cells, x, y + 1, z);
-			if (upCell.hasVelocityZ && upCell.newVelocity.y < -epsilon) {
-				sumNeighborZ += upCell.newVelocity.z;
+			
+			int4 upHasVelocity = volumes.hasVelocity.readSurface<int4>(x, y + 1, z);
+			float4 upNewVelocity = volumes.newVelocity.readSurface<float4>(x, y + 1, z);
+			if (upHasVelocity.z && upNewVelocity.y < -epsilon) {
+				sumNeighborZ += upNewVelocity.z;
 				neighborZCount++;
 			}
 		}
 		if (z < sizeZ - 1) {
-			Cell3D& frontCell = get3D(cells, x, y, z + 1);
-			if (frontCell.hasVelocityZ && frontCell.newVelocity.z < -epsilon) {
-				sumNeighborZ += frontCell.newVelocity.z;
+			
+			int4 frontHasVelocity = volumes.hasVelocity.readSurface<int4>(x, y, z+1);
+			float4 frontNewVelocity = volumes.newVelocity.readSurface<float4>(x, y , z+1);
+			if (frontHasVelocity.z && frontNewVelocity.z < -epsilon) {
+				sumNeighborZ += frontNewVelocity.z;
 				neighborZCount++;
 			}
 		}
 		if (neighborZCount > 0) {
-			thisCell.newVelocity.z = sumNeighborZ / (float)neighborZCount;
-			thisCell.hasVelocityZ = true;
+			thisNewVelocity.z = sumNeighborZ / (float)neighborZCount;
+			thisHasVelocity.z = true;
 		}
 	}
+
+	volumes.hasVelocity.writeSurface<int4>(thisHasVelocity, x, y, z);
+	volumes.newVelocity.writeSurface<float4>(thisNewVelocity, x, y, z);
 }
 
 
 
-__global__  void computeDivergenceImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float restParticlesPerCell) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= sizeX * sizeY * sizeZ) return;
+__global__  void computeDivergenceImpl(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float restParticlesPerCell) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-	int x = index / (sizeY * sizeZ);
-	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
+	if (x >= sizeX || y >= sizeY || z >= sizeZ) return;
 
-	Cell3D& thisCell = get3D(cells, x, y, z);
-	Cell3D& upCell = get3D(cells, x, y + 1, z);
-	Cell3D& rightCell = get3D(cells, x + 1, y, z);
-	Cell3D& frontCell = get3D(cells, x, y, z + 1);
+	
+	
+	
+	
 
-	float div = (upCell.newVelocity.y - thisCell.newVelocity.y + rightCell.newVelocity.x - thisCell.newVelocity.x + frontCell.newVelocity.z - thisCell.newVelocity.z);
+	float4 thisNewVelocity = volumes.newVelocity.readSurface<float4>(x, y, z);
+	float4 upNewVelocity = volumes.newVelocity.readSurface<float4>(x, y + 1, z);
+	float4 rightNewVelocity = volumes.newVelocity.readSurface<float4>(x + 1, y, z);
+	float4 frontNewVelocity = volumes.newVelocity.readSurface<float4>(x, y, z + 1);
+
+	float div = (upNewVelocity.y - thisNewVelocity.y + rightNewVelocity.x - thisNewVelocity.x + frontNewVelocity.z - thisNewVelocity.z);
 
 	//div -= max((thisCell.density - restParticlesPerCell) * 1.0, 0.0); //volume conservation
 	//div -= (thisCell.density - restParticlesPerCell) * 1.0; //volume conservation
 
-	if (thisCell.density > restParticlesPerCell) {
-		div -= (thisCell.density - restParticlesPerCell) * 0.01;
+	int currentCount = volumes.particleCount.readSurface<int>(x,y,z);
+
+	if (currentCount > restParticlesPerCell) {
+		div -= (currentCount - restParticlesPerCell) * 0.01;
 	}
-	else if (thisCell.density <= restParticlesPerCell) {
-		div -= (thisCell.density - restParticlesPerCell) * 0.01;
+	else if (currentCount <= restParticlesPerCell) {
+		div -= (currentCount - restParticlesPerCell) * 0.01;
 	}
 
-	thisCell.divergence = div;
-
-}
-__global__  void resetPressureImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= sizeX * sizeY * sizeZ) return;
-
-	int x = index / (sizeY * sizeZ);
-	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
-
-	Cell3D& thisCell = get3D(cells, x, y, z);
-	thisCell.pressure = 0;
-
+	volumes.divergence.writeSurface<float>(div, x, y, z);
 }
 
-__global__  void precomputeNeighbors(Cell3D* cells, int sizeX, int sizeY, int sizeZ) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= sizeX * sizeY * sizeZ) return;
+__global__  void jacobiImpl(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize) {
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-	int x = index / (sizeY * sizeZ);
-	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
+	if (x >= sizeX || y >= sizeY || z >= sizeZ) return;
 
-	Cell3D& thisCell = get3D(cells, x, y, z);
-	thisCell.leftCell = &thisCell;
-	thisCell.rightCell = &thisCell;
-	thisCell.upCell = &thisCell;
-	thisCell.downCell = &thisCell;
-	thisCell.frontCell = &thisCell;
-	thisCell.backCell = &thisCell;
+	
 
-	if (x > 0) {
-		thisCell.leftCell = &get3D(cells, x-1, y, z);
-	}
-	if (y > 0) {
-		thisCell.downCell = &get3D(cells, x, y-1, z);
-	}
-	if (z > 0) {
-		thisCell.backCell = &get3D(cells, x, y , z-1);
-	}
-
-	if (x < sizeX-1) {
-		thisCell.rightCell = &get3D(cells, x + 1, y, z);
-	}
-	if (y < sizeY - 1) {
-		thisCell.upCell = &get3D(cells, x , y+1, z);
-	}
-	if (z < sizeZ - 1) {
-		thisCell.frontCell = &get3D(cells, x , y, z+1);
-	}
-}
-
-__global__  void jacobiImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-	if (index >= sizeX * sizeY * sizeZ) return;
-
-	int x = index / (sizeY * sizeZ);
-	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
-
-	Cell3D& thisCell = get3D(cells, x, y, z);
-
-	if (thisCell.content == CONTENT_AIR) {
-		thisCell.pressure = 0;
+	if (volumes.content.readSurface<int>(x,y,z) == CONTENT_AIR) {
+		volumes.pressure.writeSurface<float>(0.f, x, y, z);
 		return;
 	}
 
-	float RHS = -thisCell.divergence;
+	float RHS = -volumes.divergence.readSurface<float>(x, y, z);
 
 	float newPressure = 0;
 
 	float centerCoeff = 6;
 
-	newPressure += thisCell.leftCell->pressure;
-	newPressure += thisCell.rightCell->pressure;
-	newPressure += thisCell.upCell->pressure;
-	newPressure += thisCell.downCell->pressure; 
-	newPressure += thisCell.frontCell->pressure;
-	newPressure += thisCell.backCell->pressure;
+
+	newPressure += volumes.pressure.readTexture<float>(x+1, y, z);
+	newPressure += volumes.pressure.readTexture<float>(x-1, y, z);
+	newPressure += volumes.pressure.readTexture<float>(x, y+1, z);
+	newPressure += volumes.pressure.readTexture<float>(x, y-1, z);
+	newPressure += volumes.pressure.readTexture<float>(x, y, z+1);
+	newPressure += volumes.pressure.readTexture<float>(x, y, z-1);
+
 
 	newPressure += RHS;
 	newPressure /= centerCoeff;
 
 
-
-	thisCell.pressure = newPressure;
+	volumes.pressure.writeSurface<float>(newPressure, x, y, z);
 }
 
 

@@ -4,18 +4,15 @@
 #include <thread>
 namespace Fluid_3D_FLIP {
 
-	__global__  void transferToCellAccumPhase(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd,
-		Particle* particles, int particleCount) {
+	__global__  void transferToCellAccumPhase(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd,Particle* particles, int particleCount) {
 
-		int index = blockIdx.x * blockDim.x + threadIdx.x;
 
-		if (index >= sizeX * sizeY * sizeZ) return;
 
-		int x = index / (sizeY * sizeZ);
-		int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-		int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
+		int x = blockIdx.x * blockDim.x + threadIdx.x;
+		int y = blockIdx.y * blockDim.y + threadIdx.y;
+		int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-		Cell3D& thisCell = get3D(cells, x, y, z);
+		if (x >= sizeX || y >= sizeY || z >= sizeZ) return;
 
 
 		int cellCount = (sizeX) * (sizeY) * (sizeZ);
@@ -24,8 +21,8 @@ namespace Fluid_3D_FLIP {
 		float3 yVelocityPos = make_float3((x + 0.5), y, (z + 0.5)) * cellPhysicalSize;
 		float3 zVelocityPos = make_float3((x + 0.5), y + 0.5, z) * cellPhysicalSize;
 
-		float3 thisVelocity = thisCell.velocity;
-		float3 weight = make_float3(0, 0, 0);
+		float4 thisVelocity = make_float4(0, 0, 0,0);
+		float4 weight = make_float4(0, 0, 0,0);
 
 
 #pragma unroll
@@ -41,9 +38,6 @@ namespace Fluid_3D_FLIP {
 						for (int j = cellStart[cell]; j <= cellEnd[cell]; ++j) {
 							if (j >= 0 && j < particleCount) {
 
-
-
-								//float yBefore = thisCell.velocity.y;
 
 								const Particle& p = particles[j];
 								float3 pPosition = p.position;
@@ -68,47 +62,53 @@ namespace Fluid_3D_FLIP {
 			}
 		}
 
-		thisCell.velocity = thisVelocity;
-		thisCell.weight = weight;
+		volumes.velocityAccumWeight.writeSurface<float4>(weight, x, y, z);
+		volumes.velocity.writeSurface<float4>(thisVelocity, x, y, z);
 
 	}
 
 
-	__global__  void transferToCellDividePhase(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd,
-		Particle* particles, int particleCount) {
+	__global__  void transferToCellDividePhase(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd, Particle* particles, int particleCount) {
 
-		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		int x = blockIdx.x * blockDim.x + threadIdx.x;
+		int y = blockIdx.y * blockDim.y + threadIdx.y;
+		int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-		if (index >= sizeX * sizeY * sizeZ) return;
+		if (x >= sizeX || y >= sizeY || z >= sizeZ) return;
 
-		int x = index / (sizeY * sizeZ);
-		int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-		int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
-
-		Cell3D& thisCell = get3D(cells, x, y, z);
+		int index = x * (sizeY* sizeZ) + y * (sizeZ)+z;
 
 
-		if (thisCell.weight.x > 0) {
-			thisCell.velocity.x /= thisCell.weight.x;
-			thisCell.hasVelocityX = true;
+
+		float4 weight = volumes.velocityAccumWeight.readSurface<float4>(x, y, z);
+		int4 hasVelocity = volumes.hasVelocity.readSurface<int4>(x, y, z);
+		float4 velocity = volumes.velocity.readSurface<float4>(x, y, z);
+
+		if (weight.x > 0) {
+			velocity.x /= weight.x;
+			hasVelocity.x = true;
 		}
 
-		if (thisCell.weight.y > 0) {
-			thisCell.velocity.y /= thisCell.weight.y;
-			thisCell.hasVelocityY = true;
+		if (weight.y > 0) {
+			velocity.y /= weight.y;
+			hasVelocity.y = true;
 		}
 
-		if (thisCell.weight.z > 0) {
-			thisCell.velocity.z /= thisCell.weight.z;
-			thisCell.hasVelocityZ = true;
+		if (weight.z > 0) {
+			velocity.z /= weight.z;
+			hasVelocity.z = true;
 		}
 
-		thisCell.newVelocity = thisCell.velocity;
+		volumes.velocity.writeSurface<float4>(velocity,x,y,z);
+		volumes.newVelocity.writeSurface<float4>(velocity, x, y, z);
+		volumes.hasVelocity.writeSurface<int4>(hasVelocity, x, y, z);
+
+		
 
 		for (int j = cellStart[index]; j <= cellEnd[index]; ++j) {
 			if (j >= 0 && j < particleCount) {
 
-				thisCell.content = CONTENT_FLUID;
+				volumes.content.writeSurface<int>(CONTENT_FLUID, x, y, z);
 				break;
 			}
 		}
@@ -116,68 +116,35 @@ namespace Fluid_3D_FLIP {
 
 
 
-	__global__  void calcDensityImpl(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd,
-		Particle* particles, int particleCount) {
+	__global__  void countParticlesInCellsImpl(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd, Particle* particles, int particleCount) {
 
-		int index = blockIdx.x * blockDim.x + threadIdx.x;
+		int x = blockIdx.x * blockDim.x + threadIdx.x;
+		int y = blockIdx.y * blockDim.y + threadIdx.y;
+		int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-		if (index >= sizeX * sizeY * sizeZ) return;
+		if (x >= sizeX || y >= sizeY || z >= sizeZ) return;
 
-		int x = index / (sizeY * sizeZ);
-		int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-		int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
-
-		Cell3D& thisCell = get3D(cells, x, y, z);
+		int index = x * (sizeY * sizeZ) + y * (sizeZ)+z;
 
 
-		int cellCount = (sizeX) * (sizeY) * (sizeZ);
 
-		float3 centerPos = make_float3((x + 0.5), (y + 0.5), (z + 0.5)) * cellPhysicalSize;
+		int count = cellEnd[index] - cellStart[index];
 
-		float totalWeight = 0;
 
-		/*
 
-#pragma unroll
-		for (int dx = -1; dx <= 1; ++dx) {
-#pragma unroll
-			for (int dy = -1; dy <= 1; ++dy) {
-#pragma unroll
-				for (int dz = -1; dz <= 1; ++dz) {
-					int cell = (x + dx) * sizeY * sizeZ + (y + dy) * sizeZ + z + dz;
-
-					if (cell >= 0 && cell < cellCount) {
-
-						for (int j = cellStart[cell]; j <= cellEnd[cell]; ++j) {
-							if (j >= 0 && j < particleCount) {
-
-								const Particle& p = particles[j];
-								float thisWeight = trilinearHatKernel(p.position - centerPos, cellPhysicalSize);
-								totalWeight += thisWeight;
-
-							}
-						}
-					}
-
-				}
-			}
-		}*/
-
-		totalWeight = cellEnd[index] - cellStart[index];
-
-		thisCell.density = totalWeight;
+		volumes.particleCount.writeSurface<int>(count, x, y,z);
 	}
 
 
 
-	__global__  void transferToParticlesImpl(Cell3D* cells, Particle* particles, int particleCount, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize,float FLIP_coeff) {
+	__global__  void transferToParticlesImpl(VolumeCollection volumes, Particle* particles, int particleCount, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize,float FLIP_coeff) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
 		if (index >= particleCount) return;
 
 
 		Particle& particle = particles[index];
-		float3 newGridVelocity = MAC_Grid_3D::getPointNewVelocity(particle.position, cellPhysicalSize, sizeX, sizeY, sizeZ, cells);
-		float3 oldGridVelocity = MAC_Grid_3D::getPointVelocity(particle.position, cellPhysicalSize, sizeX, sizeY, sizeZ, cells);
+		float3 newGridVelocity = MAC_Grid_3D::getPointNewVelocity(particle.position, cellPhysicalSize, sizeX, sizeY, sizeZ,  volumes);
+		float3 oldGridVelocity = MAC_Grid_3D::getPointVelocity(particle.position, cellPhysicalSize, sizeX, sizeY, sizeZ,volumes);
 		float3 velocityChange = newGridVelocity - oldGridVelocity;
 		
 		float3 FLIP = particle.velocity + velocityChange;
@@ -187,9 +154,11 @@ namespace Fluid_3D_FLIP {
 
 		particle.velocity = FLIP_coeff * FLIP + (1.0f - FLIP_coeff) * PIC;
 
+		//particle.velocity = PIC;
+
 	}
 
-	__global__  void moveParticlesImpl(float timeStep, Cell3D* cells, Particle* particles, int particleCount, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize) {
+	__global__  void moveParticlesImpl(VolumeCollection volumes, Particle* particles, int particleCount, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize,float timeStep) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
 		if (index >= particleCount) return;
 
@@ -197,9 +166,9 @@ namespace Fluid_3D_FLIP {
 		float3 beginPos = particle.position;
 
 
-		float3 u1 = MAC_Grid_3D::getPointNewVelocity(beginPos, cellPhysicalSize, sizeX, sizeY, sizeZ, cells);
-		float3 u2 = MAC_Grid_3D::getPointNewVelocity(beginPos + timeStep * u1 / 2, cellPhysicalSize, sizeX, sizeY, sizeZ, cells);
-		float3 u3 = MAC_Grid_3D::getPointNewVelocity(beginPos + timeStep * u2 * 3 / 4, cellPhysicalSize, sizeX, sizeY, sizeZ, cells);
+		float3 u1 = MAC_Grid_3D::getPointNewVelocity(beginPos, cellPhysicalSize, sizeX, sizeY, sizeZ,volumes);
+		float3 u2 = MAC_Grid_3D::getPointNewVelocity(beginPos + timeStep * u1 / 2, cellPhysicalSize, sizeX, sizeY, sizeZ,  volumes);
+		float3 u3 = MAC_Grid_3D::getPointNewVelocity(beginPos + timeStep * u2 * 3 / 4, cellPhysicalSize, sizeX, sizeY, sizeZ, volumes);
 
 		float3 destPos = beginPos + timeStep * (u1 * 2 / 9 + u2 * 3 / 9 + u3 * 4 / 9);
 
@@ -247,26 +216,21 @@ namespace Fluid_3D_FLIP {
 
 	}
 
-	__global__  void resetAllCells(Cell3D* cells, int sizeX, int sizeY, int sizeZ, float content) {
+	__global__  void resetCellImpl(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float content) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
 
-		if (index >= sizeX * sizeY * sizeZ) return;
+		int x = blockIdx.x * blockDim.x + threadIdx.x;
+		int y = blockIdx.y * blockDim.y + threadIdx.y;
+		int z = blockIdx.z * blockDim.z + threadIdx.z;
 
-		int x = index / (sizeY * sizeZ);
-		int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-		int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
-
-
-		Cell3D& thisCell = get3D(cells, x, y, z);
+		if (x >= sizeX || y >= sizeY || z >= sizeZ) return;
 
 
-		thisCell.content = content;
-		thisCell.velocity = make_float3(0, 0, 0);
-		thisCell.newVelocity = make_float3(0, 0, 0);
+		volumes.content.writeSurface<int>(CONTENT_AIR, x, y, z);
 
-		thisCell.hasVelocityX = false;
-		thisCell.hasVelocityY = false;
-		thisCell.hasVelocityZ = false;
+		volumes.hasVelocity.writeSurface<int4>(make_int4(0, 0, 0, 0), x, y, z);
+		volumes.velocity.writeSurface<float4>(make_float4(0, 0, 0, 0), x,y,z);
+		volumes.newVelocity.writeSurface<float4>(make_float4(0, 0, 0, 0), x, y, z);
 	}
 
 
@@ -284,17 +248,17 @@ namespace Fluid_3D_FLIP {
 	void Fluid::simulationStep() {
 
 		transferToGrid();
-		grid->updateFluidCount();
+		//grid->updateFluidCount();
 
 		applyGravity(timestep, *grid, gravitationalAcceleration);
 
 		fixBoundary(*grid);
 
-		calcDensity();
+		countParticlesInCells();
 
 		computeDivergence(*grid, particlesPerCell);
 
-		//solvePressure(thisTimeStep,*grid);
+		//solvePressure(timestep,*grid);
 
 		solvePressureJacobi(timestep, *grid, 100);
 
@@ -309,8 +273,8 @@ namespace Fluid_3D_FLIP {
 	}
 
 
-	void Fluid::calcDensity() {
-		calcDensityImpl << < numBlocksCell, numThreadsCell >> > (grid->cells, sizeX, sizeY, sizeZ, cellPhysicalSize, cellStart, cellEnd, particles, particleCount);
+	void Fluid::countParticlesInCells() {
+		countParticlesInCellsImpl << < grid->cudaGridSize, grid->cudaBlockSize >> > ( grid->volumes, sizeX, sizeY, sizeZ, cellPhysicalSize, cellStart, cellEnd, particles, particleCount);
 		CHECK_CUDA_ERROR("calcDensity");
 	}
 
@@ -321,20 +285,18 @@ namespace Fluid_3D_FLIP {
 		performSpatialHashing2(particleIndices,particleHashes, particles, particlesCopy, particleCount, cellPhysicalSize, sizeX, sizeY, sizeZ, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount);
 		//performSpatialHashing(particleHashes, particles, particleCount, cellPhysicalSize, sizeX, sizeY, sizeZ, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount);
 
-		resetAllCells << < numBlocksCell, numThreadsCell >> > (grid->cells, sizeX, sizeY, sizeZ, CONTENT_AIR);
+		resetCellImpl <<< grid->cudaGridSize, grid->cudaBlockSize >>> ( grid->volumes, sizeX, sizeY, sizeZ, CONTENT_AIR);
 		cudaDeviceSynchronize();
 		CHECK_CUDA_ERROR("reset all cells");
 
-		//transferToCellAccumPhase2 << < numBlocksCell, numThreadsCell >> > (grid->cells, particles, particleCount, sizeX, sizeY, sizeZ, cellPhysicalSize);
-		//transferToCellDividePhase2 << < numBlocksCell, numThreadsCell >> > (grid->cells, sizeX, sizeY, sizeZ);
 
-		transferToCellAccumPhase << < numBlocksCell, numThreadsCell >> > (grid->cells, sizeX, sizeY, sizeZ, cellPhysicalSize, cellStart, cellEnd, particles, particleCount);
-		transferToCellDividePhase << < numBlocksCell, numThreadsCell >> > (grid->cells, sizeX, sizeY, sizeZ, cellPhysicalSize, cellStart, cellEnd, particles, particleCount);
+		transferToCellAccumPhase <<< grid->cudaGridSize,grid->cudaBlockSize >> > ( grid->volumes, sizeX, sizeY, sizeZ, cellPhysicalSize, cellStart, cellEnd, particles, particleCount);
+		transferToCellDividePhase << < grid->cudaGridSize, grid->cudaBlockSize >> > ( grid->volumes, sizeX, sizeY, sizeZ, cellPhysicalSize, cellStart, cellEnd, particles, particleCount);
 		CHECK_CUDA_ERROR("transfer to cell");
 	}
 
 	void Fluid::transferToParticles() {
-		transferToParticlesImpl << <numBlocksParticle, numThreadsParticle >> > (grid->cells, particles, particleCount, sizeX, sizeY, sizeZ, cellPhysicalSize,0.95);
+		transferToParticlesImpl << <numBlocksParticle, numThreadsParticle >> > ( grid->volumes, particles, particleCount, sizeX, sizeY, sizeZ, cellPhysicalSize,0.95);
 		cudaDeviceSynchronize();
 		CHECK_CUDA_ERROR("transfer to particles");
 	}
@@ -342,7 +304,7 @@ namespace Fluid_3D_FLIP {
 	void Fluid::moveParticles(float timeStep) {
 
 		moveParticlesImpl << < numBlocksParticle, numThreadsParticle >> >
-			(timeStep, grid->cells, particles, particleCount, sizeX, sizeY, sizeZ, cellPhysicalSize);
+			(grid->volumes, particles, particleCount, sizeX, sizeY, sizeZ, cellPhysicalSize, timeStep);
 		cudaDeviceSynchronize();
 		CHECK_CUDA_ERROR("move particles");
 		return;
@@ -390,11 +352,9 @@ namespace Fluid_3D_FLIP {
 
 
 		grid = std::make_shared<MAC_Grid_3D>(sizeX, sizeY, sizeZ, cellPhysicalSize);
-		precomputeNeighbors << < grid->numBlocksCell, grid->numThreadsCell >> >
-			(grid->cells, grid->sizeX, grid->sizeY, grid->sizeZ);
+
 		container = std::make_shared<Container>(glm::vec3(sizeX, sizeY, sizeZ) * cellPhysicalSize);
 
-		Cell3D* cellsTemp = grid->copyCellsToHost();
 
 
 		grid->fluidCount = 0;
@@ -404,20 +364,19 @@ namespace Fluid_3D_FLIP {
 			if (vol.shapeType == ShapeType::Square) {
 				float3 minPos = make_float3(vol.params[0], vol.params[1], vol.params[2]);
 				float3 maxPos = make_float3(vol.params[3], vol.params[4], vol.params[5]);
-				createSquareFluid(particlesHost, cellsTemp, minPos, maxPos, grid->fluidCount);
+				createSquareFluid(particlesHost, minPos, maxPos, grid->fluidCount);
 			}
 			else if (vol.shapeType == ShapeType::Sphere) {
 				float3 center = make_float3(vol.params[0], vol.params[1], vol.params[2]);
 				float radius = vol.params[3];
-				createSphereFluid(particlesHost, cellsTemp, center, radius, grid->fluidCount);
+				createSphereFluid(particlesHost, center, radius, grid->fluidCount);
 			}
 		}
 
 
 		particleCount = particlesHost.size();
 
-		grid->copyCellsToDevice(cellsTemp);
-		delete[]cellsTemp;
+		
 
 		HANDLE_ERROR(cudaMalloc(&particles, particleCount * sizeof(Particle)));
 
@@ -431,16 +390,12 @@ namespace Fluid_3D_FLIP {
 		numThreadsParticle = min(1024, particleCount);
 		numBlocksParticle = divUp(particleCount, numThreadsParticle);
 
-		numThreadsCell = min(1024, sizeX * sizeY * sizeZ);
-		numBlocksCell = divUp(sizeX * sizeY * sizeZ, numThreadsCell);
-
-		std::cout << numThreadsCell << std::endl << numBlocksCell << std::endl;
 
 		fixBoundary(*grid);
 
 		pointSprites = std::make_shared<PointSprites>(particleCount);
 
-		HANDLE_ERROR(cudaDeviceSetLimit(cudaLimitPrintfFifoSize, numBlocksCell * numThreadsCell * 1024));
+		HANDLE_ERROR(cudaDeviceSetLimit(cudaLimitPrintfFifoSize, grid->cellCount * 1024));
 
 		HANDLE_ERROR(cudaMalloc(&particleIndices, particleCount * sizeof(*particleIndices)));
 		HANDLE_ERROR(cudaMalloc(&particlesCopy, particleCount * sizeof(Particle)));
@@ -450,6 +405,8 @@ namespace Fluid_3D_FLIP {
 		meshRenderer = std::make_shared<FluidMeshRenderer>(mesher->triangleCount);
 
 		initInkRenderer();
+
+		transferToGrid();
 
 	}
 
@@ -498,7 +455,7 @@ namespace Fluid_3D_FLIP {
 		return true;
 	}
 
-	void Fluid::createSquareFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp, float3 minPos, float3 maxPos, int startIndex) {
+	void Fluid::createSquareFluid(std::vector <Particle>& particlesHost, float3 minPos, float3 maxPos, int startIndex) {
 		int index = startIndex;
 
 		if (!checkCoordValid(minPos) || !checkCoordValid(maxPos)) {
@@ -509,12 +466,7 @@ namespace Fluid_3D_FLIP {
 		for (int z =  minPos.z* sizeZ; z < maxPos.z * sizeZ; ++z) {
 			for (int x = minPos.x * sizeX; x < maxPos.x * sizeX; ++x) {
 				for (int y = minPos.y * sizeY; y < maxPos.y * sizeY; ++y) {
-					Cell3D& thisCell = get3D(cellsTemp, x, y, z);
 
-					thisCell.velocity = make_float3(0, 0, 0);
-					thisCell.newVelocity = make_float3(0, 0, 0);
-					thisCell.content = CONTENT_FLUID;
-					thisCell.fluidIndex = index;
 					++index;
 					float3 thisPos = MAC_Grid_3D::getPhysicalPos(x, y, z, cellPhysicalSize);
 					createParticlesAt(particlesHost, thisPos, [](float3 p) {return true; },cellPhysicalSize/2);
@@ -525,7 +477,7 @@ namespace Fluid_3D_FLIP {
 		grid->fluidCount = index;
 	}
 
-	void Fluid::createSphereFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp, float3 center, float radius,int startIndex) {
+	void Fluid::createSphereFluid(std::vector <Particle>& particlesHost,  float3 center, float radius,int startIndex) {
 		int index = startIndex;
 		if (!checkCoordValid(center)) {
 			return;
@@ -546,12 +498,7 @@ namespace Fluid_3D_FLIP {
 					int createdCount = createParticlesAt(particlesHost, thisPos, filter, cellPhysicalSize / 2);
 
 					if (createdCount > 0) {
-						Cell3D& thisCell = get3D(cellsTemp, x, y, z);
-
-						thisCell.velocity = make_float3(0, 0, 0);
-						thisCell.newVelocity = make_float3(0, 0, 0);
-						thisCell.content = CONTENT_FLUID;
-						thisCell.fluidIndex = index;
+						
 						++index;
 
 					}
@@ -692,7 +639,7 @@ namespace Fluid_3D_FLIP {
 	}
 
 	void Fluid::transferToInkParticles() {
-		transferToParticlesImpl << <numBlocksInkParticle, numThreadsInkParticle >> > (grid->cells, inkParticles, inkParticleCount, sizeX, sizeY, sizeZ, cellPhysicalSize, 1.f);
+		transferToParticlesImpl << <numBlocksInkParticle, numThreadsInkParticle >> > ( grid->volumes, inkParticles, inkParticleCount, sizeX, sizeY, sizeZ, cellPhysicalSize, 1.f);
 		cudaDeviceSynchronize();
 		CHECK_CUDA_ERROR("transfer to particles");
 	}
@@ -700,7 +647,7 @@ namespace Fluid_3D_FLIP {
 	void Fluid::moveInkParticles(float timeStep) {
 
 		moveParticlesImpl << < numBlocksInkParticle, numThreadsInkParticle >> >
-			(timeStep, grid->cells, inkParticles, inkParticleCount, sizeX, sizeY, sizeZ, cellPhysicalSize);
+			( grid->volumes, inkParticles, inkParticleCount, sizeX, sizeY, sizeZ, cellPhysicalSize, timeStep);
 		cudaDeviceSynchronize();
 		CHECK_CUDA_ERROR("move particles");
 		return;

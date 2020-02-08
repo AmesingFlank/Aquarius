@@ -1,6 +1,7 @@
 #pragma once
 #include "Fluid_3D_kernels.cuh"
 #include "Fluid_kernels.cuh"
+#include "VolumeData.cuh"
 
 
 template<typename Particle>

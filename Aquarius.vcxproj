@@ -121,6 +121,7 @@
     <CudaCompile Include="Fluid\Fluid_3D_kernels.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_PBF.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_PCISPH.cu" />
+    <CudaCompile Include="Fluid\MAC_Grid_3D.cu" />
     <CudaCompile Include="Fluid\SVD.cu" />
     <CudaCompile Include="main.cu" />
     <CudaCompile Include="Rendering\Renderer3D\FluidMeshRenderer.cu" />
@@ -152,6 +153,7 @@
     <ClInclude Include="Common\InputHandler.h" />
     <ClInclude Include="Fluid\Legacy\MAC_Grid_2D.cuh" />
     <ClInclude Include="Fluid\MAC_Grid_3D.cuh" />
+    <ClInclude Include="Fluid\VolumeData.cuh" />
     <ClInclude Include="Rendering\DrawCommand.h" />
     <ClInclude Include="Rendering\mesh.h" />
     <ClInclude Include="Rendering\model.h" />

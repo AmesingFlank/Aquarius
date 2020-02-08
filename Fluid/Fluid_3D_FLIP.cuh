@@ -57,7 +57,6 @@ namespace Fluid_3D_FLIP{
 		int particleCount;
 
 		int numThreadsParticle, numBlocksParticle;
-		int numThreadsCell, numBlocksCell;
 
 		const int particlesPerCell = 8;
 
@@ -97,7 +96,7 @@ namespace Fluid_3D_FLIP{
 		virtual void simulationStep() override;
 
 
-		void calcDensity();
+		void countParticlesInCells();
 
 		
 
@@ -113,9 +112,9 @@ namespace Fluid_3D_FLIP{
 
 		int createParticlesAt(std::vector <Particle>& particlesHost, float3 centerPos,std::function<bool(float3)> filter,float particleSpacing);
 
-		void createSquareFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp, float3 minPos,float3 maxPos, int startIndex);
+		void createSquareFluid(std::vector <Particle>& particlesHost, float3 minPos,float3 maxPos, int startIndex);
 
-		void createSphereFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp,float3 center,float radius, int startIndex);
+		void createSphereFluid(std::vector <Particle>& particlesHost, float3 center,float radius, int startIndex);
 
 
 
