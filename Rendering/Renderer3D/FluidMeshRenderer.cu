@@ -43,22 +43,50 @@ FluidMeshRenderer::FluidMeshRenderer(int count_) :count(count_) {
 	
 }
 
-void FluidMeshRenderer::draw(const DrawCommand& drawCommand,GLuint skybox) {
+void FluidMeshRenderer::drawWithInk(const DrawCommand& drawCommand, GLuint skybox, PointSprites& points, float radius, std::vector<float4> phaseColors) {
+	
+
+	points.drawPhaseThickness(drawCommand, radius);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	shader->Use();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, points.phaseThicknessTexture);
+	GLuint phaseThicknessTextureLocation = glGetUniformLocation(shader->Program, "phaseThicknessTexture");
+	glUniform1i(phaseThicknessTextureLocation, 0);
+
+	GLuint usePhaseThicknessTextureLocation = glGetUniformLocation(shader->Program, "usePhaseThicknessTexture");
+	glUniform1i(usePhaseThicknessTextureLocation, 1);
+
+
+	for (int i = 0; i < phaseColors.size(); ++i) {
+		std::string name = "phaseColors[" + std::to_string(i) + "]";
+		GLuint location = glGetUniformLocation(shader->Program, name.c_str());
+		float4 color = phaseColors[i];
+		glUniform4f(location, color.x, color.y, color.z, color.w);
+	}
+
+	GLuint phaseCountLocation = glGetUniformLocation(shader->Program,"phaseCount");
+	glUniform1i(phaseCountLocation,phaseColors.size());
+
+
+	draw(drawCommand, skybox); 
+
+
+	return;
+
+}
+
+void FluidMeshRenderer::draw(const DrawCommand& drawCommand, GLuint skybox) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	glm::mat4  model = glm::mat4(1.0);
 
 	
-	/*
-	screenSpaceNormal.generateNormalTexture(
-		[&](){
-			drawDepth(drawCommand);
-		},
-		6, 5, 6, 0.1, drawCommand
-	);
-	*/
-
-	GLuint screenSpaceNormalTexture = screenSpaceNormal.normalTexture;
+	//GLuint thicknessTexture;
+	//points.drawThickness(drawCommand, radius);
+	
  
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -73,10 +101,12 @@ void FluidMeshRenderer::draw(const DrawCommand& drawCommand,GLuint skybox) {
 	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.view));
 	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.projection));
 
+	/*
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, screenSpaceNormalTexture);
 	GLuint normalTextureLocation = glGetUniformLocation(shader->Program, "normalTexture");
 	glUniform1i(normalTextureLocation, 0);
+	*/
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);

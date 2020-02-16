@@ -1,10 +1,8 @@
-
 #version 330 core
 layout (location = 0) in vec3 position;
+layout (location = 1) in vec4 volumeFractions;
 out vec3 TexCoords;
-out vec4 posToCamera;
-out float sphereRadius;
-out mat4 proj;
+out vec4 VolumeFractions;
 
 uniform mat4 projection;
 uniform mat4 view;
@@ -16,9 +14,16 @@ uniform float radius;
 
 uniform vec3 cameraPosition;
 
+out vec3 debug;
+out vec4 posToCamera;
+out float sphereRadius;
+out mat4 proj;
+
+
 
 void main()
 {
+
 	mat4 mvp = projection * view * model;
 	
 	vec3 cameraToPoint = position-cameraPosition;
@@ -45,8 +50,9 @@ void main()
 
     gl_Position =   mvp * vec4(position, 1.0);
     TexCoords = position;
-
-	posToCamera = view * model * vec4(position, 1.0);
-	sphereRadius = radius;
 	proj = projection;
+	sphereRadius = radius;
+	posToCamera = view * model * vec4(position, 1.0);
+
+	VolumeFractions = volumeFractions;
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include "Fluid_3D_kernels.cuh"
 #include "Fluid_kernels.cuh"
+#include "VolumeData.cuh"
 
 
 template<typename Particle>
@@ -63,3 +64,6 @@ void  solvePressure(float timeStep, MAC_Grid_3D& grid);
 void  updateVelocityWithPressure(float timeStep, MAC_Grid_3D& grid);
 
 void  extrapolateVelocity(float timeStep, MAC_Grid_3D& grid);
+
+
+void  solveDiffusionJacobi(float timeStep, MAC_Grid_3D& grid, int iterations,float D, float cellPhysicalSize);

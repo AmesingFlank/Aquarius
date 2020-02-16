@@ -4,6 +4,8 @@
 #include "../Shader.h"
 #include "../DrawCommand.h"
 #include "ScreenSpaceNormal.cuh"
+#include "PointSprites.h"
+#include <vector>
 
 struct FluidMeshRenderer {
 	int count;
@@ -20,6 +22,7 @@ struct FluidMeshRenderer {
 	ScreenSpaceNormal screenSpaceNormal;
 
 	FluidMeshRenderer(int count_);
-	void draw(const DrawCommand& drawCommand,GLuint skybox);
+	void draw(const DrawCommand& drawCommand, GLuint skybox);
+	void drawWithInk(const DrawCommand& drawCommand, GLuint skybox, PointSprites& points, float radius, std::vector<float4> phaseColors);
 	void drawDepth(const DrawCommand& drawCommand);
 };

@@ -22,13 +22,28 @@ namespace Fluid_3D_FLIP{
 	__device__ __host__ struct Particle {
 		float3 position = make_float3(0, 0, 0);
 		float3 velocity = make_float3(0, 0, 0);
+		float4 volumeFractions = make_float4(0,0,0,0);
 
 		__device__ __host__
-			Particle() {
-
+		Particle() {
 		}
-		Particle(float3 pos) :position(pos) {
-
+		Particle(float3 pos,int phase = 0) :position(pos) {
+			
+			switch (phase) {
+			case 0:
+				volumeFractions.x = 1;
+				break;
+			case 1:
+				volumeFractions.y = 1;
+				break;
+			case 2:
+				volumeFractions.z = 1;
+				break;
+			case 3:
+				volumeFractions.w = 1;
+				break;
+			}
+			
 		}
 	};
 
@@ -36,6 +51,8 @@ namespace Fluid_3D_FLIP{
 
 	class Fluid :public Fluid_3D {
 	public:
+
+		float timestep = 0.033f;
 
 		int sizeX;
 		int sizeY;
@@ -55,7 +72,6 @@ namespace Fluid_3D_FLIP{
 		int particleCount;
 
 		int numThreadsParticle, numBlocksParticle;
-		int numThreadsCell, numBlocksCell;
 
 		const int particlesPerCell = 8;
 
@@ -69,11 +85,27 @@ namespace Fluid_3D_FLIP{
 		Skybox skybox = Skybox("resources/Skyboxes/GamlaStan2/", ".jpg");
 
 		std::shared_ptr<PointSprites> pointSprites;
+
+		
+
 		std::shared_ptr<Container> container;
 		std::shared_ptr<MAC_Grid_3D> grid;
 
 		std::shared_ptr<Mesher> mesher;
 		std::shared_ptr<FluidMeshRenderer> meshRenderer;
+
+
+		std::shared_ptr<FluidConfig3D> fluidConfig;
+
+
+		float inkParticlesSpacing;
+		Particle* inkParticles;
+		int inkParticleCount;
+		std::shared_ptr<PointSprites> pointSpritesInk;
+		int numThreadsInkParticle, numBlocksInkParticle;
+
+
+		std::shared_ptr<FluidConfig3D> config;
 
 		Fluid();
 
@@ -82,7 +114,7 @@ namespace Fluid_3D_FLIP{
 		virtual void simulationStep() override;
 
 
-		void calcDensity();
+		void countParticlesInCells();
 
 		
 
@@ -94,13 +126,26 @@ namespace Fluid_3D_FLIP{
 
 		virtual void init(std::shared_ptr<FluidConfig> config) override;
 
-		int createParticlesAt(std::vector <Particle>& particlesHost, float3 centerPos,std::function<bool(float3)> filter);
-
-		void createSquareFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp, float3 minPos,float3 maxPos, int startIndex = 0);
-
-		void createSphereFluid(std::vector <Particle>& particlesHost, Cell3D* cellsTemp,float3 center,float radius, int startIndex = 0);
 
 
+		int createParticlesAt(std::vector <Particle>& particlesHost, float3 centerPos,std::function<bool(float3)> filter,float particleSpacing,int phase);
+
+		void createSquareFluid(std::vector <Particle>& particlesHost, float3 minPos,float3 maxPos, int phase);
+
+		void createSphereFluid(std::vector <Particle>& particlesHost, float3 center,float radius,int phase);
+
+
+
+
+
+		void createSquareInk(std::vector <Particle>& particlesHost, float3 minPos, float3 maxPos,float spacing, int phase);
+
+		void createSphereInk(std::vector <Particle>& particlesHost, float3 center, float radius, float spacing, int phase);
+
+		void initInkRenderer();
+
+		void transferToInkParticles();
+		void moveInkParticles(float timeStep);
 
 	};
 }

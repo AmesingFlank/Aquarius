@@ -4,8 +4,8 @@
 
 
 void  applyGravity(float timeStep, MAC_Grid_3D& grid, float gravitationalAcceleration) {
-	applyGravityImpl << < grid.numBlocksCell, grid.numThreadsCell >> >
-		(grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ, timeStep, gravitationalAcceleration);
+	applyGravityImpl <<< grid.cudaGridSize, grid.cudaBlockSize >>>
+		( grid.volumes,grid.sizeX, grid.sizeY, grid.sizeZ, timeStep, gravitationalAcceleration);
 	cudaDeviceSynchronize();
 	CHECK_CUDA_ERROR("apply forces");
 
@@ -21,38 +21,36 @@ void  fixBoundary(MAC_Grid_3D& grid) {
 	total = sizeY * sizeZ;
 	numThreads = min(1024, total);
 	numBlocks = divUp(total, numThreads);
-	fixBoundaryX << < numBlocks, numThreads >> > (grid.cells, sizeX, sizeY, sizeZ);
+	fixBoundaryX << < numBlocks, numThreads >> > ( grid.volumes, sizeX, sizeY, sizeZ);
 	cudaDeviceSynchronize();
 	CHECK_CUDA_ERROR("fix boundary x");
 
 	total = sizeX * sizeZ;
 	numThreads = min(1024, total);
 	numBlocks = divUp(total, numThreads);
-	fixBoundaryY << < numBlocks, numThreads >> > (grid.cells, sizeX, sizeY, sizeZ);
+	fixBoundaryY << < numBlocks, numThreads >> > ( grid.volumes, sizeX, sizeY, sizeZ);
 	cudaDeviceSynchronize();
 	CHECK_CUDA_ERROR("fix boundary y");
 
 	total = sizeX * sizeY;
 	numThreads = min(1024, total);
 	numBlocks = divUp(total, numThreads);
-	fixBoundaryZ << < numBlocks, numThreads >> > (grid.cells, sizeX, sizeY, sizeZ);
+	fixBoundaryZ << < numBlocks, numThreads >> > ( grid.volumes, sizeX, sizeY, sizeZ);
 	cudaDeviceSynchronize();
 	CHECK_CUDA_ERROR("fix boundary y");
 
 }
 
 void  computeDivergence(MAC_Grid_3D& grid, float restParticlesPerCell) {
-	computeDivergenceImpl << < grid.numBlocksCell, grid.numThreadsCell >> >
-		(grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ, grid.cellPhysicalSize, restParticlesPerCell);
+	computeDivergenceImpl <<< grid.cudaGridSize, grid.cudaBlockSize >>>
+		( grid.volumes, grid.sizeX, grid.sizeY, grid.sizeZ, grid.cellPhysicalSize, restParticlesPerCell);
 }
 
 void  solvePressureJacobi(float timeStep, MAC_Grid_3D& grid, int iterations) {
 
-	//resetPressureImpl << < grid.numBlocksCell, grid.numThreadsCell >> > (grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ);
-
 	for (int i = 0; i < iterations; ++i) {
-		jacobiImpl << < grid.numBlocksCell, grid.numThreadsCell >> >
-			(grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ, grid.cellPhysicalSize);
+		jacobiImpl  <<< grid.cudaGridSize, grid.cudaBlockSize >>>
+			( grid.volumes, grid.sizeX, grid.sizeY, grid.sizeZ, grid.cellPhysicalSize);
 	}
 
 }
@@ -63,8 +61,7 @@ void  solvePressure(float timeStep, MAC_Grid_3D& grid) {
 	int sizeX = grid.sizeX;
 	int sizeY = grid.sizeY;
 	int sizeZ = grid.sizeZ;
-	int numBlocksCell = grid.numBlocksCell;
-	int numThreadsCell = grid.numThreadsCell;
+
 
 	PressureEquation3D* equations = new PressureEquation3D[grid.fluidCount];
 	int nnz = 0;
@@ -78,8 +75,8 @@ void  solvePressure(float timeStep, MAC_Grid_3D& grid) {
 	HANDLE_ERROR(cudaMalloc(&hasNonZeroRHS_Device, sizeof(*hasNonZeroRHS_Device)));
 	HANDLE_ERROR(cudaMemset(hasNonZeroRHS_Device, 0, sizeof(*hasNonZeroRHS_Device)));
 
-	constructPressureEquations << < numBlocksCell, numThreadsCell >> >
-		(grid.cells, sizeX, sizeY, sizeZ, equationsDevice, hasNonZeroRHS_Device);
+	constructPressureEquations <<< grid.cudaGridSize,grid.cudaBlockSize >>>
+		( grid.volumes, sizeX, sizeY, sizeZ, equationsDevice, hasNonZeroRHS_Device);
 	cudaDeviceSynchronize();
 	CHECK_CUDA_ERROR("construct eqns");
 
@@ -223,14 +220,14 @@ void  solvePressure(float timeStep, MAC_Grid_3D& grid) {
 	}
 
 	//solve the pressure equation
-	double* result_device = solveSPD4(A, R, f_host, numVariables);
+	double* result_device = solveSPD2(A, R, f_host, numVariables);
 
 	double* result_host = new double[numVariables];
 	HANDLE_ERROR(cudaMemcpy(result_host, result_device, numVariables * sizeof(*result_host),
 		cudaMemcpyDeviceToHost));
 
 
-	setPressure << < numBlocksCell, numThreadsCell >> > (grid.cells, sizeX, sizeY, sizeZ, result_device);
+	setPressure <<< grid.cudaGridSize, grid.cudaBlockSize >>> ( grid.volumes, sizeX, sizeY, sizeZ, result_device);
 	cudaDeviceSynchronize();
 	CHECK_CUDA_ERROR("set pressure");
 
@@ -247,7 +244,7 @@ void  solvePressure(float timeStep, MAC_Grid_3D& grid) {
 }
 
 void  updateVelocityWithPressure(float timeStep, MAC_Grid_3D& grid) {
-	updateVelocityWithPressureImpl << < grid.numBlocksCell, grid.numThreadsCell >> > (grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ);
+	updateVelocityWithPressureImpl <<< grid.cudaGridSize, grid.cudaBlockSize >>> ( grid.volumes, grid.sizeX, grid.sizeY, grid.sizeZ);
 	cudaDeviceSynchronize();
 	CHECK_CUDA_ERROR("update velocity with pressure");
 }
@@ -263,8 +260,17 @@ void  extrapolateVelocity(float timeStep, MAC_Grid_3D& grid) {
 	//std::cout<<"maxDist "<<maxDist<<std::endl;
 
 	for (int distance = 0; distance < maxDist; ++distance) {
-		extrapolateVelocityByOne << < grid.numBlocksCell, grid.numThreadsCell >> > (grid.cells, grid.sizeX, grid.sizeY, grid.sizeZ);
+		extrapolateVelocityByOne << < grid.cudaGridSize, grid.cudaBlockSize >> > ( grid.volumes, grid.sizeX, grid.sizeY, grid.sizeZ);
 		cudaDeviceSynchronize();
 		CHECK_CUDA_ERROR("extrapolate vel");
+	}
+}
+
+
+void  solveDiffusionJacobi(float timeStep, MAC_Grid_3D& grid, int iterations, float D, float cellPhysicalSize) {
+	float lambda = D * timeStep / (cellPhysicalSize * cellPhysicalSize);
+	for (int i = 0; i < iterations; ++i) {
+		diffusionJacobiImpl << < grid.cudaGridSize, grid.cudaBlockSize >> >
+			(grid.volumes, grid.sizeX, grid.sizeY, grid.sizeZ, lambda);
 	}
 }

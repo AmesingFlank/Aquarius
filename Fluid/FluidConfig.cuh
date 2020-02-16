@@ -20,6 +20,8 @@ struct InitializationVolume {
 	ShapeType shapeType;
 
 	std::vector< float > params;
+
+	int phase;
 };
 
 
@@ -33,6 +35,12 @@ struct FluidConfig3D:public FluidConfig {
 	int sizeY;
 	int sizeZ;
 	std::vector<InitializationVolume> initialVolumes;
+
+	int phaseCount;
+	std::vector<float4> phaseColors;
+
+	float4* phaseColorsDevice;
+	float diffusionCoeff;
 };
 
 struct FluidConfig2D:public FluidConfig {

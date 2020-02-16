@@ -12,16 +12,19 @@
 #include "../DrawCommand.h"
 #include "ScreenSpaceNormal.cuh"
 
+
 struct PointSprites {
 	int count;
-	float* positionsHost;
+	float* pointsVBO_host;
 	GLuint pointsVAO, pointsVBO;
-	GLint points_vPos_location; // used by multiple shaders. location specified as common value in all shaders
+
+	int stride = 7;
+	
 
 	cudaGraphicsResource* cudaResourceVBO;
 	float* positionsDevice;
 
-	Shader* basicShader;
+	Shader* simpleShader;
 
 	float quadVertices[24] = { 
 		// positions   // texCoords
@@ -42,10 +45,14 @@ struct PointSprites {
 
 	GLuint thicknessTexture;
 
+	GLuint phaseThicknessTexture;
+
 	Shader* depthShader;
-	Shader* renderShader;
+	Shader* screenShader;
 
 	Shader* thicknessShader;
+
+	Shader* phaseThicknessShader;
 
 
 	ScreenSpaceNormal screenSpaceNormal;
@@ -53,13 +60,13 @@ struct PointSprites {
 	glm::mat4  model = glm::mat4(1.0);
 
 
-	void initScreenSpaceRenderer();
+	void initRenderer();
 	
 
-	void renderDepth(const DrawCommand& drawCommand, float radius);
+	void drawDepth(const DrawCommand& drawCommand, float radius);
 
-	void renderThickness(const DrawCommand& drawCommand, float radius);
-	void renderFinal(const DrawCommand& drawCommand, int skybox,GLuint normalTexture,GLuint depthTexture);
+	void drawThickness(const DrawCommand& drawCommand, float radius);
+	void drawScreen(const DrawCommand& drawCommand, int skybox,GLuint normalTexture,GLuint depthTexture);
 
 	PointSprites(int count_);
 
@@ -67,4 +74,9 @@ struct PointSprites {
 	void draw(const DrawCommand& drawCommand, float radius, int skybox);
 
 	void drawSimple(const DrawCommand& drawCommand, float radius);
+	void drawPhaseThickness(const DrawCommand& drawCommand, float radius);
+
+
+	void prepareShader(Shader* shader, const DrawCommand& drawCommand, float radius);
+	
 };

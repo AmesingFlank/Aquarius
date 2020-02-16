@@ -2,7 +2,6 @@
 
 namespace Fluid_3D_PBF {
 
-#define mass 65e-6f
 
 	__global__ void applyForcesImpl(Particle* particles, int particleCount, float timestep) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -270,15 +269,14 @@ namespace Fluid_3D_PBF {
 
 
 
-
-
-
-
 	Fluid::Fluid() {
 
 	}
 	
 	void Fluid::init(std::shared_ptr<FluidConfig> config) {
+		
+
+
 		particleSpacing = pow(gridPhysicalSize.x * gridPhysicalSize.y * gridPhysicalSize.z / particleCountWhenFull, 1.0 / 3.0);
 		particleSpacing = gridPhysicalSize.x / ceil(gridPhysicalSize.x / particleSpacing); // so that gridPhysicalSize is exact multiple.
 
@@ -297,6 +295,10 @@ namespace Fluid_3D_PBF {
 		std::vector<Particle> particlesVec;
 
 		std::shared_ptr<FluidConfig3D> config3D = std::static_pointer_cast<FluidConfig3D, FluidConfig>(config);
+
+		fluidConfig = config3D;
+
+
 		for (const InitializationVolume& vol : config3D->initialVolumes) {
 			if (vol.shapeType == ShapeType::Square) {
 				float3 minPos = make_float3(vol.params[0], vol.params[1], vol.params[2]);
@@ -316,6 +318,8 @@ namespace Fluid_3D_PBF {
 		HANDLE_ERROR(cudaMalloc(&particlesCopy, particleCount * sizeof(Particle)));
 
 		HANDLE_ERROR(cudaMemcpy(particles, particlesVec.data(), particleCount * sizeof(Particle), cudaMemcpyHostToDevice));
+
+
 
 		numThreads = min(1024, particleCount);
 		numBlocks = divUp(particleCount, numThreads);
@@ -357,10 +361,10 @@ namespace Fluid_3D_PBF {
 		}
 		variance /= (float)particleCount;
 
-
+		/*
 		for (Particle& p : particlesVec) {
 			p.restDensity = 1;
-		}
+		}*/
 		//HANDLE_ERROR(cudaMemcpy(particles, particlesVec.data(), particleCount * sizeof(Particle), cudaMemcpyHostToDevice));
 
 
@@ -380,6 +384,7 @@ namespace Fluid_3D_PBF {
 
 		mesher = std::make_shared<Mesher>(gridPhysicalSize, particleSpacing, particleCount, numBlocks, numThreads);
 		meshRenderer = std::make_shared<FluidMeshRenderer>(mesher->triangleCount);
+
 	}
 
 	void Fluid::createSquareFluid(std::vector<Particle>& particlesVec, float3 minPos, float3 maxPos) {
@@ -445,10 +450,11 @@ namespace Fluid_3D_PBF {
 
 					float3 pos = make_float3(x, y, z);
 					float3 jitter = make_float3(1, 1, 1);
-					jitter.x *= (random0to1() - 0.5) * particleSpacing * 0.01;
-					jitter.y *= (random0to1() - 0.5) * particleSpacing * 0.01;
-					jitter.z *= (random0to1() - 0.5) * particleSpacing * 0.01;
+					jitter.x *= (random0to1() - 0.5) * particleSpacing * 0.5;
+					jitter.y *= (random0to1() - 0.5) * particleSpacing * 0.5;
+					jitter.z *= (random0to1() - 0.5) * particleSpacing * 0.5;
 
+					pos += jitter;
 
 					if (length(pos - physicalCenter) < physicalRadius) {
 
@@ -553,7 +559,8 @@ namespace Fluid_3D_PBF {
 			meshRenderer->draw(drawCommand, skybox.texSkyBox);
 		}
 		else {
-			updatePositionsVBO << <numBlocks, numThreads >> > (particles, pointSprites->positionsDevice, particleCount);
+			updatePositionsVBO << <numBlocks, numThreads >> > (particles, pointSprites->positionsDevice, particleCount,pointSprites->stride);
+			CHECK_CUDA_ERROR("update positions and colors");
 			cudaDeviceSynchronize();
 			pointSprites->draw(drawCommand, particleSpacing / 2, skybox.texSkyBox);
 		}

@@ -16,6 +16,7 @@
 #include "../Rendering/Renderer3D/FluidMeshRenderer.cuh"
 
 
+
 namespace Fluid_3D_PBF {
 
 	__host__ __device__ struct Particle {
@@ -32,8 +33,9 @@ namespace Fluid_3D_PBF {
 
 		float s_corr;
 
-		__host__ __device__ Particle(float3 position_) :position(position_), lastPosition(position_) {
 
+		__host__ __device__ Particle(float3 position_) :position(position_), lastPosition(position_) {
+			
 		}
 
 		__host__ __device__ Particle() {
@@ -92,6 +94,8 @@ namespace Fluid_3D_PBF {
 		std::shared_ptr<Mesher> mesher;
 		std::shared_ptr<FluidMeshRenderer> meshRenderer;
 		std::shared_ptr<PointSprites> pointSprites;
+
+		std::shared_ptr<FluidConfig3D> fluidConfig;
 
 
 
