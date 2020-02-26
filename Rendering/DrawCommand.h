@@ -18,4 +18,5 @@ struct DrawCommand {
 	float far;
 
 	RenderMode renderMode;
+	bool simulationPaused;
 };

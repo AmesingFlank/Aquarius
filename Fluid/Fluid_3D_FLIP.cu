@@ -380,12 +380,13 @@ namespace Fluid_3D_FLIP {
 	void Fluid::draw(const DrawCommand& drawCommand){
 		skybox.draw(drawCommand);
 		
-		//container->draw(drawCommand);
 
 		if (drawCommand.renderMode == RenderMode::Mesh) {
 
-
-			mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
+			cudaDeviceSynchronize();
+			if (!drawCommand.simulationPaused) {
+				mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
+			}
 
 			cudaDeviceSynchronize();
 
@@ -409,7 +410,6 @@ namespace Fluid_3D_FLIP {
 
 	}
 	void Fluid::init(std::shared_ptr<FluidConfig> config) {
-		//set everything to air first
 
 		std::shared_ptr<FluidConfig3D> config3D = std::static_pointer_cast<FluidConfig3D, FluidConfig>(config);
 		this->config = config3D;
@@ -423,8 +423,6 @@ namespace Fluid_3D_FLIP {
 
 
 		grid = std::make_shared<MAC_Grid_3D>(sizeX, sizeY, sizeZ, cellPhysicalSize);
-
-		container = std::make_shared<Container>(glm::vec3(sizeX, sizeY, sizeZ) * cellPhysicalSize);
 
 		if (config3D->phaseCount > 4) {
 			throw "Only supports up to 4 phases";
@@ -480,6 +478,9 @@ namespace Fluid_3D_FLIP {
 		//initInkRenderer();
 
 		transferToGrid();
+
+		mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
+		cudaDeviceSynchronize();
 
 	}
 

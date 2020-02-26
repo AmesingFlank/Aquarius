@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../Common/GpuCommons.h"
-#include "PressureEquation.cuh"
 #include "MAC_Grid_3D.cuh"
 #include "VolumeData.cuh"
 
@@ -37,12 +36,6 @@ __global__  void fixBoundaryX( VolumeCollection volumes, int sizeX, int sizeY, i
 __global__  void fixBoundaryY( VolumeCollection volumes, int sizeX, int sizeY, int sizeZ);
 __global__  void fixBoundaryZ( VolumeCollection volumes, int sizeX, int sizeY, int sizeZ);
 
-
-__device__  float getNeibourCoefficient(int x, int y, int z,  float u, float& centerCoefficient, float& RHS,  VolumeCollection volumes, int sizeX, int sizeY, int sizeZ);
-
-
-
-__global__  void constructPressureEquations( VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, PressureEquation3D* equations,  bool* hasNonZeroRHS);
 
 __global__  void setPressure( VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, double* pressureResult);
 

@@ -87,120 +87,6 @@ __global__  void fixBoundaryZ(VolumeCollection volumes, int sizeX, int sizeY, in
 }
 
 
-__device__ float getNeibourCoefficient(int x, int y, int z, float u, float& centerCoefficient, float& RHS, VolumeCollection volumes,int sizeX, int sizeY, int sizeZ) {
-
-	int neibourContent = volumes.content.readSurface<int>(x, y, z);
-
-	if (x >= 0 && x < sizeX && y >= 0 && y < sizeY && z >= 0 && z < sizeZ && 
-		neibourContent == CONTENT_FLUID) {
-		return -1;
-	}
-	else {
-		if (x < 0 || y < 0 || z < 0 || x >= sizeX || y >= sizeY || z >= sizeZ || 
-			neibourContent == CONTENT_SOLID) {
-			centerCoefficient -= 1;
-			//RHS += u;
-			return 0;
-		}
-		else if (neibourContent == CONTENT_AIR) {
-			return 0;
-		}
-	}
-}
-
-
-
-__global__  void constructPressureEquations(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, PressureEquation3D* equations, bool* hasNonZeroRHS) {
-
-
-	int x = blockIdx.x * blockDim.x + threadIdx.x;
-	int y = blockIdx.y * blockDim.y + threadIdx.y;
-	int z = blockIdx.z * blockDim.z + threadIdx.z;
-
-	if (x >= sizeX || y >= sizeY || z >= sizeZ) return;
-
-	volumes.pressure.writeSurface<float>(0.f, x, y, z);
-	
-	if (volumes.content.readSurface<int>(x,y,z) != CONTENT_FLUID)
-		return;
-
-	PressureEquation3D thisEquation;
-	float RHS = -volumes.divergence.readSurface<float>(x, y, z);
-
-	float centerCoeff = 6;
-
-	float4 thisNewVelocity = volumes.newVelocity.readSurface<float4>(x, y, z);
-	float4 rightNewVelocity = volumes.newVelocity.readSurface<float4>(x+1, y, z);
-	float4 newVelocity = volumes.newVelocity.readSurface<float4>(x, y+1, z);
-	float4 frontNewVelocity = volumes.newVelocity.readSurface<float4>(x, y, z+1);
-
-	float leftCoeff = getNeibourCoefficient(x - 1, y, z, thisNewVelocity.x, centerCoeff, RHS,volumes, sizeX, sizeY, sizeZ);
-	float rightCoeff = getNeibourCoefficient(x + 1, y, z, rightNewVelocity.x, centerCoeff, RHS, volumes, sizeX, sizeY, sizeZ);
-	float downCoeff = getNeibourCoefficient(x, y - 1, z, thisNewVelocity.y, centerCoeff, RHS, volumes, sizeX, sizeY, sizeZ);
-	float upCoeff = getNeibourCoefficient(x, y + 1, z,  newVelocity.y, centerCoeff, RHS, volumes, sizeX, sizeY, sizeZ);
-	float backCoeff = getNeibourCoefficient(x, y, z - 1, thisNewVelocity.z, centerCoeff, RHS, volumes, sizeX, sizeY, sizeZ);
-	float frontCoeff = getNeibourCoefficient(x, y, z + 1,  frontNewVelocity.z, centerCoeff, RHS, volumes, sizeX, sizeY, sizeZ);
-
-	int nnz = 0;
-
-	if (downCoeff) {
-		int downIndex = volumes.fluidIndex.readSurface<int>(x, y - 1, z);
-		thisEquation.termsIndex[thisEquation.termCount] = downIndex;
-		thisEquation.termsCoeff[thisEquation.termCount] = downCoeff;
-		++thisEquation.termCount;
-		++nnz;
-	}
-	if (leftCoeff) {
-		int leftIndex = volumes.fluidIndex.readSurface<int>(x-1, y, z);
-		thisEquation.termsIndex[thisEquation.termCount] = leftIndex;
-		thisEquation.termsCoeff[thisEquation.termCount] = leftCoeff;
-		++thisEquation.termCount;
-		++nnz;
-	}
-	if (backCoeff) {
-		int backIndex = volumes.fluidIndex.readSurface<int>(x, y ,z-1);
-		thisEquation.termsIndex[thisEquation.termCount] = backIndex;
-		thisEquation.termsCoeff[thisEquation.termCount] = backCoeff;
-		++thisEquation.termCount;
-		++nnz;
-	}
-	int thisIndex = volumes.fluidIndex.readSurface<int>(x, y, z );
-	thisEquation.termsIndex[thisEquation.termCount] = thisIndex;
-	thisEquation.termsCoeff[thisEquation.termCount] = centerCoeff;
-	++thisEquation.termCount;
-	if (rightCoeff) {
-		int rightIndex = volumes.fluidIndex.readSurface<int>(x+1, y, z);
-		thisEquation.termsIndex[thisEquation.termCount] = rightIndex;
-		thisEquation.termsCoeff[thisEquation.termCount] = rightCoeff;
-		++thisEquation.termCount;
-		++nnz;
-	}
-	if (upCoeff) {
-		int upIndex = volumes.fluidIndex.readSurface<int>(x, y+1, z);
-		thisEquation.termsIndex[thisEquation.termCount] = upIndex;
-		thisEquation.termsCoeff[thisEquation.termCount] = upCoeff;
-		++thisEquation.termCount;
-		++nnz;
-	}
-	if (frontCoeff) {
-		int frontIndex = volumes.fluidIndex.readSurface<int>(x, y, z+1);
-		thisEquation.termsIndex[thisEquation.termCount] = frontIndex;
-		thisEquation.termsCoeff[thisEquation.termCount] = frontCoeff;
-		++thisEquation.termCount;
-		++nnz;
-	}
-	++nnz;
-	thisEquation.RHS = RHS;
-	if (RHS != 0) {
-		*hasNonZeroRHS = true;
-	}
-	thisEquation.x = x;
-	thisEquation.y = y;
-	thisEquation.z = z;
-	equations[thisIndex] = thisEquation;
-
-}
-
 __global__  void setPressure(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, double* pressureResult) {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -253,7 +139,7 @@ __global__  void updateVelocityWithPressureImpl(VolumeCollection volumes, int si
 		if (thisCellContent == CONTENT_FLUID || downContent == CONTENT_FLUID) {
 			float uY = thisNewVelocity.y -  (thisPressure - downPressure);
 			thisNewVelocity.y = uY;
-			hasVelocity.x = true;
+			hasVelocity.y = true;
 		}
 	}
 	if (z > 0) {
@@ -349,6 +235,7 @@ __global__  void extrapolateVelocityByOne(VolumeCollection volumes, int sizeX, i
 		if (neighborXCount > 0) {
 			thisNewVelocity.x = sumNeighborX / (float)neighborXCount;
 			thisHasVelocity.x = true;
+			
 		}
 	}
 
@@ -412,7 +299,9 @@ __global__  void extrapolateVelocityByOne(VolumeCollection volumes, int sizeX, i
 		if (neighborYCount > 0) {
 			thisNewVelocity.y = sumNeighborY / (float)neighborYCount;
 			thisHasVelocity.y = true;
+			
 		}
+		
 	}
 
 	if (!thisHasVelocity.z) {
@@ -475,6 +364,7 @@ __global__  void extrapolateVelocityByOne(VolumeCollection volumes, int sizeX, i
 		if (neighborZCount > 0) {
 			thisNewVelocity.z = sumNeighborZ / (float)neighborZCount;
 			thisHasVelocity.z = true;
+			
 		}
 	}
 

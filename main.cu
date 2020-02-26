@@ -106,7 +106,7 @@ int main( void ) {
 
 		DrawCommand drawCommand = {
 			view,projection,camera->Position,windowInfo.windowWidth,windowInfo.windowHeight,camera->Zoom,near,far,
-			renderMode
+			renderMode,paused
 		};
 
 
@@ -136,7 +136,6 @@ int main( void ) {
         lastFrameTime = currentTime;
 
         printGLError();
-        glfwPollEvents();
         glfwSwapBuffers(window);
 
         //break;

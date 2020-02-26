@@ -90,7 +90,7 @@ namespace Fluid_3D_PCISPH {
 
 		int numThreads, numBlocks;
 
-		Container container = Container(glm::vec3(gridPhysicalSize.x, gridPhysicalSize.y, gridPhysicalSize.z));
+		//Container container = Container(glm::vec3(gridPhysicalSize.x, gridPhysicalSize.y, gridPhysicalSize.z));
 
 		Skybox skybox = Skybox("resources/Skyboxes/GamlaStan2/",".jpg");
 

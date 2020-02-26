@@ -1,6 +1,6 @@
 {
   "dimension": 3,
-  "method": "Fluid_3D_FLIP",
+  "method": "Fluid_3D_PCISPH",
   "sizeX": 50,
   "sizeY": 50,
   "sizeZ": 50,
@@ -11,8 +11,8 @@
         0.0,
         0.0,
         0.0,
-        0.3,
-        0.3,
+        0.5,
+        0.1,
         1.0
       ],
       "phase": 0
@@ -20,11 +20,11 @@
     {
       "shape": "square",
       "params": [
-        0.7,
+        0.5,
         0.0,
         0.0,
         1.0,
-        0.3,
+        0.1,
         1.0
       ],
       "phase": 1

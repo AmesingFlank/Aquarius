@@ -9,6 +9,7 @@ __global__  inline void findCellStartEndImpl(int* particleHashes,
 
 	int thisHash = particleHashes[index];
 
+	
 
 	if (index == 0 || particleHashes[index - 1] < thisHash) {
 		cellStart[thisHash] = index;
@@ -17,4 +18,5 @@ __global__  inline void findCellStartEndImpl(int* particleHashes,
 	if (index == particleCount - 1 || particleHashes[index + 1] > thisHash) {
 		cellEnd[thisHash] = index;
 	}
+	
 }

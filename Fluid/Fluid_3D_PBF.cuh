@@ -8,7 +8,6 @@
 #include <iostream>
 #include "WeightKernels.cuh"
 #include "../Rendering/Renderer3D/PointSprites.h"
-#include "../Rendering/Renderer3D/Container.h"
 #include "../Rendering/Renderer3D/Skybox.h"
 #include "Fluid_3D.cuh"
 #include "Fluid_3D_common.cuh"
@@ -87,7 +86,6 @@ namespace Fluid_3D_PBF {
 		
 		int numThreads, numBlocks;
 
-		Container container = Container(glm::vec3(gridPhysicalSize.x, gridPhysicalSize.y, gridPhysicalSize.z));
 
 		Skybox skybox = Skybox("resources/Skyboxes/GamlaStan2/", ".jpg");
 

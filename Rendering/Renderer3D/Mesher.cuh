@@ -2,7 +2,7 @@
 
 #include "../../Fluid/MAC_Grid_3D.cuh"
 #include <memory>
-#include "../../Fluid/SVD.cuh"
+
 #include <thread>
 
 __global__
@@ -147,130 +147,7 @@ inline void computeMeanXParticle(Particle* particles, int particleCount, float p
 }
 
 
-template<typename Particle>
-__global__
-inline void computeCovarianceMatrix(Particle* particles, int particleCount, float particleRadius, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd, Mat3x3* covMats,float3* meanX) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
-	int cellCount = (sizeX) * (sizeY) * (sizeZ);
-
-	if (index >= particleCount) return;
-
-	Particle& particle = particles[index];
-
-	float3 pos = meanX[index];
-	int3 thisCell;
-
-	thisCell.x = pos.x / cellPhysicalSize;
-	thisCell.y = pos.y / cellPhysicalSize;
-	thisCell.z = pos.z / cellPhysicalSize;
-
-	float sumWeight = 0;
-	
-	Mat3x3 C;
-
-#pragma unroll
-	for (int dx = -1; dx <= 1; ++dx) {
-#pragma unroll
-		for (int dy = -1; dy <= 1; ++dy) {
-#pragma unroll
-			for (int dz = -1; dz <= 1; ++dz) {
-				int cell = (thisCell.x + dx) * (sizeY - 2) * (sizeZ - 2) + (thisCell.y + dy) * (sizeZ - 2) + thisCell.z + dz;
-
-				if (cell >= 0 && cell < cellCount) {
-
-					for (int j = cellStart[cell]; j <= cellEnd[cell]; ++j) {
-						if (j >= 0 && j < particleCount) {
-
-							const Particle& p = particles[j];
-							float thisWeight = pcaKernel(p.position - pos, 2*cellPhysicalSize);
-
-							
-
-							sumWeight += thisWeight;
-
-							float3 xDiff = p.position - pos;
-
-							Mat3x3 Cij;
-							Cij.r0.x = xDiff.x * xDiff.x;
-							Cij.r0.y = xDiff.x * xDiff.y;
-							Cij.r0.z = xDiff.x * xDiff.z;
-
-							Cij.r1.x = xDiff.y * xDiff.x;
-							Cij.r1.y = xDiff.y * xDiff.y;
-							Cij.r1.z = xDiff.y * xDiff.z;
-
-							Cij.r2.x = xDiff.z * xDiff.x;
-							Cij.r2.y = xDiff.z * xDiff.y;
-							Cij.r2.z = xDiff.z * xDiff.z;
-
-							C = C + Cij * thisWeight;
-
-						}
-					}
-				}
-
-			}
-		}
-	}
-
-	C = C * (1.0 / sumWeight);
-
-	covMats[index] = C;
-
-}
-
-
-template<typename Particle>
-__global__
-inline void computeAnistropy(Particle* particles, int particleCount, float particleRadius, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd, Mat3x3* covMats, float3* anistropy) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-
-	int cellCount = (sizeX) * (sizeY) * (sizeZ);
-
-	if (index >= particleCount) return;
-
-	Particle& particle = particles[index];
-
-	float3 pos = particle.position;
-	int3 thisCell;
-
-	thisCell.x = pos.x / cellPhysicalSize;
-	thisCell.y = pos.y / cellPhysicalSize;
-	thisCell.z = pos.z / cellPhysicalSize;
-
-	float sumWeight = 0;
-
-	Mat3x3 C = covMats[index];
-	
-	float3 eVals;
-	float3 v0;
-	float3 v1;
-	float3 v2;
-
-	float result;
-
-	computeSVD(C, eVals, v0, v1, v2);
-
-	float gammaMax = 4.f;
-	float gamma = eVals.x / eVals.z;
-	gamma = max(1.f, min(gammaMax, gamma));
-
-	float f = 0.75;
-
-	result = f * (1.f - pow(1.f - pow((gammaMax - gamma) / (gammaMax - 1.f), 2), 3)) + 1.f - f;
-	
-
-	
-
-	if (index == 0) {
-		printf("evs: %f %f %f\n", eVals.x,eVals.y,eVals.z);
-		printf("anis: %f\n", result);
-	}
-
-	anistropy[index].x = result;
-
-}
 
 
 
@@ -384,7 +261,6 @@ struct Mesher {
 	int numBlocksParticle;
 	int numThreadsParticle;
 
-	Mat3x3* covMats;
 	float3* meanXParticle;
 	float3* anistropy;
 
@@ -431,7 +307,6 @@ struct Mesher {
 
 		HANDLE_ERROR(cudaMalloc(&occupiedCellIndex, sizeof(unsigned int)));
 
-		HANDLE_ERROR(cudaMalloc(&covMats, particleCount * sizeof(*covMats)));
 		HANDLE_ERROR(cudaMalloc(&meanXParticle, particleCount * sizeof(*meanXParticle)));
 		HANDLE_ERROR(cudaMalloc(&anistropy, particleCount * sizeof(*anistropy)));
 

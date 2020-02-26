@@ -83,6 +83,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -122,7 +123,6 @@
     <CudaCompile Include="Fluid\Fluid_3D_PBF.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_PCISPH.cu" />
     <CudaCompile Include="Fluid\MAC_Grid_3D.cu" />
-    <CudaCompile Include="Fluid\SVD.cu" />
     <CudaCompile Include="main.cu" />
     <CudaCompile Include="Rendering\Renderer3D\FluidMeshRenderer.cu" />
     <CudaCompile Include="Rendering\Renderer3D\Mesher.cu" />
@@ -145,18 +145,14 @@
     <ClInclude Include="Fluid\Fluid_3D_kernels.cuh" />
     <ClInclude Include="Fluid\Fluid_3D_PBF.cuh" />
     <ClInclude Include="Fluid\Fluid_3D_PCISPH.cuh" />
-    <ClInclude Include="Fluid\Fluid_3D_SPH.cuh" />
     <ClInclude Include="Fluid\Fluid_kernels.cuh" />
-    <ClInclude Include="Fluid\PressureEquation.cuh" />
-    <ClInclude Include="Fluid\SVD.cuh" />
+    <ClInclude Include="Fluid\Legacy\PressureEquation.cuh" />
     <ClInclude Include="Common\GpuCommons.h" />
     <ClInclude Include="Common\InputHandler.h" />
     <ClInclude Include="Fluid\Legacy\MAC_Grid_2D.cuh" />
     <ClInclude Include="Fluid\MAC_Grid_3D.cuh" />
     <ClInclude Include="Fluid\VolumeData.cuh" />
     <ClInclude Include="Rendering\DrawCommand.h" />
-    <ClInclude Include="Rendering\mesh.h" />
-    <ClInclude Include="Rendering\model.h" />
     <ClInclude Include="Rendering\Quad.h" />
     <ClInclude Include="Rendering\Renderer3D\camera.h" />
     <ClInclude Include="Rendering\Renderer3D\Container.h" />
@@ -167,7 +163,7 @@
     <ClInclude Include="Rendering\Renderer3D\ScreenSpaceNormal.cuh" />
     <ClInclude Include="Rendering\Renderer3D\Skybox.h" />
     <ClInclude Include="Rendering\Shader.h" />
-    <ClInclude Include="Fluid\SPD_Solver.h" />
+    <ClInclude Include="Fluid\Legacy\SPD_Solver.h" />
     <ClInclude Include="Fluid\WeightKernels.cuh" />
     <ClInclude Include="Rendering\WindowInfo.h" />
     <ClInclude Include="resources\Shaders\PointSprites_phase_fs.glsl" />
@@ -188,12 +184,13 @@
     <None Include="resources\Shaders\ScreenSpaceNormal_smooth_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_thickness_fs.glsl" />
     <None Include="resources\Shaders\PointSprites_points_vs.glsl" />
-    <None Include="resources\Shaders\Container_fs.glsl" />
-    <None Include="resources\Shaders\Container_vs.glsl" />
     <None Include="resources\Shaders\Quad_fs.glsl" />
     <None Include="resources\Shaders\Quad_vs.glsl" />
     <None Include="resources\Shaders\Skybox_fs.glsl" />
     <None Include="resources\Shaders\Skybox_vs.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Rendering\Renderer3D\Container.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
