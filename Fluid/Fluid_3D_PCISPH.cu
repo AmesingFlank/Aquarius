@@ -543,6 +543,9 @@ namespace Fluid_3D_PCISPH {
 
 		mesher = std::make_shared<Mesher>(gridPhysicalSize, particleSpacing, particleCount, numBlocks, numThreads);
 		meshRenderer = std::make_shared<FluidMeshRenderer>(mesher->triangleCount);
+
+		mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
+		cudaDeviceSynchronize();
 	}
 
 	void Fluid::computeRestDensity() {

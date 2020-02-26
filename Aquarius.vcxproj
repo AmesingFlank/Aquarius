@@ -151,6 +151,7 @@
     <ClInclude Include="Common\InputHandler.h" />
     <ClInclude Include="Fluid\Legacy\MAC_Grid_2D.cuh" />
     <ClInclude Include="Fluid\MAC_Grid_3D.cuh" />
+    <ClInclude Include="Fluid\Legacy\SVD.cuh" />
     <ClInclude Include="Fluid\VolumeData.cuh" />
     <ClInclude Include="Rendering\DrawCommand.h" />
     <ClInclude Include="Rendering\Quad.h" />

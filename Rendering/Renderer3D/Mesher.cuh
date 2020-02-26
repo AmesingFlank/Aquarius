@@ -2,7 +2,6 @@
 
 #include "../../Fluid/MAC_Grid_3D.cuh"
 #include <memory>
-
 #include <thread>
 
 __global__
@@ -17,7 +16,7 @@ void smoothSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float pa
 // not using anistropy
 template<typename Particle>
 __global__
-inline void computeSDF(Particle* particles, int particleCount,float particleRadius,int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart,int* cellEnd,int* hasSDF,float3* meanXCell,float3* anistropy,cudaSurfaceObject_t sdfSurface) {
+inline void computeSDF(Particle* particles, int particleCount,float particleRadius,int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart,int* cellEnd,int* hasSDF,float3* meanXCell,cudaSurfaceObject_t sdfSurface) {
 	int index = blockIdx.x * blockDim.x + threadIdx.x;
 
 	int cellCount = (sizeX) * (sizeY) * (sizeZ);
@@ -87,138 +86,6 @@ void extrapolateSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, flo
 
 
 
-template<typename Particle>
-__global__
-inline void computeMeanXParticle(Particle* particles, int particleCount, float particleRadius, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd, float3* meanX) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-
-	int cellCount = (sizeX) * (sizeY) * (sizeZ);
-
-	if (index >= particleCount) return;
-
-	Particle& particle = particles[index];
-
-	float3 pos = particle.position;
-	int3 thisCell;
-
-	thisCell.x = pos.x / cellPhysicalSize;
-	thisCell.y = pos.y / cellPhysicalSize;
-	thisCell.z = pos.z / cellPhysicalSize;
-
-	float sumWeight = 0;
-
-	float3 X = make_float3(0,0,0);
-
-#pragma unroll
-	for (int dx = -1; dx <= 1; ++dx) {
-#pragma unroll
-		for (int dy = -1; dy <= 1; ++dy) {
-#pragma unroll
-			for (int dz = -1; dz <= 1; ++dz) {
-				int cell = (thisCell.x + dx) * (sizeY-2) * (sizeZ-2) + (thisCell.y + dy) * (sizeZ-2) + thisCell.z + dz;
-
-				if (cell >= 0 && cell < cellCount) {
-
-					for (int j = cellStart[cell]; j <= cellEnd[cell]; ++j) {
-						if (j >= 0 && j < particleCount) {
-
-							const Particle& p = particles[j];
-							float thisWeight = pcaKernel(p.position - pos, 2*cellPhysicalSize);
-							sumWeight += thisWeight;
-
-							if (index == 5000) {
-								printf("weight %f\n", thisWeight);
-							}
-
-
-							X += thisWeight * p.position;
-						}
-					}
-				}
-
-			}
-		}
-	}
-
-	X /= sumWeight;
-	meanX[index] = X;
-
-
-}
-
-
-
-
-
-
-// Using anistropy. Doesn't quite work yet
-template<typename Particle>
-__global__
-inline void computeSDF2(Particle* particles, int particleCount, float particleRadius, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd,  int* hasSDF, float3* meanXCell, float3* anistropy,cudaSurfaceObject_t sdfSurface) {
-	int index = blockIdx.x * blockDim.x + threadIdx.x;
-
-	int cellCount = (sizeX) * (sizeY) * (sizeZ);
-
-	if (index >= cellCount) return;
-
-	int x = index / (sizeY * sizeZ);
-	int y = (index - x * (sizeY * sizeZ)) / sizeZ;
-	int z = index - x * (sizeY * sizeZ) - y * (sizeZ);
-
-
-	// set to some postive value first. this means that, by default, all cells are not occupied.
-	surf3Dwrite<float>(cellPhysicalSize, sdfSurface, x * sizeof(float), y, z);
-	hasSDF[index] = 0;
-
-	float3 sumX = { 0,0,0 };
-	float sumWeight = 0;
-
-	float3 centerPos = make_float3(x-1, y-1, z-1) * cellPhysicalSize;
-
-	float sumAnistropy = 0;
-
-#pragma unroll
-	for (int dx = -2; dx <= 1; ++dx) {
-#pragma unroll
-		for (int dy = -2; dy <= 1; ++dy) {
-#pragma unroll
-			for (int dz = -2; dz <= 1; ++dz) {
-				int cell = (x + dx -1) * (sizeY-2) * (sizeZ-2) + (y + dy-1) * (sizeZ-2) + z + dz-1;
-
-				if (cell >= 0 && cell < cellCount) {
-
-					for (int j = cellStart[cell]; j <= cellEnd[cell]; ++j) {
-						if (j >= 0 && j < particleCount) {
-
-							const Particle& p = particles[j];
-							float thisWeight = dunfanKernel((p.position - centerPos), cellPhysicalSize*2) * anistropy[j].x;
-							sumWeight += thisWeight;
-
-							sumX += thisWeight * p.position;
-
-							sumAnistropy += thisWeight * anistropy[j].x;
-
-						}
-					}
-				}
-
-			}
-		}
-	}
-
-	if (sumWeight != 0) {
-		float3 meanX = sumX / sumWeight;
-
-		float meanAnistropy = sumAnistropy / sumWeight;
-		float thisSDF = length(meanX-centerPos) - particleRadius ;
-		//thisSDF = zhu05Kernel(make_float3(particleRadius,0,0),cellPhysicalSize) - sumWeight ; //blobby
-		surf3Dwrite<float>(thisSDF, sdfSurface, x * sizeof(float), y, z);
-		hasSDF[index] = 1;
-		meanXCell[index] = meanX;
-	}
-
-}
-
 struct Mesher {
 
 	// two grids:
@@ -261,8 +128,7 @@ struct Mesher {
 	int numBlocksParticle;
 	int numThreadsParticle;
 
-	float3* meanXParticle;
-	float3* anistropy;
+
 
 	float cellPhysicalSize_SDF;
 	float particleRadius;
@@ -307,9 +173,7 @@ struct Mesher {
 
 		HANDLE_ERROR(cudaMalloc(&occupiedCellIndex, sizeof(unsigned int)));
 
-		HANDLE_ERROR(cudaMalloc(&meanXParticle, particleCount * sizeof(*meanXParticle)));
-		HANDLE_ERROR(cudaMalloc(&anistropy, particleCount * sizeof(*anistropy)));
-
+		
 
 
 		cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
@@ -349,20 +213,9 @@ struct Mesher {
 
 		performSpatialHashing2(particleIndices, particleHashes, particles, particlesCopy, particleCount, cellPhysicalSize_SDF, sizeX_SDF - 2, sizeY_SDF - 2, sizeZ_SDF - 2, numBlocksParticle, numThreadsParticle, cellStart, cellEnd, cellCount_SDF);
 
-		/*
-		computeMeanXParticle << <numBlocksParticle, numThreadsParticle >> > (particles, particleCount, particleRadius, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, cellStart, cellEnd, meanXParticle);
-		CHECK_CUDA_ERROR("compute meanX");
+		
 
-		computeCovarianceMatrix << <numBlocksParticle, numThreadsParticle >> > (particles, particleCount, particleRadius, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, cellStart, cellEnd, covMats, meanXParticle);
-		CHECK_CUDA_ERROR("compute cov mat");
-
-
-		computeAnistropy << <numBlocksParticle, numThreadsParticle >> > (particles, particleCount, particleRadius, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, cellStart, cellEnd, covMats,anistropy);
-		CHECK_CUDA_ERROR("compute anistropy");
-		*/
-
-
-		computeSDF << <numBlocksCell_SDF, numThreadsCell_SDF >> > (particles, particleCount, particleRadius, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, cellStart, cellEnd, hasSDF, meanXCell, anistropy, sdfSurface);
+		computeSDF << <numBlocksCell_SDF, numThreadsCell_SDF >> > (particles, particleCount, particleRadius, sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, cellStart, cellEnd, hasSDF, meanXCell, sdfSurface);
 		CHECK_CUDA_ERROR("compute sdf");
 
 

@@ -2,7 +2,7 @@
 
 
 #include "MAC_Grid_3D.cuh"
-#include "SPD_Solver.h"
+//#include "SPD_Solver.h"
 #include <vector>
 #include <utility>
 #include "../Common/GpuCommons.h"
