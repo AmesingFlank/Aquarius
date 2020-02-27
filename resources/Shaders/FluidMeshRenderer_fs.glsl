@@ -1,4 +1,3 @@
-#version 330 core
 in vec3 fragPos;
 out vec4 color;
 in vec3 fragPosNDC;
@@ -21,17 +20,18 @@ vec4 traceRay(vec3 origin, vec3 direction) {
 	float tHitGround = origin.y / -direction.y;
 	if (tHitGround > 0) {
 		vec3 hitPos = origin + tHitGround * direction;
-		if (hitPos.x >= 0 && hitPos.x <= 10 && hitPos.z >= 0 && hitPos.z <= 10) {
-			int xi = int(hitPos.x);
-			int zi = int(hitPos.z);
+		if (hitPos.x >= -5 && hitPos.x <= 15 && hitPos.z >= -5 && hitPos.z <= 15) {
+			int xi = int(hitPos.x + 100);
+			int zi = int(hitPos.z + 100);
 			if ((xi + zi) % 2 == 0)
-				return vec4(0.5, 0.5, 0.5,1);
+				return vec4(0.5, 0.5, 0.5, 1);
 			else
-				return vec4(0.8, 0.8, 0.8,1);
+				return vec4(0.8, 0.8, 0.8, 1);
 		}
 	}
-	return vec4(texture(skybox, direction).rgb,1);
+	return vec4(texture(skybox, direction).rgb, 1);
 }
+
 
 void main()
 {
@@ -112,3 +112,6 @@ void main()
 
 
 }
+
+
+

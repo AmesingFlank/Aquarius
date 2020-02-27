@@ -12,6 +12,8 @@
 #include "Fluid/Fluid_3D_FLIP.cuh"
 #include "Fluid/Fluid_3D_PCISPH.cuh"
 #include "Fluid/Fluid_3D_PBF.cuh"
+#include "Fluid/Fluid_3D.cuh"
+
 
 
 
@@ -57,15 +59,15 @@ int main( void ) {
 
 
 	std::shared_ptr<FluidConfig> config = getConfig();
-	std::shared_ptr<Fluid> fluid;
+	std::shared_ptr<Fluid_3D> fluid;
 	if (config->method == "Fluid_3D_FLIP") {
-		fluid = std::static_pointer_cast<Fluid,Fluid_3D_FLIP::Fluid>(std::make_shared<Fluid_3D_FLIP::Fluid>());
+		fluid = std::static_pointer_cast<Fluid_3D,Fluid_3D_FLIP::Fluid>(std::make_shared<Fluid_3D_FLIP::Fluid>());
 	}
 	else if (config->method == "Fluid_3D_PCISPH") {
-		fluid = std::static_pointer_cast<Fluid, Fluid_3D_PCISPH::Fluid>(std::make_shared<Fluid_3D_PCISPH::Fluid>());
+		fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_PCISPH::Fluid>(std::make_shared<Fluid_3D_PCISPH::Fluid>());
 	}
 	else if (config->method == "Fluid_3D_PBF") {
-		fluid = std::static_pointer_cast<Fluid, Fluid_3D_PBF::Fluid>(std::make_shared<Fluid_3D_PBF::Fluid>());
+		fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_PBF::Fluid>(std::make_shared<Fluid_3D_PBF::Fluid>());
 	}
 	else {
 		std::cout << "unsupported method in config file" << std::endl;
@@ -77,6 +79,10 @@ int main( void ) {
 	RenderMode renderMode = RenderMode::Mesh;
 
 	bool paused = true;
+
+	glm::vec2 fluidCenter = fluid->getCenter();
+
+	glm::vec3 lightPos(fluidCenter.x, 30, fluidCenter.y);
 
     while(!glfwWindowShouldClose(window)){
 
@@ -106,7 +112,7 @@ int main( void ) {
 
 		DrawCommand drawCommand = {
 			view,projection,camera->Position,windowInfo.windowWidth,windowInfo.windowHeight,camera->Zoom,near,far,
-			renderMode,paused
+			renderMode,paused,lightPos
 		};
 
 

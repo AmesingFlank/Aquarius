@@ -25,26 +25,28 @@ void PointSprites::initRenderer() {
 	pointsVBO_host = new float[count * stride];
 
 	simpleShader = new Shader(
-		Shader::SHADERS_PATH("PointSprites_points_vs.glsl").c_str(), 
-		Shader::SHADERS_PATH("PointSprites_simple_fs.glsl").c_str(), nullptr);
+		Shader::SHADERS_PATH("PointSprites_points_vs.glsl"), 
+		Shader::SHADERS_PATH("PointSprites_simple_fs.glsl")
+	);
 
 	phaseThicknessShader = new Shader(
-		Shader::SHADERS_PATH("PointSprites_points_vs.glsl").c_str(), 
-		Shader::SHADERS_PATH("PointSprites_phase_fs.glsl").c_str(), nullptr);
+		Shader::SHADERS_PATH("PointSprites_points_vs.glsl"), 
+		Shader::SHADERS_PATH("PointSprites_phase_fs.glsl")
+	);
 
 	depthShader = new Shader(
-		Shader::SHADERS_PATH("PointSprites_points_vs.glsl").c_str(),
-		Shader::SHADERS_PATH("PointSprites_depth_fs.glsl").c_str()
+		Shader::SHADERS_PATH("PointSprites_points_vs.glsl"),
+		Shader::SHADERS_PATH("PointSprites_depth_fs.glsl")
 	);
 	screenShader = new Shader(
-		Shader::SHADERS_PATH("PointSprites_screen_vs.glsl").c_str(),
-		Shader::SHADERS_PATH("PointSprites_screen_fs.glsl").c_str()
+		Shader::SHADERS_PATH("PointSprites_screen_vs.glsl"),
+		Shader::SHADERS_PATH("PointSprites_screen_fs.glsl")
 	);
 
 
 	thicknessShader = new Shader(
-		Shader::SHADERS_PATH("PointSprites_points_vs.glsl").c_str(),
-		Shader::SHADERS_PATH("PointSprites_thickness_fs.glsl").c_str()
+		Shader::SHADERS_PATH("PointSprites_points_vs.glsl"),
+		Shader::SHADERS_PATH("PointSprites_thickness_fs.glsl")
 	);
 
 	// used by multiple shaders. location specified as common value in all shader code

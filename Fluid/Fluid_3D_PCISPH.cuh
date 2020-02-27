@@ -105,6 +105,8 @@ namespace Fluid_3D_PCISPH {
 
 		virtual void init(std::shared_ptr<FluidConfig> config);
 
+		virtual glm::vec2 getCenter() override;
+
 		void computeRestDensity();
 
 		virtual void simulationStep() override;

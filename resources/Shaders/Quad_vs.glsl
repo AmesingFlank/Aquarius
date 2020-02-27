@@ -1,4 +1,3 @@
-#version 330
 
 layout (location = 10) in vec3 vPos;
 layout (location = 15) in vec2 texCoord;

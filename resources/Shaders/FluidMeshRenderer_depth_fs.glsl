@@ -1,4 +1,3 @@
-#version 330 core
 out vec4 depthOutput;
 in vec3 fragPosViewSpace;
 void main()

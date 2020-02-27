@@ -379,7 +379,8 @@ namespace Fluid_3D_FLIP {
 
 	void Fluid::draw(const DrawCommand& drawCommand){
 		skybox.draw(drawCommand);
-		
+
+		container->draw(drawCommand);
 
 		if (drawCommand.renderMode == RenderMode::Mesh) {
 
@@ -419,8 +420,9 @@ namespace Fluid_3D_FLIP {
 		sizeY = config3D->sizeY;
 		sizeZ = config3D->sizeZ;
 		cellCount = (sizeX + 1) * (sizeY + 1) * (sizeZ + 1);
-		cellPhysicalSize = 10.f / (float)sizeY;
+		cellPhysicalSize = gridPhysicalSize / (float)sizeY;
 
+		container = std::make_shared<Container>(gridPhysicalSize);
 
 		grid = std::make_shared<MAC_Grid_3D>(sizeX, sizeY, sizeZ, cellPhysicalSize);
 
@@ -707,4 +709,12 @@ namespace Fluid_3D_FLIP {
 
 	}
 
+
+	glm::vec2 Fluid::getCenter() {
+		return glm::vec2(gridPhysicalSize / 2, gridPhysicalSize / 2);
+	}
+
 }
+
+
+

@@ -19,4 +19,5 @@ struct DrawCommand {
 
 	RenderMode renderMode;
 	bool simulationPaused;
+	glm::vec3 lightPos;
 };

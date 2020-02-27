@@ -3,7 +3,7 @@
 #define AQUARIUS_QUAD_H
 
 #include "Shader.h"
-
+#include <memory>
 
 struct Quad {
 
@@ -17,9 +17,9 @@ struct Quad {
     };
 
 
-    Shader* shader;
+    std::shared_ptr<Shader> shader;
 
-    GLuint VBO,VAO, vertex_shader, fragment_shader;
+    GLuint VBO,VAO;
     GLint vPos_location, texCoord_location,quadTexture_location;
 
     Quad (){
@@ -27,7 +27,7 @@ struct Quad {
 		std::string vsPath = Shader::SHADERS_PATH("Quad_vs.glsl");
 		std::string fsPath = Shader::SHADERS_PATH("Quad_fs.glsl");
 
-        shader = new Shader(vsPath.c_str(),fsPath.c_str(), nullptr);
+        shader = std::make_shared<Shader>(vsPath,fsPath);
 
         vPos_location = glGetAttribLocation(shader->Program, "vPos");
         texCoord_location = glGetAttribLocation(shader->Program,"texCoord");
@@ -58,6 +58,7 @@ struct Quad {
         glBindVertexArray(0);
 
     }
+	
 };
 
 #endif //AQUARIUS_QUAD_H

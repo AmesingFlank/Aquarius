@@ -5,7 +5,7 @@ Skybox::Skybox(const std::string& path, const std::string& extension) {
 	std::string vsPath = Shader::SHADERS_PATH("Skybox_vs.glsl");
 	std::string fsPath = Shader::SHADERS_PATH("Skybox_fs.glsl");
 
-	shader = new Shader(vsPath.c_str(), fsPath.c_str(), nullptr);
+	shader = new Shader(vsPath, fsPath);
 
 
 	vPos_location = glGetAttribLocation(shader->Program, "position");

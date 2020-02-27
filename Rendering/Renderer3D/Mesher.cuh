@@ -237,4 +237,14 @@ struct Mesher {
 
 		cudaDeviceSynchronize();
 	}
+
+	~Mesher() {
+		HANDLE_ERROR(cudaFree(&cellStart ));
+		HANDLE_ERROR(cudaFree(&cellEnd ));
+
+		HANDLE_ERROR(cudaFree(&hasSDF ));
+		HANDLE_ERROR(cudaFree(&meanXCell ));
+
+		HANDLE_ERROR(cudaFree(&occupiedCellIndex));
+	}
 };

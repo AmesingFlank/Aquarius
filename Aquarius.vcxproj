@@ -172,11 +172,16 @@
   <ItemGroup>
     <None Include="README.md" />
     <None Include="resources\LaunchConfigs.json" />
+    <None Include="resources\Shaders\Container_bottom_fs.glsl" />
+    <None Include="resources\Shaders\Container_bottom_vs.glsl" />
+    <None Include="resources\Shaders\Container_edges_fs.glsl" />
+    <None Include="resources\Shaders\Container_edges_vs.glsl" />
     <None Include="resources\Shaders\FluidMeshRenderer_depth_fs.glsl" />
     <None Include="resources\Shaders\FluidMeshRenderer_fs.glsl" />
     <None Include="resources\Shaders\FluidMeshRenderer_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_depth_fs.glsl" />
     <None Include="resources\Shaders\PointSprites_simple_fs.glsl" />
+    <None Include="resources\Shaders\RayTraceEnvironment.glsl" />
     <None Include="resources\Shaders\ScreenSpaceNormal_normal_fs.glsl" />
     <None Include="resources\Shaders\ScreenSpaceNormal_normal_vs.glsl" />
     <None Include="resources\Shaders\PointSprites_screen_fs.glsl" />
@@ -191,7 +196,8 @@
     <None Include="resources\Shaders\Skybox_vs.glsl" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Rendering\Renderer3D\Container.cpp" />
+    <ClCompile Include="Rendering\Renderer3D\Container.cu" />
+    <ClCompile Include="Rendering\Shader.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

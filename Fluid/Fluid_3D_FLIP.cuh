@@ -16,6 +16,8 @@
 #include "../Rendering/Renderer3D/Skybox.h"
 #include "../Rendering/Renderer3D/Mesher.cuh"
 #include "../Rendering/Renderer3D/FluidMeshRenderer.cuh"
+#include "../Rendering/Renderer3D/Container.h"
+
 
 namespace Fluid_3D_FLIP{
 	__device__ __host__ struct Particle {
@@ -56,6 +58,10 @@ namespace Fluid_3D_FLIP{
 		int sizeX;
 		int sizeY;
 		int sizeZ;
+
+		float gridPhysicalSize = 10.f;
+
+		std::shared_ptr<Container> container;
 
 
 		int cellCount;
@@ -123,6 +129,8 @@ namespace Fluid_3D_FLIP{
 		virtual void draw(const DrawCommand& drawCommand) override;
 
 		virtual void init(std::shared_ptr<FluidConfig> config) override;
+
+		virtual glm::vec2 getCenter() override;
 
 
 

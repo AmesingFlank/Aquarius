@@ -7,14 +7,14 @@ FluidMeshRenderer::FluidMeshRenderer(int count_) :count(count_) {
 	coordsHost = new float[count * 3 * floatsPerVertex];
 
 	shader = new Shader(
-		Shader::SHADERS_PATH("FluidMeshRenderer_vs.glsl").c_str(), 
-		Shader::SHADERS_PATH("FluidMeshRenderer_fs.glsl").c_str(), 
-		nullptr);
+		Shader::SHADERS_PATH("FluidMeshRenderer_vs.glsl"), 
+		Shader::SHADERS_PATH("FluidMeshRenderer_fs.glsl")
+	);
 
 	depthShader = new Shader(
-		Shader::SHADERS_PATH("FluidMeshRenderer_vs.glsl").c_str(),
-		Shader::SHADERS_PATH("FluidMeshRenderer_depth_fs.glsl").c_str(),
-		nullptr);
+		Shader::SHADERS_PATH("FluidMeshRenderer_vs.glsl"),
+		Shader::SHADERS_PATH("FluidMeshRenderer_depth_fs.glsl")
+	);
 
 	positionLocation = glGetAttribLocation(shader->Program, "position");
 	normalLocation = glGetAttribLocation(shader->Program, "normal");
