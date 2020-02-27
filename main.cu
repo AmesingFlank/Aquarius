@@ -91,7 +91,7 @@ int main( void ) {
         glDepthFunc(GL_LESS);
         glClear(GL_COLOR_BUFFER_BIT);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        glClearColor(0.25f,0.38f,0.5f,0.f);
+        glClearColor(0,0,0,1);
         glfwPollEvents();
         InputHandler::Do_Movement();
 		if (InputHandler::keys[GLFW_KEY_SPACE]) {

@@ -26,13 +26,51 @@ struct Container {
 
 	std::shared_ptr<Shader> edgesShader;
 
-	float minVal = -1000;
-	float maxVal = 1000;
+	float minVal = -1;
+	float maxVal = 2;
 
-	float bottomData[2*3*3] = {
-		minVal,0,minVal, minVal,0,maxVal, maxVal,0,maxVal,
+	float bottomData[108] = {
+			0.0f,  1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f,
+			1.0f, 0.0f, 0.0f,
+			1.0f, 0.0f, 0.0f,
+			1.0f,  1.0f, 0.0f,
+			0.0f,  1.0f, 0.0f,
 
-		minVal,0,minVal, maxVal,0,maxVal, maxVal,0,minVal
+			0.0f, 0.0f,  1.0f,
+			0.0f, 0.0f, 0.0f,
+			0.0f,  1.0f, 0.0f,
+			0.0f,  1.0f, 0.0f,
+			0.0f,  1.0f,  1.0f,
+			0.0f, 0.0f,  1.0f,
+
+			1.0f, 0.0f, 0.0f,
+			1.0f, 0.0f,  1.0f,
+			1.0f,  1.0f,  1.0f,
+			1.0f,  1.0f,  1.0f,
+			1.0f,  1.0f, 0.0f,
+			1.0f, 0.0f, 0.0f,
+
+			0.0f, 0.0f,  1.0f,
+			0.0f,  1.0f,  1.0f,
+			1.0f,  1.0f,  1.0f,
+			1.0f,  1.0f,  1.0f,
+			1.0f, 0.0f,  1.0f,
+			0.0f, 0.0f,  1.0f,
+
+			0.0f,  1.0f, 0.0f,
+			1.0f,  1.0f, 0.0f,
+			1.0f,  1.0f,  1.0f,
+			1.0f,  1.0f,  1.0f,
+			0.0f,  1.0f,  1.0f,
+			0.0f,  1.0f, 0.0f,
+
+			0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f,  1.0f,
+			1.0f, 0.0f, 0.0f,
+			1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f,  1.0f,
+			1.0f, 0.0f,  1.0f
 	};
 
 	GLuint bottomVBO, bottomVAO;
@@ -52,4 +90,7 @@ struct Container {
 	void draw(const DrawCommand& drawCommand);
 
 	Container(float size);
+
+	float size;
+
 };

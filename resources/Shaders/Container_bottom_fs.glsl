@@ -3,10 +3,10 @@ in vec3 FragPos;
 
 uniform vec3 cameraPos;
 uniform vec3 lightPos;
-
+uniform float boxSize;
 void main() {
 	
 	color = vec4(1);
-	color = rayTraceEnvironment(cameraPos, normalize(FragPos-cameraPos), lightPos);
+	color.rgb = rayTraceEnvironment(cameraPos, normalize(FragPos-cameraPos), lightPos,boxSize);
 
 }

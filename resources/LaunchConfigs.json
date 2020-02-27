@@ -1,6 +1,6 @@
 {
   "dimension": 3,
-  "method": "Fluid_3D_PBF",
+  "method": "Fluid_3D_FLIP",
   "sizeX": 50,
   "sizeY": 50,
   "sizeZ": 50,
@@ -35,7 +35,7 @@
         0.5,
         0.8,
         0.5,
-        0.15
+        0.0
       ],
       "phase": 1
     }

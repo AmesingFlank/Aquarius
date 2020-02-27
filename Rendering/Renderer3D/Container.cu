@@ -4,6 +4,7 @@ Container::Container(float size) {
 	initEdges();
 	initBottom();
 	model = glm::scale(model, glm::vec3(size, size, size));
+	this->size = size;
 }
 
 void Container::drawEdges(const DrawCommand& drawCommand) {
@@ -48,12 +49,22 @@ void Container::initEdges() {
 void Container::drawBottom(const DrawCommand& drawCommand) {
 	bottomShader->Use();
 
+	float extension = 1;
+
+	glm::mat4 bottomScale = glm::scale(model, glm::vec3(2 + extension));
+
+	glm::mat4 bottomTranslate(1.0);
+	bottomTranslate = glm::translate(bottomTranslate, glm::vec3(-size, 0, -size));
+
+	glm::mat4 bottomModel = bottomTranslate * bottomScale;
+
+
 
 	GLuint modelLocation = glGetUniformLocation(bottomShader->Program, "model");
 	GLuint viewLocation = glGetUniformLocation(bottomShader->Program, "view");
 	GLuint projectionLocation = glGetUniformLocation(bottomShader->Program, "projection");
 
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(model));
+	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(bottomModel));
 	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.view));
 	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.projection));
 
@@ -63,10 +74,12 @@ void Container::drawBottom(const DrawCommand& drawCommand) {
 	GLuint lightPosLocation = glGetUniformLocation(bottomShader->Program, "lightPos");
 	glUniform3f(lightPosLocation, drawCommand.lightPos.x, drawCommand.lightPos.y, drawCommand.lightPos.z);
 
+	GLuint boxSizeLocation = glGetUniformLocation(bottomShader->Program, "boxSize");
+	glUniform1f(boxSizeLocation, size);
 
 	glBindVertexArray(bottomVAO);
 
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
 void Container::initBottom() {
@@ -94,7 +107,7 @@ void Container::initBottom() {
 }
 
 void Container::draw(const DrawCommand& drawCommand) {
-	drawBottom(drawCommand);
+	//drawBottom(drawCommand);
 	
 	glDisable(GL_DEPTH_TEST);
 	drawEdges(drawCommand);
