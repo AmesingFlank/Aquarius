@@ -6,4 +6,5 @@ public:
 	virtual void simulationStep() = 0;
 	virtual void draw(const DrawCommand& drawCommand) = 0;
 	virtual void init(std::shared_ptr<FluidConfig> config) = 0;
+	virtual ~Fluid() {};
 };

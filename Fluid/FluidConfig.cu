@@ -163,8 +163,6 @@ std::shared_ptr<FluidConfig> getConfig() {
 				result->phaseColors.push_back(color);
 			}
 
-			HANDLE_ERROR(cudaMalloc(&result->phaseColorsDevice,phaseColorsLength * sizeof(float4)));
-			HANDLE_ERROR(cudaMemcpy(result->phaseColorsDevice, result->phaseColors.data(), phaseColorsLength * sizeof(float4),cudaMemcpyHostToDevice));
 
 		}
 

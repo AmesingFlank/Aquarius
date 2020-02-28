@@ -714,6 +714,21 @@ namespace Fluid_3D_FLIP {
 		return glm::vec2(gridPhysicalSize / 2, gridPhysicalSize / 2);
 	}
 
+	Fluid::~Fluid() {
+		HANDLE_ERROR(cudaFree(particles));
+
+		HANDLE_ERROR(cudaFree(particleHashes ));
+		HANDLE_ERROR(cudaFree(cellStart ));
+		HANDLE_ERROR(cudaFree(cellEnd ));
+
+
+
+		HANDLE_ERROR(cudaFree(particleIndices));
+		HANDLE_ERROR(cudaFree(particlesCopy));
+
+		//HANDLE_ERROR(cudaFree(inkParticles));
+	}
+
 }
 
 

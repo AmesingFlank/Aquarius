@@ -35,17 +35,44 @@ Shader::Shader(const std::string& vertexPath, const std::string& fragmentPath,
 
 
 
-	this->Program = glCreateProgram();
-	glAttachShader(this->Program, vertex);
-	glAttachShader(this->Program, fragment);
+	this->program = glCreateProgram();
+	glAttachShader(this->program, vertex);
+	glAttachShader(this->program, fragment);
 
 
-	glLinkProgram(this->Program);
-	checkCompileErrors(this->Program, "PROGRAM");
+	glLinkProgram(this->program);
+	checkCompileErrors(this->program, "PROGRAM");
 
 	glDeleteShader(vertex);
 	glDeleteShader(fragment);
 
 
+}
 
+void Shader::checkCompileErrors(GLuint shader, std::string type)
+{
+	GLint success;
+	GLchar infoLog[1024];
+	if (type != "PROGRAM")
+	{
+		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+		if (!success)
+		{
+			glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+			std::cout << "| ERROR::::SHADER-COMPILATION-ERROR of type: " << type << "|\n" << infoLog << "\n| -- --------------------------------------------------- -- |" << std::endl;
+		}
+	}
+	else
+	{
+		glGetProgramiv(shader, GL_LINK_STATUS, &success);
+		if (!success)
+		{
+			glGetProgramInfoLog(shader, 1024, NULL, infoLog);
+			std::cout << "| ERROR::::PROGRAM-LINKING-ERROR of type: " << type << "|\n" << infoLog << "\n| -- --------------------------------------------------- -- |" << std::endl;
+		}
+	}
+}
+
+Shader::~Shader() {
+	glDeleteProgram(this->program);
 }

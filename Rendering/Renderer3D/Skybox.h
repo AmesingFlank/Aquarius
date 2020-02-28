@@ -13,6 +13,7 @@
 #include "../DrawCommand.h"
 #include <vector>
 #include <string>
+#include <memory>
 
 struct Skybox{
     GLfloat vertices[108] = {
@@ -65,11 +66,13 @@ struct Skybox{
 
     glm::mat4  model = glm::mat4(1.0);
 
-    Shader* shader;
+    std::shared_ptr<Shader> shader;
 
 	Skybox(const std::string& path, const std::string& extension);
 
 	void draw(const DrawCommand& drawCommand);
+
+	~Skybox();
 
 };
 

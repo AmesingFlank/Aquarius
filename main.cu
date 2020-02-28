@@ -27,6 +27,8 @@
 #include "Rendering/WindowInfo.h"
 #include "Fluid/FluidConfig.cuh"
 
+#include "UI/ui.h"
+
 
 int main( void ) {
 
@@ -43,6 +45,8 @@ int main( void ) {
 	windowInfo.windowHeight = windowInfo.windowWidth / 2;
 
     GLFWwindow* window = createWindowOpenGL(windowInfo.windowWidth, windowInfo.windowHeight);
+
+	nk_context* uiContext = createUI(window);
 
     glfwSetKeyCallback(window, InputHandler::key_callback);
     glfwSetCursorPosCallback(window, InputHandler::mouse_callback);
@@ -128,6 +132,8 @@ int main( void ) {
 		
 		fluid->draw(drawCommand);
 
+		drawUI(uiContext);
+
         ++framesSinceLast;
 
         if(currentTime-lastSecond>=1){
@@ -146,6 +152,9 @@ int main( void ) {
 
         //break;
     }
+
+	fluid.reset();
+	printGLError();
 
     std::cout<<"finished everything"<<std::endl;
 	cudaDeviceReset();

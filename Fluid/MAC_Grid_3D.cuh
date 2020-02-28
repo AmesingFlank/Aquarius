@@ -56,7 +56,7 @@ public:
 
 
 	MAC_Grid_3D(int X, int Y, int Z, float cellPhysicalSize_);
-
+	~MAC_Grid_3D();
 
 	VolumeCollection volumes;
 	

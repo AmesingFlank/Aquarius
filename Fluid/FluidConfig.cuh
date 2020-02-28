@@ -39,8 +39,9 @@ struct FluidConfig3D:public FluidConfig {
 	int phaseCount;
 	std::vector<float4> phaseColors;
 
-	float4* phaseColorsDevice;
 	float diffusionCoeff;
+
+	
 };
 
 struct FluidConfig2D:public FluidConfig {

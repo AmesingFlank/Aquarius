@@ -112,7 +112,7 @@ namespace Fluid_3D_FLIP{
 		std::shared_ptr<FluidConfig3D> config;
 
 		Fluid();
-
+		virtual ~Fluid() override;
 
 
 		virtual void simulationStep() override;

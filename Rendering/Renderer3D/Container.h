@@ -93,4 +93,5 @@ struct Container {
 
 	float size;
 
+	~Container();
 };

@@ -98,6 +98,7 @@ namespace Fluid_3D_PBF {
 
 
 		Fluid();
+		virtual ~Fluid() override;
 
 
 		virtual void draw(const DrawCommand& drawCommand) override;

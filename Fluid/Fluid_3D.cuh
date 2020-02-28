@@ -7,4 +7,5 @@
 class Fluid_3D : public Fluid {
 public:
 	virtual glm::vec2 getCenter() = 0;
+	virtual ~Fluid_3D() {};
 };

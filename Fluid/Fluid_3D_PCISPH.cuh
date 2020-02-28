@@ -99,7 +99,7 @@ namespace Fluid_3D_PCISPH {
 		std::shared_ptr<PointSprites> pointSprites;
 
 		Fluid();
-
+		virtual ~Fluid() override;
 
 		virtual void draw(const DrawCommand& drawCommand) override;
 

@@ -5,13 +5,13 @@ Skybox::Skybox(const std::string& path, const std::string& extension) {
 	std::string vsPath = Shader::SHADERS_PATH("Skybox_vs.glsl");
 	std::string fsPath = Shader::SHADERS_PATH("Skybox_fs.glsl");
 
-	shader = new Shader(vsPath, fsPath);
+	shader = std::make_shared<Shader>(vsPath, fsPath);
 
 
-	vPos_location = glGetAttribLocation(shader->Program, "position");
-	model_location = glGetUniformLocation(shader->Program, "model");
-	view_location = glGetUniformLocation(shader->Program, "view");
-	projection_location = glGetUniformLocation(shader->Program, "projection");
+	vPos_location = glGetAttribLocation(shader->program, "position");
+	model_location = glGetUniformLocation(shader->program, "model");
+	view_location = glGetUniformLocation(shader->program, "view");
+	projection_location = glGetUniformLocation(shader->program, "projection");
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -57,7 +57,7 @@ Skybox::Skybox(const std::string& path, const std::string& extension) {
 void Skybox::draw(const DrawCommand& drawCommand) {
 
 	glDepthMask(GL_FALSE);
-	glUseProgram(shader->Program);
+	glUseProgram(shader->program);
 	glBindVertexArray(VAO);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, texSkyBox);
 
@@ -69,4 +69,11 @@ void Skybox::draw(const DrawCommand& drawCommand) {
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 	glDepthMask(GL_TRUE);
+}
+
+Skybox::~Skybox() {
+	glDeleteBuffers(1, &VBO);
+	glDeleteVertexArrays(1, &VAO);
+
+	glDeleteTextures(1, &texSkyBox);
 }

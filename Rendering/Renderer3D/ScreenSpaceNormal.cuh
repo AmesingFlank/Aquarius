@@ -5,6 +5,8 @@
 #include "../WindowInfo.h"
 #include "../DrawCommand.h"
 #include <functional>
+#include <memory>
+
 
 class ScreenSpaceNormal {
 private:
@@ -29,8 +31,8 @@ private:
 	GLuint depthTextureB;
 	
 
-	Shader* smoothShader;
-	Shader* normalShader;
+	std::shared_ptr<Shader> smoothShader;
+	std::shared_ptr<Shader> normalShader;
 
 public:
 
@@ -41,12 +43,14 @@ public:
 	ScreenSpaceNormal();
 
 	GLuint generateNormalTexture(std::function<void()> renderDepthFunc,int smoothIterations, int smoothRadius, float sigma_d, float sigma_r,const DrawCommand& drawCommand);
-
+	~ScreenSpaceNormal();
 
 	
 private:
 	void renderDepth(std::function<void()> renderDepthFunc);
 	void smoothDepth(int smoothIterations, int smoothRadius, float sigma_d, float sigma_r);
 	void renderNormal(const DrawCommand& drawCommand);
+
+	
 
 };

@@ -641,4 +641,16 @@ namespace Fluid_3D_PCISPH {
 	glm::vec2 Fluid::getCenter() {
 		return glm::vec2(gridPhysicalSize.x / 2, gridPhysicalSize.z / 2);
 	}
+	Fluid::~Fluid() {
+		HANDLE_ERROR(cudaFree(particles));
+
+		HANDLE_ERROR(cudaFree(particleHashes));
+		HANDLE_ERROR(cudaFree(cellBegin));
+		HANDLE_ERROR(cudaFree(cellEnd));
+
+
+
+		HANDLE_ERROR(cudaFree(particleIndices));
+		HANDLE_ERROR(cudaFree(particlesCopy));
+	}
 }

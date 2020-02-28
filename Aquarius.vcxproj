@@ -159,7 +159,6 @@
     <ClInclude Include="Rendering\Renderer3D\Container.h" />
     <ClInclude Include="Rendering\Renderer3D\FluidMeshRenderer.cuh" />
     <ClInclude Include="Rendering\Renderer3D\Mesher.cuh" />
-    <ClInclude Include="Rendering\Renderer3D\InkRendererParticle.cuh" />
     <ClInclude Include="Rendering\Renderer3D\PointSprites.h" />
     <ClInclude Include="Rendering\Renderer3D\ScreenSpaceNormal.cuh" />
     <ClInclude Include="Rendering\Renderer3D\Skybox.h" />
@@ -168,6 +167,7 @@
     <ClInclude Include="Fluid\WeightKernels.cuh" />
     <ClInclude Include="Rendering\WindowInfo.h" />
     <ClInclude Include="resources\Shaders\PointSprites_phase_fs.glsl" />
+    <ClInclude Include="UI\ui.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
@@ -198,6 +198,7 @@
   <ItemGroup>
     <ClCompile Include="Rendering\Renderer3D\Container.cu" />
     <ClCompile Include="Rendering\Shader.cpp" />
+    <ClCompile Include="UI\ui.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -11,6 +11,7 @@
 #include "../WindowInfo.h"
 #include "../DrawCommand.h"
 #include "ScreenSpaceNormal.cuh"
+#include <memory>
 
 
 struct PointSprites {
@@ -24,7 +25,7 @@ struct PointSprites {
 	cudaGraphicsResource* cudaResourceVBO;
 	float* positionsDevice;
 
-	Shader* simpleShader;
+	
 
 	float quadVertices[24] = { 
 		// positions   // texCoords
@@ -47,12 +48,11 @@ struct PointSprites {
 
 	GLuint phaseThicknessTexture;
 
-	Shader* depthShader;
-	Shader* screenShader;
-
-	Shader* thicknessShader;
-
-	Shader* phaseThicknessShader;
+	std::shared_ptr<Shader> simpleShader;
+	std::shared_ptr<Shader> depthShader;
+	std::shared_ptr<Shader> screenShader;
+	std::shared_ptr<Shader> thicknessShader;
+	std::shared_ptr<Shader> phaseThicknessShader;
 
 
 	ScreenSpaceNormal screenSpaceNormal;
@@ -77,6 +77,8 @@ struct PointSprites {
 	void drawPhaseThickness(const DrawCommand& drawCommand, float radius);
 
 
-	void prepareShader(Shader* shader, const DrawCommand& drawCommand, float radius);
+	void prepareShader(std::shared_ptr<Shader> shader, const DrawCommand& drawCommand, float radius);
+
+	~PointSprites();
 	
 };
