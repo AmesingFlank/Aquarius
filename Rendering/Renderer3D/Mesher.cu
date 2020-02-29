@@ -295,17 +295,13 @@ float3 edgeToCoord[12] = {
 __device__ __forceinline__
 float getSDF(int x, int y, int z, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, int sizeX_mesh, int sizeY_mesh, int sizeZ_mesh, float cellPhysicalSize_mesh,cudaTextureObject_t sdfTexture) {
 
-	if (x == 0 || y == 0 || z == 0 || x > sizeX_mesh-1 || y > sizeY_mesh-1 || z > sizeZ_mesh-1) {
+	if (x == 0 || y == 0 || z == 0 || x >= sizeX_mesh-1 || y >= sizeY_mesh-1 || z >= sizeZ_mesh-1) {
 		return 0;
 	}
 	
 	float3 position = make_float3(x-1, y-1, z-1) * cellPhysicalSize_mesh;
 	float3 sdfGridPosition = make_float3(1,1,1) + position / cellPhysicalSize_SDF;
-	float3 coord = {
-		sdfGridPosition.x / (sizeX_SDF - 1),
-		sdfGridPosition.y / (sizeY_SDF - 1),
-		sdfGridPosition.z / (sizeZ_SDF - 1),
-	};
+	float3& coord = sdfGridPosition;
 	return tex3D<float>(sdfTexture, coord.x, coord.y, coord.z);
 
 }
@@ -315,11 +311,7 @@ __device__ __forceinline__
 float getSDF(float3 position, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, cudaTextureObject_t sdfTexture) {
 	
 	float3 sdfGridPosition = make_float3(1, 1, 1) + position / cellPhysicalSize_SDF;
-	float3 coord = {
-		sdfGridPosition.x / (sizeX_SDF - 1),
-		sdfGridPosition.y / (sizeY_SDF - 1),
-		sdfGridPosition.z / (sizeZ_SDF - 1),
-	};
+	float3& coord = sdfGridPosition;
 	return tex3D<float>(sdfTexture, coord.x, coord.y, coord.z);
 }
 

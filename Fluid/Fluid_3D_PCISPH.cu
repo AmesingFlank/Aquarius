@@ -446,7 +446,7 @@ namespace Fluid_3D_PCISPH {
 		}
 	}
 
-	void Fluid::init(std::shared_ptr<FluidConfig> config) {
+	void Fluid::init(FluidConfig config) {
 
 #if SIMULATE_PARTICLES_NOT_FLUID
 
@@ -468,8 +468,7 @@ namespace Fluid_3D_PCISPH {
 
 		std::vector<Particle> particlesVec;
 
-		std::shared_ptr<FluidConfig3D> config3D = std::static_pointer_cast<FluidConfig3D, FluidConfig>(config);
-		for (const InitializationVolume& vol : config3D->initialVolumes) {
+		for (const InitializationVolume& vol : config.initialVolumes) {
 			if (vol.shapeType == ShapeType::Square) {
 				float3 minPos = make_float3(vol.params[0], vol.params[1], vol.params[2]);
 				float3 maxPos = make_float3(vol.params[3], vol.params[4], vol.params[5]);

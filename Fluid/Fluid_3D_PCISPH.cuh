@@ -103,7 +103,7 @@ namespace Fluid_3D_PCISPH {
 
 		virtual void draw(const DrawCommand& drawCommand) override;
 
-		virtual void init(std::shared_ptr<FluidConfig> config);
+		virtual void init(FluidConfig config);
 
 		virtual glm::vec2 getCenter() override;
 

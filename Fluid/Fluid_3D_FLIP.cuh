@@ -99,7 +99,6 @@ namespace Fluid_3D_FLIP{
 		std::shared_ptr<FluidMeshRenderer> meshRenderer;
 
 
-		std::shared_ptr<FluidConfig3D> fluidConfig;
 
 
 		float inkParticlesSpacing;
@@ -109,7 +108,7 @@ namespace Fluid_3D_FLIP{
 		int numThreadsInkParticle, numBlocksInkParticle;
 
 
-		std::shared_ptr<FluidConfig3D> config;
+		FluidConfig config;
 
 		Fluid();
 		virtual ~Fluid() override;
@@ -128,7 +127,7 @@ namespace Fluid_3D_FLIP{
 
 		virtual void draw(const DrawCommand& drawCommand) override;
 
-		virtual void init(std::shared_ptr<FluidConfig> config) override;
+		virtual void init(FluidConfig config) override;
 
 		virtual glm::vec2 getCenter() override;
 

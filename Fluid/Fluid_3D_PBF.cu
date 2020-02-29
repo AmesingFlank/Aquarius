@@ -273,7 +273,7 @@ namespace Fluid_3D_PBF {
 
 	}
 	
-	void Fluid::init(std::shared_ptr<FluidConfig> config) {
+	void Fluid::init(FluidConfig config) {
 		
 
 
@@ -294,12 +294,11 @@ namespace Fluid_3D_PBF {
 
 		std::vector<Particle> particlesVec;
 
-		std::shared_ptr<FluidConfig3D> config3D = std::static_pointer_cast<FluidConfig3D, FluidConfig>(config);
 
-		fluidConfig = config3D;
+		fluidConfig = config;
 
 
-		for (const InitializationVolume& vol : config3D->initialVolumes) {
+		for (const InitializationVolume& vol : config.initialVolumes) {
 			if (vol.shapeType == ShapeType::Square) {
 				float3 minPos = make_float3(vol.params[0], vol.params[1], vol.params[2]);
 				float3 maxPos = make_float3(vol.params[3], vol.params[4], vol.params[5]);

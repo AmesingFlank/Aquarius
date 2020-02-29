@@ -192,7 +192,7 @@ struct Mesher {
 		texDesc.addressMode[2] = cudaAddressModeBorder;
 		texDesc.filterMode = cudaFilterModeLinear;
 		texDesc.readMode = cudaReadModeElementType;
-		texDesc.normalizedCoords = 1;
+		texDesc.normalizedCoords = 0;
 
 		HANDLE_ERROR(cudaCreateTextureObject(&sdfTexture, &resDesc, &texDesc, nullptr));
 

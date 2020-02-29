@@ -24,30 +24,78 @@ struct InitializationVolume {
 	int phase;
 };
 
-
-struct FluidConfig {
-	int dimension;
-	std::string method;
+// Values are default values
+struct ConfigFLIP {
+	int sizeX = 50;
+	int sizeY = 50;
+	int sizeZ = 50;
+	int pressureIterations = 100;
+	int diffusionIterations = 50;
 };
 
-struct FluidConfig3D:public FluidConfig {
-	int sizeX;
-	int sizeY;
-	int sizeZ;
-	std::vector<InitializationVolume> initialVolumes;
+struct ConfigPBF {
+	int substeps = 4;
+	int iterations = 4;
+	int maxParticleCount = 3e5;
+};
 
-	int phaseCount;
+struct ConfigPCISPH {
+	int substeps = 1;
+	int iterations = 4;
+	int maxParticleCount = 3e5;
+	float stiffness = 15;
+};
+
+struct FluidConfig{
+
+
+
+	// Simulation Set-up
+	std::string method = "FLIP";
+	std::vector<InitializationVolume> initialVolumes;
+	float timestep = 0.033;
+	float gravity = -9.8;
+
+
+	// Multiphase Settings
+	int phaseCount = 2;
 	std::vector<float4> phaseColors;
+	float diffusionCoeff = 0.01;
 
-	float diffusionCoeff;
 
-	
+	ConfigFLIP FLIP;
+	ConfigPBF PBF;
+	ConfigPCISPH PCISPH;
+
+	FluidConfig() {
+		initialVolumes.push_back(
+			{
+				ShapeType::Square,
+				std::vector<float>({0,0,0, 0.5,0.2,1}),
+				0
+			}
+		);
+		initialVolumes.push_back(
+			{
+				ShapeType::Square,
+				std::vector<float>({0.5,0,0, 1.0,0.2,1}),
+				1
+			}
+		);
+		initialVolumes.push_back(
+			{
+				ShapeType::Sphere,
+				std::vector<float>({0.5,0.8,0.5,   0.15}),
+				1
+			}
+		);
+
+		phaseColors.push_back(make_float4(0, 0, 1, 1));
+		phaseColors.push_back(make_float4(1, 0, 1, 1));
+	}
 };
 
-struct FluidConfig2D:public FluidConfig {
-	int sizeX;
-	int sizeY;
-	std::vector<InitializationVolume> initialVolumes;
-};
 
-std::shared_ptr<FluidConfig> getConfig();
+
+//FluidConfig getConfigFromFile();
+

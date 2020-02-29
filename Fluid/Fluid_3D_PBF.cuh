@@ -57,7 +57,7 @@ namespace Fluid_3D_PBF {
 		int* cellEnd;
 
 		float timestep = 0.033;
-		float substeps = 4;
+		int substeps = 4;
 
 		float3 gridPhysicalSize = make_float3(10.f, 10.f, 10.f);
 
@@ -79,7 +79,7 @@ namespace Fluid_3D_PBF {
 		float particleSpacing;
 
 
-		float solverIterations = 4;
+		int solverIterations = 4;
 
 
 
@@ -93,7 +93,7 @@ namespace Fluid_3D_PBF {
 		std::shared_ptr<FluidMeshRenderer> meshRenderer;
 		std::shared_ptr<PointSprites> pointSprites;
 
-		std::shared_ptr<FluidConfig3D> fluidConfig;
+		FluidConfig fluidConfig;
 
 
 
@@ -105,7 +105,7 @@ namespace Fluid_3D_PBF {
 
 		virtual glm::vec2 getCenter() override;
 
-		virtual void init(std::shared_ptr<FluidConfig> config) override;
+		virtual void init(FluidConfig config) override;
 
 		virtual void simulationStep() override;
 
