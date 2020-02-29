@@ -22,7 +22,7 @@ struct FluidMeshRenderer {
 	std::shared_ptr<Shader> shader;
 	std::shared_ptr<Shader> depthShader;
 
-	ScreenSpaceNormal screenSpaceNormal;
+	//ScreenSpaceNormal screenSpaceNormal;
 
 	FluidMeshRenderer(int count_);
 	void draw(const DrawCommand& drawCommand, GLuint skybox);

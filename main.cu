@@ -41,7 +41,7 @@ int main( void ) {
 
 	WindowInfo& windowInfo = WindowInfo::instance();
 
-	windowInfo.windowWidth = screenWidth * 3 / 4;
+	windowInfo.windowWidth = screenWidth * 0.9;
 	windowInfo.windowHeight = windowInfo.windowWidth / 2;
 
     GLFWwindow* window = createWindowOpenGL(windowInfo.windowWidth, windowInfo.windowHeight);

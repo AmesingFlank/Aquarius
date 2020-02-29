@@ -447,6 +447,7 @@ namespace Fluid_3D_FLIP {
 
 		particleCount = particlesHost.size();
 
+		std::cout << "FLIP particle count " << particleCount << std::endl;
 		
 
 		HANDLE_ERROR(cudaMalloc(&particles, particleCount * sizeof(Particle)));
