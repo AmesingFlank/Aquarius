@@ -3,12 +3,12 @@
 namespace Fluid_3D_PBF {
 
 
-	__global__ void applyForcesImpl(Particle* particles, int particleCount, float timestep) {
+	__global__ void applyForcesImpl(Particle* particles, int particleCount, float timestep,float3 gravity) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
 		if (index >= particleCount) return;
 
 		Particle& particle = particles[index];
-		particle.velosity += timestep * make_float3(0, -9.8, 0);
+		particle.velosity += timestep * gravity;
 		
 	}
 
@@ -275,6 +275,11 @@ namespace Fluid_3D_PBF {
 	
 	void Fluid::init(FluidConfig config) {
 		
+		substeps = config.PBF.substeps;
+		timestep = config.PBF.timestep;
+		solverIterations = config.PBF.iterations;
+		particleCountWhenFull = config.PBF.maxParticleCount;
+
 
 
 		particleSpacing = pow(gridPhysicalSize.x * gridPhysicalSize.y * gridPhysicalSize.z / particleCountWhenFull, 1.0 / 3.0);
@@ -513,7 +518,7 @@ namespace Fluid_3D_PBF {
 	}
 
 	void Fluid::applyForces() {
-		applyForcesImpl<<<numBlocks,numThreads>>>(particles, particleCount, timestep / (float)substeps);
+		applyForcesImpl<<<numBlocks,numThreads>>>(particles, particleCount, timestep / (float)substeps,fluidConfig.gravity);
 	}
 
 	void Fluid::predictPosition() {

@@ -56,8 +56,8 @@ namespace Fluid_3D_PBF {
 		int* cellBegin;
 		int* cellEnd;
 
-		float timestep = 0.033;
-		int substeps = 4;
+		float timestep ;
+		int substeps ;
 
 		float3 gridPhysicalSize = make_float3(10.f, 10.f, 10.f);
 
@@ -65,7 +65,7 @@ namespace Fluid_3D_PBF {
 
 		float restDensity;
 
-		float particleCountWhenFull = 3e5;
+		float particleCountWhenFull ;
 
 		float kernelRadiusToSpacingRatio = 2.01;
 
@@ -79,7 +79,7 @@ namespace Fluid_3D_PBF {
 		float particleSpacing;
 
 
-		int solverIterations = 4;
+		int solverIterations;
 
 
 

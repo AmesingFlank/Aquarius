@@ -115,8 +115,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <CudaCompile Include="Fluid\FluidConfig.cu" />
-    <CudaCompile Include="Fluid\Legacy\Fluid_2D_kernels.cu" />
-    <CudaCompile Include="Fluid\Legacy\Fluid_2D_kernels.cuh" />
     <CudaCompile Include="Fluid\Fluid_3D_common.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_FLIP.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_kernels.cu" />
@@ -133,12 +131,6 @@
   <ItemGroup>
     <ClInclude Include="Fluid\Fluid.h" />
     <ClInclude Include="Fluid\FluidConfig.cuh" />
-    <ClInclude Include="Fluid\Legacy\Fluid_2D.h" />
-    <ClInclude Include="Fluid\Legacy\Fluid_2D_FLIP.cuh" />
-    <ClInclude Include="Fluid\Legacy\Fluid_2D_common.cuh" />
-    <ClInclude Include="Fluid\Legacy\Fluid_2D_PCISPH.cuh" />
-    <ClInclude Include="Fluid\Legacy\Fluid_2D_PoistionBased_CPU.h" />
-    <ClInclude Include="Fluid\Legacy\Fluid_2D_SemiLagrange.cuh" />
     <ClInclude Include="Fluid\Fluid_3D.cuh" />
     <ClInclude Include="Fluid\Fluid_3D_common.cuh" />
     <ClInclude Include="Fluid\Fluid_3D_FLIP.cuh" />
@@ -146,12 +138,9 @@
     <ClInclude Include="Fluid\Fluid_3D_PBF.cuh" />
     <ClInclude Include="Fluid\Fluid_3D_PCISPH.cuh" />
     <ClInclude Include="Fluid\Fluid_kernels.cuh" />
-    <ClInclude Include="Fluid\Legacy\PressureEquation.cuh" />
     <ClInclude Include="Common\GpuCommons.h" />
     <ClInclude Include="Common\InputHandler.h" />
-    <ClInclude Include="Fluid\Legacy\MAC_Grid_2D.cuh" />
     <ClInclude Include="Fluid\MAC_Grid_3D.cuh" />
-    <ClInclude Include="Fluid\Legacy\SVD.cuh" />
     <ClInclude Include="Fluid\VolumeData.cuh" />
     <ClInclude Include="Rendering\DrawCommand.h" />
     <ClInclude Include="Rendering\Quad.h" />
@@ -163,7 +152,6 @@
     <ClInclude Include="Rendering\Renderer3D\ScreenSpaceNormal.cuh" />
     <ClInclude Include="Rendering\Renderer3D\Skybox.h" />
     <ClInclude Include="Rendering\Shader.h" />
-    <ClInclude Include="Fluid\Legacy\SPD_Solver.h" />
     <ClInclude Include="Fluid\WeightKernels.cuh" />
     <ClInclude Include="Rendering\WindowInfo.h" />
     <ClInclude Include="resources\Shaders\PointSprites_phase_fs.glsl" />

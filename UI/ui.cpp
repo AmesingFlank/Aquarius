@@ -109,12 +109,12 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 	float widgetWidth = windowWidth * 0.2;
 
 	float algoWidgetTop = widgetBoundary;
-	float algoWidgetHeight = windowHeight * 0.3;
+	float algoWidgetHeight = windowHeight * 0.33;
 
 	float phaseWidgetTop = windowHeight*0.4;
 	float phaseWidgetHeight = windowHeight * 0.3;
 
-	float instructionsWidgetTop = windowHeight * 0.75;
+	float instructionsWidgetTop = windowHeight * 0.73;
 	float instructionsWidgetHeight = windowHeight * 0.2;
 
 
@@ -150,28 +150,32 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 
 		bool isFLIP = fluidConfig.method == "FLIP";
 
-		nk_layout_row_dynamic(ctx, rowHeight,  2);
-		nk_label(ctx, "Gravity", NK_TEXT_LEFT);
-		nk_property_float(ctx, "g:", -10, &fluidConfig.gravity, 10, 0.2, incPerPixel);
 
+
+		nk_layout_row_dynamic(ctx, rowHeight, 1);
+		nk_label(ctx, "Gravity:", NK_TEXT_LEFT);
+		nk_layout_row_dynamic(ctx, rowHeight, 3);
+
+		nk_property_float(ctx, "g:", -10, &fluidConfig.gravity.x, 10, 0.2, incPerPixel);
+		nk_property_float(ctx, "g:", -10, &fluidConfig.gravity.y, 10, 0.2, incPerPixel);
+		nk_property_float(ctx, "g:", -10, &fluidConfig.gravity.z, 10, 0.2, incPerPixel);
 		GAP;
 
-		nk_layout_row_dynamic(ctx, rowHeight, 2);
-		nk_label(ctx, "Timestep", NK_TEXT_LEFT);
-		nk_property_float(ctx, "dt:", 0.005, &fluidConfig.timestep, 0.05, 0.005, incPerPixel);
-
-		GAP;
+		
 
 		if (nk_tree_push(ctx, NK_TREE_NODE, "Initial Fluid Volumes:", NK_MAXIMIZED))
 		{
 			nk_layout_row_dynamic(ctx, rowHeight, 1);
 			if (nk_button_label(ctx, "Add New Initial Volume")) {
-
+				fluidConfig.initialVolumes.emplace_back();
 			}
 			GAP_SMALL;
-			for (int i = 0; i < fluidConfig.initialVolumes.size();++i) {
-				InitializationVolume& volume = fluidConfig.initialVolumes[i];
-				if (nk_tree_push(ctx, NK_TREE_NODE, std::to_string(i).c_str(), NK_MAXIMIZED))
+			std::vector<InitializationVolume>::iterator it = fluidConfig.initialVolumes.begin();
+			int id = 0;
+			for (; it != fluidConfig.initialVolumes.end();) {
+				InitializationVolume& volume = *it;
+				bool erased = false;
+				if (nk_tree_push(ctx, NK_TREE_NODE, std::to_string(id).c_str(), NK_MAXIMIZED))
 				{
 					nk_layout_row_dynamic(ctx, rowHeight, 3);
 					nk_label(ctx, "Type:", NK_TEXT_LEFT);
@@ -188,7 +192,7 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 						}
 					}
 						
-					if (nk_option_label(ctx, "Ball", fluidConfig.initialVolumes[i].shapeType == ShapeType::Sphere)) {
+					if (nk_option_label(ctx, "Ball", volume.shapeType == ShapeType::Sphere)) {
 						volume.shapeType = ShapeType::Sphere;
 						while (volume.params.size() < 4) {
 							volume.params.push_back(0);
@@ -223,8 +227,10 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 						}
 						nk_layout_row_dynamic(ctx, rowHeight, 1);
 						if (nk_button_label(ctx, "delete")) {
-
+							fluidConfig.initialVolumes.erase(it);
+							erased = true;
 						}
+						
 						GAP_SMALL;
 					}
 					
@@ -250,13 +256,20 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 						}
 						nk_layout_row_dynamic(ctx, rowHeight, 1);
 						if (nk_button_label(ctx, "delete")) {
-
+							fluidConfig.initialVolumes.erase(it);
+							erased = true;
 						}
 						GAP_SMALL;
 					}
 
 					nk_tree_pop(ctx);
+					
 				}
+				if (!erased) {
+					++it; 
+					++id;
+				}
+				
 			}
 			
 
@@ -274,6 +287,14 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 		if (nk_begin(ctx, "FLIP Settings", nk_rect(rightSideWidgetBegin, algoWidgetTop, widgetWidth, algoWidgetHeight),
 			NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
 			NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE)) {
+
+			float timestep_ms = fluidConfig.FLIP.timestep * 1000;
+			nk_layout_row_dynamic(ctx, rowHeight, 1);
+			nk_label(ctx, "Timestep(ms)", NK_TEXT_LEFT);
+			nk_property_float(ctx, "dt:", 5, &timestep_ms, 50, 5, incPerPixel);
+			fluidConfig.FLIP.timestep = timestep_ms / 1000;
+
+			GAP_SMALL;
 
 			nk_layout_row_dynamic(ctx, rowHeight, 1);
 			nk_label(ctx, "Grid Size: (for all of x/y/z)", NK_TEXT_LEFT);
@@ -301,6 +322,14 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 			NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
 			NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE)) {
 
+			float timestep_ms = fluidConfig.PBF.timestep * 1000;
+			nk_layout_row_dynamic(ctx, rowHeight, 1);
+			nk_label(ctx, "Timestep(ms)", NK_TEXT_LEFT);
+			nk_property_float(ctx, "dt:", 5, &timestep_ms, 50, 5, incPerPixel);
+			fluidConfig.PBF.timestep = timestep_ms / 1000;
+
+			GAP_SMALL;
+
 			nk_layout_row_dynamic(ctx, rowHeight, 1);
 			nk_label(ctx, "Substeps:", NK_TEXT_LEFT);
 			nk_property_int(ctx, "", 1, &fluidConfig.PBF.substeps, 10, 1, incPerPixel);
@@ -325,6 +354,14 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 		if (nk_begin(ctx, "PCISPH Settings", nk_rect(rightSideWidgetBegin, algoWidgetTop, widgetWidth, algoWidgetHeight),
 			NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
 			NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE)) {
+
+			float timestep_ms = fluidConfig.PCISPH.timestep * 1000;
+			nk_layout_row_dynamic(ctx, rowHeight, 1);
+			nk_label(ctx, "Timestep(ms)", NK_TEXT_LEFT);
+			nk_property_float(ctx, "dt:", 1, &timestep_ms, 20, 1, incPerPixel);
+			fluidConfig.PCISPH.timestep = timestep_ms / 1000;
+
+			GAP_SMALL;
 
 			nk_layout_row_dynamic(ctx, rowHeight, 1);
 			nk_label(ctx, "Substeps:", NK_TEXT_LEFT);

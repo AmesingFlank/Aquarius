@@ -126,6 +126,11 @@ int main( void ) {
 
 		drawUI(uiContext,config, [&]() 
 			{
+				if (config.initialVolumes.size() == 0) {
+					std::cout << "ERROR: No Initial Volumes" << std::endl;
+					return;
+				}
+
 				if (hasCreatedFluid) {
 					fluid.reset();
 				}
@@ -138,10 +143,8 @@ int main( void ) {
 				else if (config.method == "PBF") {
 					fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_PBF::Fluid>(std::make_shared<Fluid_3D_PBF::Fluid>());
 				}
-				else {
-					std::cout << "unsupported method in config file" << std::endl;
-					exit(1);
-				}
+				
+				
 
 				fluid->init(config);
 				hasCreatedFluid = true;

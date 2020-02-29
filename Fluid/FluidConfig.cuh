@@ -11,35 +11,40 @@
 #include <memory>
 #include "../Common/GpuCommons.h"
 
+// Values are default values
+
+
 enum class ShapeType {
 	Sphere,Square
 };
 
 struct InitializationVolume {
 
-	ShapeType shapeType;
+	ShapeType shapeType = ShapeType::Square;
 
-	std::vector< float > params;
+	std::vector< float > params = {0,0,0,0,0,0};
 
-	int phase;
+	int phase = 0;
 };
 
-// Values are default values
 struct ConfigFLIP {
 	int sizeX = 50;
 	int sizeY = 50;
 	int sizeZ = 50;
 	int pressureIterations = 100;
-	int diffusionIterations = 50;
+	int diffusionIterations = 100;
+	float timestep = 0.033;
 };
 
 struct ConfigPBF {
+	float timestep = 0.033;
 	int substeps = 4;
-	int iterations = 4;
+	int iterations = 2;
 	int maxParticleCount = 3e5;
 };
 
 struct ConfigPCISPH {
+	float timestep = 0.005;
 	int substeps = 1;
 	int iterations = 4;
 	int maxParticleCount = 3e5;
@@ -53,8 +58,7 @@ struct FluidConfig{
 	// Simulation Set-up
 	std::string method = "FLIP";
 	std::vector<InitializationVolume> initialVolumes;
-	float timestep = 0.033;
-	float gravity = -9.8;
+	float3 gravity = make_float3(0,-9.8,0);
 
 
 	// Multiphase Settings

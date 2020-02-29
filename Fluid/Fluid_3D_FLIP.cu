@@ -307,7 +307,7 @@ namespace Fluid_3D_FLIP {
 		transferToGrid();
 		//grid->updateFluidCount();
 
-		applyGravity(timestep, *grid, gravitationalAcceleration);
+		applyGravity(timestep, *grid, config.gravity);
 
 		fixBoundary(*grid);
 
@@ -317,14 +317,14 @@ namespace Fluid_3D_FLIP {
 
 		//solvePressure(timestep,*grid);
 
-		solvePressureJacobi(timestep, *grid, 100);
+		solvePressureJacobi(timestep, *grid, config.FLIP.pressureIterations);
 
 
 		updateVelocityWithPressure(timestep, *grid);
 
 		extrapolateVelocity(timestep, *grid);
 
-		solveDiffusionJacobi(timestep, *grid, 100, config.diffusionCoeff,cellPhysicalSize);
+		solveDiffusionJacobi(timestep, *grid, config.FLIP.diffusionIterations, config.diffusionCoeff,cellPhysicalSize);
 
 
 		transferToParticles();
@@ -414,6 +414,7 @@ namespace Fluid_3D_FLIP {
 
 		this->config = config;
 
+		timestep = config.FLIP.timestep;
 		sizeX = config.FLIP.sizeX;
 		sizeY = config.FLIP.sizeY;
 		sizeZ = config.FLIP.sizeZ;

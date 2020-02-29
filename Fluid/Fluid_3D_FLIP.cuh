@@ -53,7 +53,7 @@ namespace Fluid_3D_FLIP{
 	class Fluid :public Fluid_3D {
 	public:
 
-		float timestep = 0.033f;
+		float timestep;
 
 		int sizeX;
 		int sizeY;
@@ -69,7 +69,7 @@ namespace Fluid_3D_FLIP{
 
 		float cellPhysicalSize;
 
-		const float gravitationalAcceleration = 9.8;
+
 		const float density = 1;
 
 		Particle* particles;
