@@ -4,25 +4,18 @@
 #include <thread>
 #include <math.h>
 
-
-
 #include "Common/GpuCommons.h"
-
 
 #include "Fluid/Fluid_3D_FLIP.cuh"
 #include "Fluid/Fluid_3D_PCISPH.cuh"
 #include "Fluid/Fluid_3D_PBF.cuh"
 #include "Fluid/Fluid_3D.cuh"
 
-
-
-
 #include "Rendering/Renderer3D/camera.h"
 #include "Common/InputHandler.h"
 #include "Rendering/Renderer3D/PointSprites.h"
 
 #include "Rendering/DrawCommand.h"
-
 
 #include "Rendering/WindowInfo.h"
 #include "Fluid/FluidConfig.cuh"
@@ -49,8 +42,9 @@ int main( void ) {
 
 	nk_context* uiContext = createUI(window);
 
-    glfwSetKeyCallback(window, InputHandler::key_callback);
-    glfwSetCursorPosCallback(window, InputHandler::mouse_callback);
+    glfwSetKeyCallback(window, InputHandler::keyCallback);
+    glfwSetCursorPosCallback(window, InputHandler::mousePosCallback);
+	glfwSetMouseButtonCallback(window, InputHandler::mouseButtonCallback);
 
 	std::shared_ptr<Camera> camera;
 	
@@ -72,6 +66,16 @@ int main( void ) {
 
 	bool hasCreatedFluid = false;
 
+	inputHandler.onEscape = [&]() {
+		glfwSetWindowShouldClose(window, GL_TRUE);
+	};
+	inputHandler.onShift = [&]() {
+		renderMode = (RenderMode)(((int)renderMode + 1) % (int)RenderMode::MAX);
+	};
+	inputHandler.onSpace = [&]() {
+		paused = !paused;
+	};
+
 	
 
     while(!glfwWindowShouldClose(window)){
@@ -85,15 +89,6 @@ int main( void ) {
         glfwPollEvents();
 
         InputHandler::doMovement();
-
-		if (InputHandler::Handler::instance().keys[GLFW_KEY_SPACE]) {
-			InputHandler::Handler::instance().keys[GLFW_KEY_SPACE] = false;
-			paused = !paused;
-		}
-		if (InputHandler::Handler::instance().keys[GLFW_KEY_RIGHT_SHIFT]) {
-			InputHandler::Handler::instance().keys[GLFW_KEY_RIGHT_SHIFT] = false;
-			renderMode = (RenderMode)(((int)renderMode + 1) % (int)RenderMode::MAX);
-		}
 
 
         double currentTime = glfwGetTime();
@@ -152,6 +147,7 @@ int main( void ) {
 
 				camera = std::make_shared<Camera>(fluid->getCenter());
 				inputHandler.camera = camera;
+				paused = true;
 			}
 		);
 

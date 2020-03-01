@@ -9,22 +9,19 @@
 
 
 enum class CameraMovement {
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT,
+   
 	RotateUp,
 	RotateDown,
 	RotateRight,
-	RotateLeft
+	RotateLeft,
+
+	MoveForward,
+	MoveBackward,
+	MoveRight,
+	MoveLeft,
 };
 
-
-const GLfloat SPEED      =  3.0f;
-const GLfloat SENSITIVTY =  0.25f;
-
-
-inline glm::vec3 eulerToVec(float yaw, float pitch) {
+inline glm::vec3 eulerToVec(double yaw, double pitch) {
 	glm::vec3 v;
 	v.x = -sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 	v.y = sin(glm::radians(pitch));
@@ -33,12 +30,12 @@ inline glm::vec3 eulerToVec(float yaw, float pitch) {
 }
 
 
-inline void vecToEuler(glm::vec3 v, float& yaw, float& pitch) {
+inline void vecToEuler(glm::vec3 v, double& yaw, double& pitch) {
 	v = glm::normalize(v);
 	pitch = glm::degrees(asin(v.y));
 
-	float sinYaw = -v.x / cos(glm::radians(pitch));
-	float cosYaw = -v.z / cos(glm::radians(pitch));
+	double sinYaw = -v.x / cos(glm::radians(pitch));
+	double cosYaw = -v.z / cos(glm::radians(pitch));
 
 	yaw = acos(cosYaw);
 	if (sinYaw < 0) {
@@ -63,17 +60,17 @@ public:
     glm::vec3 right;
     glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
 
-	float yaw;
-    float pitch;
+	double yaw;
+    double pitch;
 
-	float globalYaw;
-	float globalPitch;
+	double globalYaw;
+	double globalPitch;
 	float globalRadius = 20;
 
 	float globalRotationSpeed = 1;
+	float globalMovementSpeed = 0.3;
+	float perspectiveRotationSpeed = 0.3;
 
-	GLfloat MovementSpeed;
-    GLfloat MouseSensitivity;
 
 	const float FOV = 45;
 
@@ -81,12 +78,12 @@ public:
 
 
 
-    Camera(glm::vec3 lookCenter_) :  MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY)
+    Camera(glm::vec3 lookCenter_) 
     {
 		this->lookCenter = lookCenter_;
 
-		yaw = 0;
-        pitch = 0;
+		yaw = 180;
+        pitch = -30;
 
 		globalYaw = 0;
 		globalPitch = 30;
@@ -107,7 +104,14 @@ public:
 
 	void updateEulerWithPosition() {
 		vecToEuler(position, globalYaw, globalPitch);
+		globalRadius = glm::length(position);
 	}
+
+	void updateFrontWithEuler() {
+		front = eulerToVec(yaw, pitch);
+		updateRightUp();
+	}
+
 
 	void lookAtCenter() {
 		front = glm::normalize(-position);
@@ -124,90 +128,68 @@ public:
 		return lookCenter + position;
 	}
 
-    glm::mat4 getViewMatrix()
-    {
-		
+    glm::mat4 getViewMatrix(){
         return glm::lookAt(getActualPosition(), getActualPosition() + front, up);
     }
 
+	void clampPitch() {
+		pitch = max(-89.0, min(89.0, pitch));
+		globalPitch = max(-89.0, min(89.0, globalPitch));
+	}
 
 
 	void doMovement(CameraMovement move) {
 		if (move == CameraMovement::RotateLeft) {
 			globalYaw -= globalRotationSpeed;
+			yaw -= globalRotationSpeed;
+			updatePositionWithEuler();
+			updateFrontWithEuler();
 		}
 		if (move == CameraMovement::RotateRight) {
 			globalYaw += globalRotationSpeed;
+			yaw += globalRotationSpeed;
+			updatePositionWithEuler();
+			updateFrontWithEuler();
 		}
 		if (move == CameraMovement::RotateUp) {
 			globalPitch += globalRotationSpeed;
+			pitch -= globalRotationSpeed;
+			clampPitch();
+			updatePositionWithEuler();
+			updateFrontWithEuler();
 		}
 		if (move == CameraMovement::RotateDown) {
 			globalPitch -= globalRotationSpeed;
+			pitch += globalRotationSpeed;
+			clampPitch();
+			updatePositionWithEuler();
+			updateFrontWithEuler();
 		}
-		updatePositionWithEuler();
-		lookAtCenter();
+		if (move == CameraMovement::MoveLeft) {
+			position -= right * globalMovementSpeed;
+			updateEulerWithPosition();
+		}
+		if (move == CameraMovement::MoveRight) {
+			position += right * globalMovementSpeed;
+			updateEulerWithPosition();
+		}
+		if (move == CameraMovement::MoveBackward) {
+			position -= front * globalMovementSpeed;
+			updateEulerWithPosition();
+		}
+		if (move == CameraMovement::MoveForward) {
+			position += front * globalMovementSpeed;
+			updateEulerWithPosition();
+		}
+		
 	}
 
-	float lastProcessKeyboardTime = -1;
 
-	void ProcessKeyboard(CameraMovement direction)
-    {
-        float now = glfwGetTime();
-        if(lastProcessKeyboardTime<0){
-            lastProcessKeyboardTime = now;
-        }
-        float deltaTime = now-lastProcessKeyboardTime;
-        GLfloat velocity = this->MovementSpeed * deltaTime;
-        if (direction == CameraMovement::FORWARD)
-            this->position += this->front * velocity;
-        if (direction == CameraMovement::BACKWARD)
-            this->position -= this->front * velocity;
-        if (direction == CameraMovement::LEFT)
-            this->position -= this->right * velocity;
-        if (direction == CameraMovement::RIGHT)
-            this->position += this->right * velocity;
-        lastProcessKeyboardTime = now;
-		//std::cout << "camera at " << position.x << "  " << position.y <<"  "<< position.z << std::endl;
-    }
+	void perspectiveChange(float dx, float dy) {
+		yaw -= dx * perspectiveRotationSpeed;
+		pitch += dy * perspectiveRotationSpeed;
+		clampPitch();
+		updateFrontWithEuler();
+	}
 
-    // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-    void ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean constrainPitch = true)
-    {
-        xoffset *= this->MouseSensitivity;
-        yoffset *= this->MouseSensitivity;
-
-        this->yaw   -= xoffset;
-        this->pitch += yoffset;
-
-        // Make sure that when pitch is out of bounds, screen doesn't get flipped
-        if (constrainPitch)
-        {
-            if (this->pitch > 89.0f)
-                this->pitch = 89.0f;
-            if (this->pitch < -89.0f)
-                this->pitch = -89.0f;
-        }
-
-        // Update front, right and up Vectors using the updated Eular angles
-        this->updateCameraVectors();
-    }
-
-
-
-private:
-    // Calculates the front vector from the Camera's (updated) Eular Angles
-    void updateCameraVectors()
-    {
-
-        this->front = eulerToVec(yaw,pitch);
-
-		if (abs(glm::length(front) - 1) > 1e-3) {
-			std::cout << "wat??" << std::endl;
-		}
-
-        // Also re-calculate the right and up vector
-        this->right = glm::normalize(glm::cross(this->front, this->worldUp)); 
-        this->up    = glm::normalize(glm::cross(this->right, this->front));
-    }
 };

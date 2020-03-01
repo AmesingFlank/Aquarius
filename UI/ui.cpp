@@ -115,7 +115,7 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 	float phaseWidgetHeight = windowHeight * 0.3;
 
 	float instructionsWidgetTop = windowHeight * 0.73;
-	float instructionsWidgetHeight = windowHeight * 0.2;
+	float instructionsWidgetHeight = windowHeight * 0.25;
 
 
 	float rightSideWidgetBegin = windowWidth - widgetWidth - widgetBoundary;
@@ -449,20 +449,30 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 		NK_WINDOW_BORDER | NK_WINDOW_MOVABLE | NK_WINDOW_SCALABLE |
 		NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE))
 	{
-		nk_layout_row_dynamic(ctx, 25, 1);
-		nk_label(ctx, "To pause simulation", NK_TEXT_LEFT);
+		
 
 		nk_layout_row_dynamic(ctx, 25, 1);
-		nk_label(ctx, "Press \"space\" ", NK_TEXT_LEFT);
+		nk_label(ctx, "SPACE to pause simulation", NK_TEXT_LEFT);
 
 		GAP;
 
+		nk_layout_row_dynamic(ctx, 25, 1);
+		nk_label(ctx, "SHIFT To switch render mode", NK_TEXT_LEFT);
+
+		GAP;
 
 		nk_layout_row_dynamic(ctx, 25, 1);
-		nk_label(ctx, "To switch rendering method", NK_TEXT_LEFT);
+		nk_label(ctx, "Up/Down/Left/Right to hover", NK_TEXT_LEFT);
+
+		GAP;
 
 		nk_layout_row_dynamic(ctx, 25, 1);
-		nk_label(ctx, "Press \"Right Shift\" ", NK_TEXT_LEFT);
+		nk_label(ctx, "W/A/S/D to move", NK_TEXT_LEFT);
+
+		GAP;
+
+		nk_layout_row_dynamic(ctx, 25, 1);
+		nk_label(ctx, "Left mouse + drag to look around", NK_TEXT_LEFT);
 
 
 	}
