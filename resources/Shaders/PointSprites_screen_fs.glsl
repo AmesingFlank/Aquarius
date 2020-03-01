@@ -11,7 +11,7 @@ uniform mat4 inverseView;
 uniform mat4 projection;
 uniform float windowWidth;
 uniform float windowHeight;
-uniform float zoom;
+uniform float FOV;
 uniform vec3 cameraPosition;
 uniform samplerCube skybox;
 
@@ -24,7 +24,7 @@ float projectZ(float viewZ) {
 }
 
 vec3 getViewPos(float depth) {
-	float xPhysicalHalfScreen = tan(zoom * M_PI / 180) * abs(depth);
+	float xPhysicalHalfScreen = tan(FOV * M_PI / 180) * abs(depth);
 	float yPhysicalHalfScreen = xPhysicalHalfScreen * windowHeight / windowWidth;
 
 	float x = (TexCoord.x * 2 - 1) * xPhysicalHalfScreen;

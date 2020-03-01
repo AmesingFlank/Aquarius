@@ -710,8 +710,8 @@ namespace Fluid_3D_FLIP {
 	}
 
 
-	glm::vec2 Fluid::getCenter() {
-		return glm::vec2(gridPhysicalSize / 2, gridPhysicalSize / 2);
+	glm::vec3 Fluid::getCenter() {
+		return glm::vec3(gridPhysicalSize / 2,0, gridPhysicalSize / 2);
 	}
 
 	Fluid::~Fluid() {

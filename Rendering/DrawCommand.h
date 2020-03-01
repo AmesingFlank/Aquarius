@@ -13,7 +13,7 @@ struct DrawCommand {
 	glm::vec3 cameraPosition;
 	float windowWidth;
 	float windowHeight;
-	float zoom;
+	float FOV;
 	float near;
 	float far;
 

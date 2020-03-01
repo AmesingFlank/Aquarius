@@ -215,7 +215,7 @@ void PointSprites::drawScreen(const DrawCommand& drawCommand, int skybox,GLuint 
 	screenShader->setUniformMat4("inverseView",inverseView);
 
 
-	screenShader->setUniform1f("zoom", drawCommand.zoom);
+	screenShader->setUniform1f("FOV", drawCommand.FOV);
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 

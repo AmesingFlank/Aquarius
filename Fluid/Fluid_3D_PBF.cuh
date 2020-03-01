@@ -103,7 +103,7 @@ namespace Fluid_3D_PBF {
 
 		virtual void draw(const DrawCommand& drawCommand) override;
 
-		virtual glm::vec2 getCenter() override;
+		virtual glm::vec3 getCenter() override;
 
 		virtual void init(FluidConfig config) override;
 

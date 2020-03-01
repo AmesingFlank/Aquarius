@@ -129,7 +129,7 @@ namespace Fluid_3D_FLIP{
 
 		virtual void init(FluidConfig config) override;
 
-		virtual glm::vec2 getCenter() override;
+		virtual glm::vec3 getCenter() override;
 
 
 

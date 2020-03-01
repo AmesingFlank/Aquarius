@@ -129,6 +129,7 @@
     <CudaCompile Include="Rendering\Renderer3D\Skybox.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Common\Commons.h" />
     <ClInclude Include="Fluid\Fluid.h" />
     <ClInclude Include="Fluid\FluidConfig.cuh" />
     <ClInclude Include="Fluid\Fluid_3D.cuh" />

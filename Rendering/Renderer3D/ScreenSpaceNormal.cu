@@ -185,7 +185,7 @@ void ScreenSpaceNormal::renderNormal(const DrawCommand& drawCommand) {
 	normalShader->setUniform1f("windowWidth", WindowInfo::instance().windowWidth);
 	normalShader->setUniform1f("windowHeight", WindowInfo::instance().windowHeight);
 
-	normalShader->setUniform1f("zoom", drawCommand.zoom);
+	normalShader->setUniform1f("FOV", drawCommand.FOV);
 
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);

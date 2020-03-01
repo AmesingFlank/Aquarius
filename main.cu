@@ -52,7 +52,7 @@ int main( void ) {
     glfwSetCursorPosCallback(window, InputHandler::mouse_callback);
 
     std::shared_ptr<Camera> camera = std::make_shared<Camera>(glm::vec3(5,10,20));
-    InputHandler::camera = camera;
+    InputHandler::Handler::instance().camera = camera;
 
 	
 	double framesSinceLast = 0;
@@ -85,12 +85,12 @@ int main( void ) {
         glClearColor(0,0,0,1);
         glfwPollEvents();
         InputHandler::Do_Movement();
-		if (InputHandler::keys[GLFW_KEY_SPACE]) {
-			InputHandler::keys[GLFW_KEY_SPACE] = false;
+		if (InputHandler::Handler::instance().keys[GLFW_KEY_SPACE]) {
+			InputHandler::Handler::instance().keys[GLFW_KEY_SPACE] = false;
 			paused = !paused;
 		}
-		if (InputHandler::keys[GLFW_KEY_RIGHT_SHIFT]) {
-			InputHandler::keys[GLFW_KEY_RIGHT_SHIFT] = false;
+		if (InputHandler::Handler::instance().keys[GLFW_KEY_RIGHT_SHIFT]) {
+			InputHandler::Handler::instance().keys[GLFW_KEY_RIGHT_SHIFT] = false;
 			renderMode = (RenderMode)(((int)renderMode + 1) % (int)RenderMode::MAX);
 		}
 
@@ -99,19 +99,19 @@ int main( void ) {
 
         glm::mat4 view = camera->GetViewMatrix();
 		float widthHeightRatio = (float)windowInfo.windowWidth / (float)windowInfo.windowHeight;
-        glm::mat4 projection = glm::perspective(camera->Zoom, widthHeightRatio, near,far);
+        glm::mat4 projection = glm::perspective(camera->FOV, widthHeightRatio, near,far);
 
 		
 
         double currentTime = glfwGetTime();
 
 		if (hasCreatedFluid) {
-			glm::vec2 fluidCenter = fluid->getCenter();
+			glm::vec3 fluidCenter = fluid->getCenter();
 
 			glm::vec3 lightPos(fluidCenter.x, 30, fluidCenter.y);
 
 			DrawCommand drawCommand = {
-			view,projection,camera->Position,windowInfo.windowWidth,windowInfo.windowHeight,camera->Zoom,near,far,
+			view,projection,camera->Position,windowInfo.windowWidth,windowInfo.windowHeight,camera->FOV,near,far,
 			renderMode,paused,lightPos
 			};
 

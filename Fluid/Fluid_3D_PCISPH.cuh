@@ -105,7 +105,7 @@ namespace Fluid_3D_PCISPH {
 
 		virtual void init(FluidConfig config);
 
-		virtual glm::vec2 getCenter() override;
+		virtual glm::vec3 getCenter() override;
 
 		void computeRestDensity();
 

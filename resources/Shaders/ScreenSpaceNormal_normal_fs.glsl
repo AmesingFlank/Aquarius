@@ -6,7 +6,7 @@ in vec2 TexCoord;
 uniform sampler2D depthTexture;
 uniform float windowWidth;
 uniform float windowHeight;
-uniform float zoom;
+uniform float FOV;
 
 layout (location = 0) out vec4 normalOutput;
 
@@ -44,7 +44,7 @@ void main() {
 		dzdy = dzdyDown;
 	}
 
-	float dxViewSpace = tan(zoom*M_PI / 180) * abs(depth) * 2 / windowWidth;
+	float dxViewSpace = tan(FOV*M_PI / 180) * abs(depth) * 2 / windowWidth;
 	float dyViewSpace = dxViewSpace * windowHeight / windowWidth ;
 		
 	vec3 tangentX = vec3(dxViewSpace, 0, dzdx);

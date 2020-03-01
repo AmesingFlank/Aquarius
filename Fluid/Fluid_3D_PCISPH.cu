@@ -483,8 +483,8 @@ namespace Fluid_3D_PCISPH {
 			(particles, particleCount, timestep / (float)substeps, true, particleSpacing, gridPhysicalSize);
 	}
 
-	glm::vec2 Fluid::getCenter() {
-		return glm::vec2(gridPhysicalSize.x / 2, gridPhysicalSize.z / 2);
+	glm::vec3 Fluid::getCenter() {
+		return glm::vec3(gridPhysicalSize.x / 2, 0,gridPhysicalSize.z / 2);
 	}
 	Fluid::~Fluid() {
 		HANDLE_ERROR(cudaFree(particles));

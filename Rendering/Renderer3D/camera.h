@@ -16,12 +16,16 @@ enum Camera_Movement {
     RIGHT
 };
 
+enum class CameraMovement {
+	RotateUp, RotateDown,RotateLeft,RotateRight,
+	LookUp,LookDown,LookLeft,LookRight
+};
+
 // Default camera values
 const GLfloat YAW        = -90.0f;
 const GLfloat PITCH      =  0.0f;
 const GLfloat SPEED      =  3.0f;
 const GLfloat SENSITIVTY =  0.25f;
-const GLfloat ZOOM       =  45.0f;
 
 
 // An abstract camera class that processes input and calculates the corresponding Eular Angles, Vectors and Matrices for use in OpenGL
@@ -40,10 +44,11 @@ public:
     // Camera options
     GLfloat MovementSpeed;
     GLfloat MouseSensitivity;
-    GLfloat Zoom;
+
+	const float FOV = 45;
 
     // Constructor with vectors
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), GLfloat yaw = YAW, GLfloat pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
+    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), GLfloat yaw = YAW, GLfloat pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY)
     {
         this->Position = position;
         this->WorldUp = up;
@@ -51,15 +56,7 @@ public:
         this->Pitch = pitch;
         this->updateCameraVectors();
     }
-    // Constructor with scalar values
-    Camera(GLfloat posX, GLfloat posY, GLfloat posZ, GLfloat upX, GLfloat upY, GLfloat upZ, GLfloat yaw, GLfloat pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
-    {
-        this->Position = glm::vec3(posX, posY, posZ);
-        this->WorldUp = glm::vec3(upX, upY, upZ);
-        this->Yaw = yaw;
-        this->Pitch = pitch;
-        this->updateCameraVectors();
-    }
+
 
     // Returns the view matrix calculated using Eular Angles and the LookAt Matrix
     glm::mat4 GetViewMatrix()

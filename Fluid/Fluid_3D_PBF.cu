@@ -573,11 +573,11 @@ namespace Fluid_3D_PBF {
 			cudaDeviceSynchronize();
 			pointSprites->draw(drawCommand, particleSpacing / 2, skybox.texSkyBox);
 		}
-
+		
 	}
 
-	glm::vec2 Fluid::getCenter() {
-		return glm::vec2(gridPhysicalSize.x/2, gridPhysicalSize.z / 2);
+	glm::vec3 Fluid::getCenter() {
+		return glm::vec3(gridPhysicalSize.x/2,0, gridPhysicalSize.z / 2);
 	}
 
 	Fluid::~Fluid() {
