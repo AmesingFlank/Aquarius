@@ -310,6 +310,10 @@ void PointSprites::prepareShader(std::shared_ptr<Shader> shader, const DrawComma
 	shader->setUniformMat4("view", drawCommand.view);
 	shader->setUniformMat4("projection", drawCommand.projection);
 
+
+	float tanHalfFOV = tan(glm::radians(drawCommand.FOV) / 2);
+	shader->setUniform1f("tanHalfFOV", tanHalfFOV);
+
 }
 
 PointSprites::~PointSprites() {

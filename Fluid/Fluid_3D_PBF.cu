@@ -392,6 +392,8 @@ namespace Fluid_3D_PBF {
 		mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
 		cudaDeviceSynchronize();
 
+		container = std::make_shared<Container>(gridPhysicalSize.x);
+
 	}
 
 	void Fluid::createSquareFluid(std::vector<Particle>& particlesVec, float3 minPos, float3 maxPos) {
@@ -558,7 +560,7 @@ namespace Fluid_3D_PBF {
 
 	void Fluid::draw(const DrawCommand& drawCommand) {
 		skybox.draw(drawCommand);
-		//container.draw(drawCommand);
+		container->draw(drawCommand);
 
 		if (drawCommand.renderMode == RenderMode::Mesh) {
 			if (!drawCommand.simulationPaused) {

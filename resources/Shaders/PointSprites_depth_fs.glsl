@@ -1,5 +1,4 @@
 
-in vec3 TexCoords;
 layout (location = 0) out vec4 depthOutput;
 
 in vec4 posToCamera;

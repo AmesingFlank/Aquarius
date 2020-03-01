@@ -218,7 +218,7 @@ namespace Fluid_3D_PCISPH {
 
 	void Fluid::draw(const DrawCommand& drawCommand){
 		skybox.draw(drawCommand);
-		//container.draw(drawCommand);
+		container->draw(drawCommand);
 
 
 		if (drawCommand.renderMode == RenderMode::Mesh) {
@@ -416,6 +416,8 @@ namespace Fluid_3D_PCISPH {
 
 		mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
 		cudaDeviceSynchronize();
+
+		container = std::make_shared<Container>(gridPhysicalSize.x);
 	}
 
 	void Fluid::computeRestDensity() {

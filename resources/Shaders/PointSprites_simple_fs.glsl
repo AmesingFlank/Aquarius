@@ -1,4 +1,3 @@
-in vec3 TexCoords;
 in vec4 Color;
 
 out vec4 FragColor;

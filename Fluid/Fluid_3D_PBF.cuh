@@ -13,6 +13,8 @@
 #include "Fluid_3D_common.cuh"
 #include "../Rendering/Renderer3D/Mesher.cuh"
 #include "../Rendering/Renderer3D/FluidMeshRenderer.cuh"
+#include "../Rendering/Renderer3D/Container.h"
+
 
 
 
@@ -94,6 +96,8 @@ namespace Fluid_3D_PBF {
 		std::shared_ptr<PointSprites> pointSprites;
 
 		FluidConfig fluidConfig;
+
+		std::shared_ptr<Container> container;
 
 
 
