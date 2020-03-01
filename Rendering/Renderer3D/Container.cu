@@ -8,15 +8,11 @@ Container::Container(float size) {
 }
 
 void Container::drawEdges(const DrawCommand& drawCommand) {
-	edgesShader->Use();
+	edgesShader->use();
 
-	GLuint modelLocation = glGetUniformLocation(edgesShader->Program, "model");
-	GLuint viewLocation = glGetUniformLocation(edgesShader->Program, "view");
-	GLuint projectionLocation = glGetUniformLocation(edgesShader->Program, "projection");
-
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(model));
-	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.view));
-	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.projection));
+	edgesShader->setUniformMat4("model", model);
+	edgesShader->setUniformMat4("view", drawCommand.view);
+	edgesShader->setUniformMat4("projection", drawCommand.projection);
 
 	glBindVertexArray(edgesVAO);
 
@@ -36,7 +32,7 @@ void Container::initEdges() {
 	glBindBuffer(GL_ARRAY_BUFFER, edgesVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(edgesData),edgesData, GL_STATIC_DRAW);
 
-	GLuint edgesPositionLocation = glGetAttribLocation(edgesShader->Program,"position");
+	GLuint edgesPositionLocation = glGetAttribLocation(edgesShader->program,"position");
 
 	glEnableVertexAttribArray(edgesPositionLocation);
 	glVertexAttribPointer(edgesPositionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
@@ -47,7 +43,7 @@ void Container::initEdges() {
 
 
 void Container::drawBottom(const DrawCommand& drawCommand) {
-	bottomShader->Use();
+	bottomShader->use();
 
 	float extension = 1;
 
@@ -58,28 +54,21 @@ void Container::drawBottom(const DrawCommand& drawCommand) {
 
 	glm::mat4 bottomModel = bottomTranslate * bottomScale;
 
+	
 
+	bottomShader->setUniformMat4("model", model);
+	bottomShader->setUniformMat4("view", drawCommand.view);
+	bottomShader->setUniformMat4("projection", drawCommand.projection);
 
-	GLuint modelLocation = glGetUniformLocation(bottomShader->Program, "model");
-	GLuint viewLocation = glGetUniformLocation(bottomShader->Program, "view");
-	GLuint projectionLocation = glGetUniformLocation(bottomShader->Program, "projection");
+	bottomShader->setUniform3f("cameraPos", drawCommand.cameraPosition);
+	bottomShader->setUniform3f("lightPos", drawCommand.lightPos);
 
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(bottomModel));
-	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.view));
-	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.projection));
+	bottomShader->setUniform1f("boxSize", size);
 
-	GLuint cameraPosLocation = glGetUniformLocation(bottomShader->Program, "cameraPos");
-	glUniform3f(cameraPosLocation, drawCommand.cameraPosition.x, drawCommand.cameraPosition.y, drawCommand.cameraPosition.z);
-
-	GLuint lightPosLocation = glGetUniformLocation(bottomShader->Program, "lightPos");
-	glUniform3f(lightPosLocation, drawCommand.lightPos.x, drawCommand.lightPos.y, drawCommand.lightPos.z);
-
-	GLuint boxSizeLocation = glGetUniformLocation(bottomShader->Program, "boxSize");
-	glUniform1f(boxSizeLocation, size);
 
 	glBindVertexArray(bottomVAO);
 
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void Container::initBottom() {
@@ -97,7 +86,7 @@ void Container::initBottom() {
 	glBindBuffer(GL_ARRAY_BUFFER, bottomVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(bottomData), bottomData, GL_STATIC_DRAW);
 
-	GLuint bottomPositionLocation = glGetAttribLocation(bottomShader->Program, "position");
+	GLuint bottomPositionLocation = glGetAttribLocation(bottomShader->program, "position");
 
 	glEnableVertexAttribArray(bottomPositionLocation);
 	glVertexAttribPointer(bottomPositionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
@@ -107,10 +96,19 @@ void Container::initBottom() {
 }
 
 void Container::draw(const DrawCommand& drawCommand) {
-	//drawBottom(drawCommand);
+	drawBottom(drawCommand);
 	
 	glDisable(GL_DEPTH_TEST);
 	drawEdges(drawCommand);
 	glEnable(GL_DEPTH_TEST);
+
+}
+
+Container::~Container() {
+	glDeleteBuffers(1, &bottomVBO);
+	glDeleteBuffers(1, &edgesVBO);
+
+	glDeleteVertexArrays(1, &bottomVAO);
+	glDeleteVertexArrays(1, &bottomVBO);
 
 }

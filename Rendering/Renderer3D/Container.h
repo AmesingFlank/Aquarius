@@ -30,6 +30,13 @@ struct Container {
 	float maxVal = 2;
 
 	float bottomData[108] = {
+			0.0f, 0.0f, 0.0f,
+			0.0f, 0.0f,  1.0f,
+			1.0f, 0.0f, 0.0f,
+			1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f,  1.0f,
+			1.0f, 0.0f,  1.0f,
+
 			0.0f,  1.0f, 0.0f,
 			0.0f, 0.0f, 0.0f,
 			1.0f, 0.0f, 0.0f,
@@ -65,12 +72,7 @@ struct Container {
 			0.0f,  1.0f,  1.0f,
 			0.0f,  1.0f, 0.0f,
 
-			0.0f, 0.0f, 0.0f,
-			0.0f, 0.0f,  1.0f,
-			1.0f, 0.0f, 0.0f,
-			1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f,  1.0f,
-			1.0f, 0.0f,  1.0f
+			
 	};
 
 	GLuint bottomVBO, bottomVAO;
@@ -93,4 +95,5 @@ struct Container {
 
 	float size;
 
+	~Container();
 };

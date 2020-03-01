@@ -20,7 +20,7 @@ struct Quad {
     std::shared_ptr<Shader> shader;
 
     GLuint VBO,VAO;
-    GLint vPos_location, texCoord_location,quadTexture_location;
+    GLint vPos_location, texCoord_location;
 
     Quad (){
 
@@ -29,9 +29,8 @@ struct Quad {
 
         shader = std::make_shared<Shader>(vsPath,fsPath);
 
-        vPos_location = glGetAttribLocation(shader->Program, "vPos");
-        texCoord_location = glGetAttribLocation(shader->Program,"texCoord");
-        quadTexture_location = glGetUniformLocation(shader->Program,"quadTexture");
+        vPos_location = glGetAttribLocation(shader->program, "vPos");
+        texCoord_location = glGetAttribLocation(shader->program,"texCoord");
 
         glGenVertexArrays(1,&VAO);
         glGenBuffers(1, &VBO);
@@ -47,17 +46,22 @@ struct Quad {
     }
     void draw(GLuint texture){
 
-        glUseProgram(shader->Program);
+        glUseProgram(shader->program);
         glBindVertexArray(VAO);
         glActiveTexture(GL_TEXTURE0);
-        glUniform1i(quadTexture_location,0);
         glBindTexture(GL_TEXTURE_2D,texture);
+		shader->setUniform1i("quadTexture", 0);
 
         glDrawArrays(GL_TRIANGLES,0,6);
 
         glBindVertexArray(0);
 
     }
+
+	~Quad() {
+		glDeleteBuffers(1, &VBO);
+		glDeleteVertexArrays(1, &VAO);
+	}
 	
 };
 

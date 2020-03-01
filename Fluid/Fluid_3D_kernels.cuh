@@ -27,7 +27,7 @@ __global__  inline void calcHashImpl(int* particleHashes,  // output
 }
 
 
-__global__  void applyGravityImpl(VolumeCollection volumes,int sizeX, int sizeY, int sizeZ, float timeStep, float gravitationalAcceleration);
+__global__  void applyGravityImpl(VolumeCollection volumes,int sizeX, int sizeY, int sizeZ, float timeStep, float3 gravitationalAcceleration);
 
 
 

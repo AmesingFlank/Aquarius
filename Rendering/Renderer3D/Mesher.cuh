@@ -134,72 +134,7 @@ struct Mesher {
 	float particleRadius;
 	float cellPhysicalSize_mesh;
 
-	Mesher(float3 containerSize,float particleSpacing,int particleCount_,int numBlocksParticle_,int numThreadsParticle_){
-
-		particleCount = particleCount_;
-		numBlocksParticle = numBlocksParticle_;
-		numThreadsParticle = numThreadsParticle_;
-
-
-		cellPhysicalSize_SDF = particleSpacing ;
-		particleRadius = particleSpacing;
-
-		std::cout << "mesher particle radius " << particleRadius << std::endl;
-		cellPhysicalSize_mesh = containerSize.x / (float)(sizeX_mesh - 2);
-
-		sizeX_SDF = 3 + containerSize.x / cellPhysicalSize_SDF;
-		sizeY_SDF = 3 + containerSize.y / cellPhysicalSize_SDF;
-		sizeZ_SDF = 3 + containerSize.z / cellPhysicalSize_SDF;
-
-		std::cout << "mesher sizeX_SDF " << sizeX_SDF << std::endl;
-
-		cellCount_SDF = sizeX_SDF * sizeY_SDF * sizeZ_SDF;
-
-		numThreadsCell_SDF = min(1024, cellCount_SDF);
-		numBlocksCell_SDF = divUp(cellCount_SDF, numThreadsCell_SDF);
-
-		numThreadsCell_mesh = min(1024, cellCount_mesh);
-		numBlocksCell_mesh = divUp(cellCount_mesh, numThreadsCell_mesh);
-
-		triangleCount = 5 * 1 << 22;
-
-		std::cout << cellCount_mesh * 5 << std::endl;
-
-		HANDLE_ERROR(cudaMalloc(&cellStart, cellCount_SDF * sizeof(*cellStart)));
-		HANDLE_ERROR(cudaMalloc(&cellEnd, cellCount_SDF * sizeof(*cellEnd)));
-
-		HANDLE_ERROR(cudaMalloc(&hasSDF, cellCount_SDF * sizeof(*hasSDF)));
-		HANDLE_ERROR(cudaMalloc(&meanXCell, cellCount_SDF * sizeof(*meanXCell)));
-
-		HANDLE_ERROR(cudaMalloc(&occupiedCellIndex, sizeof(unsigned int)));
-
-		
-
-
-		cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
-		cudaExtent extent = { sizeX_SDF,sizeY_SDF,sizeZ_SDF };
-		HANDLE_ERROR(cudaMalloc3DArray(&sdfTextureArray, &channelDesc, extent, cudaArraySurfaceLoadStore));
-		
-		cudaResourceDesc resDesc;
-		memset(&resDesc, 0, sizeof(resDesc));
-		resDesc.resType = cudaResourceTypeArray;
-		resDesc.res.array.array = sdfTextureArray;
-
-		cudaTextureDesc texDesc;
-		memset(&texDesc, 0, sizeof(texDesc));
-		texDesc.addressMode[0] = cudaAddressModeBorder;
-		texDesc.addressMode[1] = cudaAddressModeBorder;
-		texDesc.addressMode[2] = cudaAddressModeBorder;
-		texDesc.filterMode = cudaFilterModeLinear;
-		texDesc.readMode = cudaReadModeElementType;
-		texDesc.normalizedCoords = 1;
-
-		HANDLE_ERROR(cudaCreateTextureObject(&sdfTexture, &resDesc, &texDesc, nullptr));
-
-		HANDLE_ERROR(cudaCreateSurfaceObject(&sdfSurface, &resDesc));
-
-
-	}
+	Mesher(float3 containerSize, float particleSpacing, int particleCount_, int numBlocksParticle_, int numThreadsParticle_);
 
 
 	template<typename Particle>
@@ -239,12 +174,15 @@ struct Mesher {
 	}
 
 	~Mesher() {
-		HANDLE_ERROR(cudaFree(&cellStart ));
-		HANDLE_ERROR(cudaFree(&cellEnd ));
+		cudaDeviceSynchronize();
+		HANDLE_ERROR(cudaFree(cellStart ));
+		HANDLE_ERROR(cudaFree(cellEnd ));
 
-		HANDLE_ERROR(cudaFree(&hasSDF ));
-		HANDLE_ERROR(cudaFree(&meanXCell ));
+		HANDLE_ERROR(cudaFree(hasSDF ));
+		HANDLE_ERROR(cudaFree(meanXCell ));
 
-		HANDLE_ERROR(cudaFree(&occupiedCellIndex));
+		HANDLE_ERROR(cudaFree(occupiedCellIndex));
+
+		HANDLE_ERROR(cudaFreeArray(sdfTextureArray));
 	}
 };

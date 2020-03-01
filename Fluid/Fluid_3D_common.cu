@@ -2,7 +2,7 @@
 
 
 
-void  applyGravity(float timeStep, MAC_Grid_3D& grid, float gravitationalAcceleration) {
+void  applyGravity(float timeStep, MAC_Grid_3D& grid, float3 gravitationalAcceleration) {
 	applyGravityImpl <<< grid.cudaGridSize, grid.cudaBlockSize >>>
 		( grid.volumes,grid.sizeX, grid.sizeY, grid.sizeZ, timeStep, gravitationalAcceleration);
 	cudaDeviceSynchronize();

@@ -4,18 +4,12 @@
 #include <thread>
 #include <math.h>
 
-
-
 #include "Common/GpuCommons.h"
-
 
 #include "Fluid/Fluid_3D_FLIP.cuh"
 #include "Fluid/Fluid_3D_PCISPH.cuh"
 #include "Fluid/Fluid_3D_PBF.cuh"
 #include "Fluid/Fluid_3D.cuh"
-
-
-
 
 #include "Rendering/Renderer3D/camera.h"
 #include "Common/InputHandler.h"
@@ -23,9 +17,10 @@
 
 #include "Rendering/DrawCommand.h"
 
-
 #include "Rendering/WindowInfo.h"
 #include "Fluid/FluidConfig.cuh"
+
+#include "UI/ui.h"
 
 
 int main( void ) {
@@ -38,18 +33,20 @@ int main( void ) {
 	getScreenDimensions(screenWidth, screenHeight);
 
 	WindowInfo& windowInfo = WindowInfo::instance();
+	InputHandler::Handler& inputHandler = InputHandler::Handler::instance();
 
-	windowInfo.windowWidth = screenWidth * 3 / 4;
+	windowInfo.windowWidth = screenWidth * 0.9;
 	windowInfo.windowHeight = windowInfo.windowWidth / 2;
 
     GLFWwindow* window = createWindowOpenGL(windowInfo.windowWidth, windowInfo.windowHeight);
 
-    glfwSetKeyCallback(window, InputHandler::key_callback);
-    glfwSetCursorPosCallback(window, InputHandler::mouse_callback);
+	nk_context* uiContext = createUI(window);
 
-    std::shared_ptr<Camera> camera = std::make_shared<Camera>(glm::vec3(5,10,20));
-    InputHandler::camera = camera;
+    glfwSetKeyCallback(window, InputHandler::keyCallback);
+    glfwSetCursorPosCallback(window, InputHandler::mousePosCallback);
+	glfwSetMouseButtonCallback(window, InputHandler::mouseButtonCallback);
 
+	std::shared_ptr<Camera> camera;
 	
 	double framesSinceLast = 0;
 	double lastSecond = glfwGetTime();
@@ -58,31 +55,28 @@ int main( void ) {
 	glEnable(GL_BLEND);
 
 
-	std::shared_ptr<FluidConfig> config = getConfig();
+	FluidConfig config;
 	std::shared_ptr<Fluid_3D> fluid;
-	if (config->method == "Fluid_3D_FLIP") {
-		fluid = std::static_pointer_cast<Fluid_3D,Fluid_3D_FLIP::Fluid>(std::make_shared<Fluid_3D_FLIP::Fluid>());
-	}
-	else if (config->method == "Fluid_3D_PCISPH") {
-		fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_PCISPH::Fluid>(std::make_shared<Fluid_3D_PCISPH::Fluid>());
-	}
-	else if (config->method == "Fluid_3D_PBF") {
-		fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_PBF::Fluid>(std::make_shared<Fluid_3D_PBF::Fluid>());
-	}
-	else {
-		std::cout << "unsupported method in config file" << std::endl;
-		exit(1);
-	}
 
-	fluid->init(config);
+	
 
 	RenderMode renderMode = RenderMode::Mesh;
 
 	bool paused = true;
 
-	glm::vec2 fluidCenter = fluid->getCenter();
+	bool hasCreatedFluid = false;
 
-	glm::vec3 lightPos(fluidCenter.x, 30, fluidCenter.y);
+	inputHandler.onEscape = [&]() {
+		glfwSetWindowShouldClose(window, GL_TRUE);
+	};
+	inputHandler.onShift = [&]() {
+		renderMode = (RenderMode)(((int)renderMode + 1) % (int)RenderMode::MAX);
+	};
+	inputHandler.onSpace = [&]() {
+		paused = !paused;
+	};
+
+	
 
     while(!glfwWindowShouldClose(window)){
 
@@ -93,40 +87,69 @@ int main( void ) {
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
         glClearColor(0,0,0,1);
         glfwPollEvents();
-        InputHandler::Do_Movement();
-		if (InputHandler::keys[GLFW_KEY_SPACE]) {
-			InputHandler::keys[GLFW_KEY_SPACE] = false;
-			paused = !paused;
-		}
-		if (InputHandler::keys[GLFW_KEY_RIGHT_SHIFT]) {
-			InputHandler::keys[GLFW_KEY_RIGHT_SHIFT] = false;
-			renderMode = (RenderMode)(((int)renderMode + 1) % (int)RenderMode::MAX);
-		}
 
-		float near = 0.1;
-		float far = 1000;
-
-        glm::mat4 view = camera->GetViewMatrix();
-		float widthHeightRatio = (float)windowInfo.windowWidth / (float)windowInfo.windowHeight;
-        glm::mat4 projection = glm::perspective(camera->Zoom, widthHeightRatio, near,far);
-
-		DrawCommand drawCommand = {
-			view,projection,camera->Position,windowInfo.windowWidth,windowInfo.windowHeight,camera->Zoom,near,far,
-			renderMode,paused,lightPos
-		};
+        InputHandler::doMovement();
 
 
         double currentTime = glfwGetTime();
 
-		if (!paused) {
-			fluid->simulationStep();
+		if (hasCreatedFluid) {
+
+			float near = 0.1;
+			float far = 1000;
+
+			glm::mat4 view = camera->getViewMatrix();
+			float widthHeightRatio = (float)windowInfo.windowWidth / (float)windowInfo.windowHeight;
+			glm::mat4 projection = glm::perspective(camera->FOV, widthHeightRatio, near, far);
+
+			glm::vec3 fluidCenter = fluid->getCenter();
+
+			glm::vec3 lightPos(fluidCenter.x, 30, fluidCenter.y);
+
+			DrawCommand drawCommand = {
+			view,projection,camera->getActualPosition(),windowInfo.windowWidth,windowInfo.windowHeight,camera->FOV,near,far,
+			renderMode,paused,lightPos
+			};
+
+			if (!paused) {
+				fluid->simulationStep();
+			}
+
+			fluid->draw(drawCommand);
 		}
-		else {
-			// There's still a bug that, when paused, the meshed rendering doesn't work, unless sleep for a while..
-			//std::this_thread::sleep_for(std::chrono::milliseconds(16));
-		}
+
 		
-		fluid->draw(drawCommand);
+
+		drawUI(uiContext,config, [&]() 
+			{
+				if (config.initialVolumes.size() == 0) {
+					std::cout << "ERROR: No Initial Volumes" << std::endl;
+					return;
+				}
+
+				if (hasCreatedFluid) {
+					fluid.reset();
+				}
+				if (config.method == "FLIP") {
+					fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_FLIP::Fluid>(std::make_shared<Fluid_3D_FLIP::Fluid>());
+				}
+				else if (config.method == "PCISPH") {
+					fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_PCISPH::Fluid>(std::make_shared<Fluid_3D_PCISPH::Fluid>());
+				}
+				else if (config.method == "PBF") {
+					fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_PBF::Fluid>(std::make_shared<Fluid_3D_PBF::Fluid>());
+				}
+				
+				
+
+				fluid->init(config);
+				hasCreatedFluid = true;
+
+				camera = std::make_shared<Camera>(fluid->getCenter());
+				inputHandler.camera = camera;
+				paused = true;
+			}
+		);
 
         ++framesSinceLast;
 
@@ -146,6 +169,9 @@ int main( void ) {
 
         //break;
     }
+
+	fluid.reset();
+	printGLError();
 
     std::cout<<"finished everything"<<std::endl;
 	cudaDeviceReset();

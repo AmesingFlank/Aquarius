@@ -53,7 +53,7 @@ namespace Fluid_3D_FLIP{
 	class Fluid :public Fluid_3D {
 	public:
 
-		float timestep = 0.033f;
+		float timestep;
 
 		int sizeX;
 		int sizeY;
@@ -69,7 +69,7 @@ namespace Fluid_3D_FLIP{
 
 		float cellPhysicalSize;
 
-		const float gravitationalAcceleration = 9.8;
+
 		const float density = 1;
 
 		Particle* particles;
@@ -99,7 +99,6 @@ namespace Fluid_3D_FLIP{
 		std::shared_ptr<FluidMeshRenderer> meshRenderer;
 
 
-		std::shared_ptr<FluidConfig3D> fluidConfig;
 
 
 		float inkParticlesSpacing;
@@ -109,10 +108,10 @@ namespace Fluid_3D_FLIP{
 		int numThreadsInkParticle, numBlocksInkParticle;
 
 
-		std::shared_ptr<FluidConfig3D> config;
+		FluidConfig config;
 
 		Fluid();
-
+		virtual ~Fluid() override;
 
 
 		virtual void simulationStep() override;
@@ -128,9 +127,9 @@ namespace Fluid_3D_FLIP{
 
 		virtual void draw(const DrawCommand& drawCommand) override;
 
-		virtual void init(std::shared_ptr<FluidConfig> config) override;
+		virtual void init(FluidConfig config) override;
 
-		virtual glm::vec2 getCenter() override;
+		virtual glm::vec3 getCenter() override;
 
 
 

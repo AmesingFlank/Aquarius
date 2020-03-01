@@ -2,7 +2,7 @@
 
 
 
-__global__  void applyGravityImpl(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float timeStep, float gravitationalAcceleration) {
+__global__  void applyGravityImpl(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float timeStep, float3 gravitationalAcceleration) {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int z = blockIdx.z * blockDim.z + threadIdx.z;
@@ -13,15 +13,27 @@ __global__  void applyGravityImpl(VolumeCollection volumes, int sizeX, int sizeY
 
 	if (volumes.content.readSurface<int>(x,y,z) == CONTENT_FLUID) {
 		float4 newVelocity = volumes.newVelocity.readSurface<float4>(x, y, z);
-		newVelocity.y -= gravitationalAcceleration * timeStep;
+		newVelocity += make_float4(gravitationalAcceleration * timeStep,0);
 
 
 		volumes.newVelocity.writeSurface<float4>(newVelocity, x, y, z);
 
-		if (volumes.content.readSurface<int>(x, y+1, z) == CONTENT_AIR) {
-			float4 newVelocity = volumes.newVelocity.readSurface<float4>(x, y+1, z);
-			newVelocity.y -= gravitationalAcceleration * timeStep;
-			volumes.newVelocity.writeSurface<float4>(newVelocity, x, y+1, z);
+		if (volumes.content.readSurface<int>(x+1, y, z) == CONTENT_AIR && gravitationalAcceleration.x != 0) {
+			float4 newVelocity = volumes.newVelocity.readSurface<float4>(x+1, y, z);
+			newVelocity += make_float4(gravitationalAcceleration * timeStep, 0);
+			volumes.newVelocity.writeSurface<float4>(newVelocity, x+1, y, z);
+
+		}
+		if (volumes.content.readSurface<int>(x, y + 1, z) == CONTENT_AIR && gravitationalAcceleration.y != 0) {
+			float4 newVelocity = volumes.newVelocity.readSurface<float4>(x, y + 1, z);
+			newVelocity += make_float4(gravitationalAcceleration * timeStep, 0);
+			volumes.newVelocity.writeSurface<float4>(newVelocity, x, y + 1, z);
+
+		}
+		if (volumes.content.readSurface<int>(x, y, z+1) == CONTENT_AIR && gravitationalAcceleration.z != 0) {
+			float4 newVelocity = volumes.newVelocity.readSurface<float4>(x, y, z+1);
+			newVelocity += make_float4(gravitationalAcceleration * timeStep, 0);
+			volumes.newVelocity.writeSurface<float4>(newVelocity, x, y , z+1);
 
 		}
 	}

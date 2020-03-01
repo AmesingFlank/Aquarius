@@ -3,12 +3,12 @@
 namespace Fluid_3D_PBF {
 
 
-	__global__ void applyForcesImpl(Particle* particles, int particleCount, float timestep) {
+	__global__ void applyForcesImpl(Particle* particles, int particleCount, float timestep,float3 gravity) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
 		if (index >= particleCount) return;
 
 		Particle& particle = particles[index];
-		particle.velosity += timestep * make_float3(0, -9.8, 0);
+		particle.velosity += timestep * gravity;
 		
 	}
 
@@ -273,8 +273,13 @@ namespace Fluid_3D_PBF {
 
 	}
 	
-	void Fluid::init(std::shared_ptr<FluidConfig> config) {
+	void Fluid::init(FluidConfig config) {
 		
+		substeps = config.PBF.substeps;
+		timestep = config.PBF.timestep;
+		solverIterations = config.PBF.iterations;
+		particleCountWhenFull = config.PBF.maxParticleCount;
+
 
 
 		particleSpacing = pow(gridPhysicalSize.x * gridPhysicalSize.y * gridPhysicalSize.z / particleCountWhenFull, 1.0 / 3.0);
@@ -294,12 +299,11 @@ namespace Fluid_3D_PBF {
 
 		std::vector<Particle> particlesVec;
 
-		std::shared_ptr<FluidConfig3D> config3D = std::static_pointer_cast<FluidConfig3D, FluidConfig>(config);
 
-		fluidConfig = config3D;
+		fluidConfig = config;
 
 
-		for (const InitializationVolume& vol : config3D->initialVolumes) {
+		for (const InitializationVolume& vol : config.initialVolumes) {
 			if (vol.shapeType == ShapeType::Square) {
 				float3 minPos = make_float3(vol.params[0], vol.params[1], vol.params[2]);
 				float3 maxPos = make_float3(vol.params[3], vol.params[4], vol.params[5]);
@@ -387,6 +391,8 @@ namespace Fluid_3D_PBF {
 
 		mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
 		cudaDeviceSynchronize();
+
+		container = std::make_shared<Container>(gridPhysicalSize.x);
 
 	}
 
@@ -514,7 +520,7 @@ namespace Fluid_3D_PBF {
 	}
 
 	void Fluid::applyForces() {
-		applyForcesImpl<<<numBlocks,numThreads>>>(particles, particleCount, timestep / (float)substeps);
+		applyForcesImpl<<<numBlocks,numThreads>>>(particles, particleCount, timestep / (float)substeps,fluidConfig.gravity);
 	}
 
 	void Fluid::predictPosition() {
@@ -554,7 +560,7 @@ namespace Fluid_3D_PBF {
 
 	void Fluid::draw(const DrawCommand& drawCommand) {
 		skybox.draw(drawCommand);
-		//container.draw(drawCommand);
+		container->draw(drawCommand);
 
 		if (drawCommand.renderMode == RenderMode::Mesh) {
 			if (!drawCommand.simulationPaused) {
@@ -569,10 +575,23 @@ namespace Fluid_3D_PBF {
 			cudaDeviceSynchronize();
 			pointSprites->draw(drawCommand, particleSpacing / 2, skybox.texSkyBox);
 		}
-
+		
 	}
 
-	glm::vec2 Fluid::getCenter() {
-		return glm::vec2(gridPhysicalSize.x/2, gridPhysicalSize.z / 2);
+	glm::vec3 Fluid::getCenter() {
+		return glm::vec3(gridPhysicalSize.x / 2, gridPhysicalSize.y / 2, gridPhysicalSize.z / 2);
+	}
+
+	Fluid::~Fluid() {
+		HANDLE_ERROR(cudaFree(particles));
+
+		HANDLE_ERROR(cudaFree(particleHashes));
+		HANDLE_ERROR(cudaFree(cellBegin));
+		HANDLE_ERROR(cudaFree(cellEnd));
+
+
+
+		HANDLE_ERROR(cudaFree(particleIndices));
+		HANDLE_ERROR(cudaFree(particlesCopy));
 	}
 }

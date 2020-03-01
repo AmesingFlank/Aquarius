@@ -13,6 +13,8 @@
 #include "Fluid_3D_common.cuh"
 #include "../Rendering/Renderer3D/Mesher.cuh"
 #include "../Rendering/Renderer3D/FluidMeshRenderer.cuh"
+#include "../Rendering/Renderer3D/Container.h"
+
 
 
 
@@ -56,8 +58,8 @@ namespace Fluid_3D_PBF {
 		int* cellBegin;
 		int* cellEnd;
 
-		float timestep = 0.033;
-		float substeps = 4;
+		float timestep ;
+		int substeps ;
 
 		float3 gridPhysicalSize = make_float3(10.f, 10.f, 10.f);
 
@@ -65,7 +67,7 @@ namespace Fluid_3D_PBF {
 
 		float restDensity;
 
-		float particleCountWhenFull = 3e5;
+		float particleCountWhenFull ;
 
 		float kernelRadiusToSpacingRatio = 2.01;
 
@@ -79,7 +81,7 @@ namespace Fluid_3D_PBF {
 		float particleSpacing;
 
 
-		float solverIterations = 4;
+		int solverIterations;
 
 
 
@@ -93,18 +95,21 @@ namespace Fluid_3D_PBF {
 		std::shared_ptr<FluidMeshRenderer> meshRenderer;
 		std::shared_ptr<PointSprites> pointSprites;
 
-		std::shared_ptr<FluidConfig3D> fluidConfig;
+		FluidConfig fluidConfig;
+
+		std::shared_ptr<Container> container;
 
 
 
 		Fluid();
+		virtual ~Fluid() override;
 
 
 		virtual void draw(const DrawCommand& drawCommand) override;
 
-		virtual glm::vec2 getCenter() override;
+		virtual glm::vec3 getCenter() override;
 
-		virtual void init(std::shared_ptr<FluidConfig> config) override;
+		virtual void init(FluidConfig config) override;
 
 		virtual void simulationStep() override;
 

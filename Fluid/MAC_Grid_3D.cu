@@ -121,3 +121,20 @@ float MAC_Grid_3D::getMaxSpeed() {
 
 	return maxSpeed;
 }
+
+MAC_Grid_3D::~MAC_Grid_3D() {
+	releaseField3D(volumes. content);
+	releaseField3D(volumes. pressure);
+	releaseField3D(volumes. fluidIndex);
+	releaseField3D(volumes. divergence);
+	releaseField3D(volumes. particleCount);
+
+	releaseField3D(volumes. velocityAccumWeight);
+	releaseField3D(volumes. hasVelocity);
+
+	releaseField3D(volumes. velocity);
+	releaseField3D(volumes. newVelocity);
+
+	releaseField3D(volumes. volumeFractions);
+	releaseField3D(volumes. newVolumeFractions);
+}

@@ -45,36 +45,32 @@ public:
 
 
 public:
-    GLuint Program;
+    GLuint program;
 	Shader(const std::string& vertexPath, const std::string& fragmentPath,
 		const std::vector<std::string>& fragmentAdditionalPaths = std::vector<std::string>());
 
-	void Use() { glUseProgram(this->Program); }
+	void use() { glUseProgram(this->program); }
+
+	~Shader();
+
+	GLint getUniformLocation(std::string name);
+
+	void setUniform1i(std::string name,int val,bool debug = false);
+	void setUniform1f(std::string name,float val, bool debug = false);
+
+	void setUniformMat4(std::string name, const glm::mat4& mat, bool debug = false);
+	void setUniform3f(std::string name, float3 val, bool debug = false);
+	void setUniform3f(std::string name, glm::vec3 val, bool debug = false);
+	void setUniform4f(std::string name, float4 val, bool debug = false);
+	void setUniform4f(std::string name, glm::vec4 val, bool debug = false);
+
+	
 
 private:
-    void checkCompileErrors(GLuint shader, std::string type)
-    {
-        GLint success;
-        GLchar infoLog[1024];
-        if(type != "PROGRAM")
-        {
-            glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-            if(!success)
-            {
-                glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-                std::cout << "| ERROR::::SHADER-COMPILATION-ERROR of type: " << type << "|\n" << infoLog << "\n| -- --------------------------------------------------- -- |" << std::endl;
-            }
-        }
-        else
-        {
-            glGetProgramiv(shader, GL_LINK_STATUS, &success);
-            if(!success)
-            {
-                glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-                std::cout << "| ERROR::::PROGRAM-LINKING-ERROR of type: " << type << "|\n" << infoLog << "\n| -- --------------------------------------------------- -- |" << std::endl;
-            }
-        }
-    }
+	void checkCompileErrors(GLuint shader, std::string type);
+	
+
+
 };
 
 #endif //AQUARIUS_SHADER_H

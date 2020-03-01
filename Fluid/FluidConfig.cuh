@@ -11,42 +11,95 @@
 #include <memory>
 #include "../Common/GpuCommons.h"
 
+// Values are default values
+
+
 enum class ShapeType {
 	Sphere,Square
 };
 
 struct InitializationVolume {
 
-	ShapeType shapeType;
+	ShapeType shapeType = ShapeType::Square;
 
-	std::vector< float > params;
+	std::vector< float > params = {0,0,0,0,0,0};
 
-	int phase;
+	int phase = 0;
 };
 
-
-struct FluidConfig {
-	int dimension;
-	std::string method;
+struct ConfigFLIP {
+	int sizeX = 50;
+	int sizeY = 50;
+	int sizeZ = 50;
+	int pressureIterations = 100;
+	int diffusionIterations = 100;
+	float timestep = 0.033;
 };
 
-struct FluidConfig3D:public FluidConfig {
-	int sizeX;
-	int sizeY;
-	int sizeZ;
+struct ConfigPBF {
+	float timestep = 0.033;
+	int substeps = 4;
+	int iterations = 2;
+	int maxParticleCount = 3e5;
+};
+
+struct ConfigPCISPH {
+	float timestep = 0.005;
+	int substeps = 1;
+	int iterations = 4;
+	int maxParticleCount = 3e5;
+	float stiffness = 15;
+};
+
+struct FluidConfig{
+
+
+
+	// Simulation Set-up
+	std::string method = "FLIP";
 	std::vector<InitializationVolume> initialVolumes;
+	float3 gravity = make_float3(0,-9.8,0);
 
-	int phaseCount;
+
+	// Multiphase Settings
+	int phaseCount = 2;
 	std::vector<float4> phaseColors;
+	float diffusionCoeff = 0.01;
 
-	float4* phaseColorsDevice;
-	float diffusionCoeff;
+
+	ConfigFLIP FLIP;
+	ConfigPBF PBF;
+	ConfigPCISPH PCISPH;
+
+	FluidConfig() {
+		initialVolumes.push_back(
+			{
+				ShapeType::Square,
+				std::vector<float>({0,0,0, 0.5,0.2,1}),
+				0
+			}
+		);
+		initialVolumes.push_back(
+			{
+				ShapeType::Square,
+				std::vector<float>({0.5,0,0, 1.0,0.2,1}),
+				1
+			}
+		);
+		initialVolumes.push_back(
+			{
+				ShapeType::Sphere,
+				std::vector<float>({0.5,0.8,0.5,   0.15}),
+				1
+			}
+		);
+
+		phaseColors.push_back(make_float4(0, 0, 1, 1));
+		phaseColors.push_back(make_float4(1, 0, 1, 1));
+	}
 };
 
-struct FluidConfig2D:public FluidConfig {
-	int sizeX;
-	int sizeY;
-	std::vector<InitializationVolume> initialVolumes;
-};
 
-std::shared_ptr<FluidConfig> getConfig();
+
+//FluidConfig getConfigFromFile();
+

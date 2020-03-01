@@ -1,131 +1,8 @@
 #include "Fluid_3D_PCISPH.cuh"
 
-#define SIMULATE_PARTICLES_NOT_FLUID 0
+
 
 namespace Fluid_3D_PCISPH {
-	// this is not for PCISPH.
-	// It is used for a pure particle simulation, same as the one in CUDA samples
-	__global__ void collide(Particle* particles, float cellSize, int particleCount, int* cellBegin, int* cellEnd, int3 gridSize, float kernelRadius, float timestep, float spacing) {
-		int index = blockIdx.x * blockDim.x + threadIdx.x;
-		if (index >= particleCount) return;
-
-
-		Particle& particle = particles[index];
-
-		float3 pos = particle.position;
-		int3 thisCell;
-
-		thisCell.x = pos.x / cellSize;
-		thisCell.y = pos.y / cellSize;
-		thisCell.z = pos.z / cellSize;
-
-		float3 force = { 0,0,0 };
-
-		float collideDist = spacing;;
-
-#pragma unroll
-		for (int dx = -1; dx <= 1; ++dx) {
-#pragma unroll
-			for (int dy = -1; dy <= 1; ++dy) {
-#pragma unroll
-				for (int dz = -1; dz <= 1; ++dz) {
-					int x = thisCell.x + dx;
-					int y = thisCell.y + dy;
-					int z = thisCell.z + dz;
-					if (x < 0 || x >= gridSize.x || y < 0 || y >= gridSize.y || z < 0 || z >= gridSize.z) {
-						continue;
-					}
-					int hash = x * gridSize.y * gridSize.z + y * gridSize.z + z;
-					if (cellBegin[hash] == -1) {
-						continue;
-					}
-					for (int j = cellBegin[hash]; j <= cellEnd[hash]; ++j) {
-
-						if (j != index) {
-							Particle& that = particles[j];
-							float3 relPos = that.position - particle.position;
-							float dist = length(relPos);
-
-							if (dist < collideDist) {
-								float3 norm = relPos / dist;
-
-								// relative velocity
-								float3 relVel = that.velosity - particle.velosity;
-
-								// relative tangential velocity
-								float3 tanVel = relVel - (dot(relVel, norm) * norm);
-
-								// spring force
-								force += -0.5 * (collideDist - dist) * norm;
-								// dashpot (damping) force
-								force += 0.02 * relVel;
-								// tangential shear force
-								force += 0.1 * tanVel;
-							}
-
-						}
-
-					}
-				}
-			}
-		}
-
-		particle.velosity += force;
-	}
-	// this is not for PCISPH.
-	// It is used for a pure particle simulation, same as the one in CUDA samples
-	__global__ void integrate(Particle* particles, float cellSize, int particleCount, int* cellBegin, int* cellEnd, int3 gridSize, float3 gridPhysicalSize, float kernelRadius, float timestep, float spacing) {
-		int index = blockIdx.x * blockDim.x + threadIdx.x;
-		if (index >= particleCount) return;
-
-
-		Particle& particle = particles[index];
-
-		particle.velosity += make_float3(0, -0.0003, 0) * timestep;
-
-		float3 pos = particle.position;
-		float3 vel = particle.velosity;
-
-		pos += timestep * vel;
-
-		float bounce = -0.5;
-
-		if (pos.x < spacing) {
-			pos.x = spacing;
-			vel.x *= bounce;;
-		}
-
-		if (pos.x > gridPhysicalSize.x - spacing) {
-			pos.x = gridPhysicalSize.x - spacing;
-			vel.x *= bounce;;
-		}
-
-		if (pos.y < spacing) {
-			pos.y = spacing;
-			vel.y *= bounce;;
-		}
-
-		if (pos.y > gridPhysicalSize.y - spacing) {
-			pos.y = gridPhysicalSize.y - spacing;
-			vel.y *= bounce;;
-		}
-
-		if (pos.z < spacing) {
-			pos.z = spacing;
-			vel.z *= bounce;;
-		}
-
-		if (pos.z > gridPhysicalSize.z - spacing) {
-			pos.z = gridPhysicalSize.z - spacing;
-			vel.z *= bounce;;
-		}
-
-
-
-		particle.position = pos;
-		particle.velosity = vel;
-
-	}
 
 
 
@@ -133,18 +10,12 @@ namespace Fluid_3D_PCISPH {
 
 
 
-
-
-
-
-
-
-	__global__ void computeExternalForcesImpl(Particle* particles, int particleCount) {
+	__global__ void computeExternalForcesImpl(Particle* particles, int particleCount,float3 gravity) {
 		int index = blockIdx.x * blockDim.x + threadIdx.x;
 		if (index >= particleCount) return;
 
 		Particle& particle = particles[index];
-		particle.acceleration = make_float3(0, -9.8, 0);
+		particle.acceleration = gravity;
 
 	}
 
@@ -347,7 +218,7 @@ namespace Fluid_3D_PCISPH {
 
 	void Fluid::draw(const DrawCommand& drawCommand){
 		skybox.draw(drawCommand);
-		//container.draw(drawCommand);
+		container->draw(drawCommand);
 
 
 		if (drawCommand.renderMode == RenderMode::Mesh) {
@@ -431,10 +302,6 @@ namespace Fluid_3D_PCISPH {
 					jitter.y *= (random0to1() - 0.5) * particleSpacing * 0.01;
 					jitter.z *= (random0to1() - 0.5) * particleSpacing * 0.01;
 
-#if  SIMULATE_PARTICLES_NOT_FLUID
-					pos += jitter;
-#endif //  SIMULATE_PARTICLES_NOT_FLUID
-
 
 					
 					if (length(pos-physicalCenter) < physicalRadius) {
@@ -446,14 +313,18 @@ namespace Fluid_3D_PCISPH {
 		}
 	}
 
-	void Fluid::init(std::shared_ptr<FluidConfig> config) {
+	void Fluid::init(FluidConfig config) {
 
-#if SIMULATE_PARTICLES_NOT_FLUID
+		particleCountWhenFull = config.PCISPH.maxParticleCount;
+		stiffness = config.PCISPH.stiffness;
+		timestep = config.PCISPH.timestep;
+		substeps = config.PCISPH.substeps;
+		iterations = config.PCISPH.iterations;
 
-		kernelRadius = gridPhysicalSize.x / 64;
-		particleSpacing = kernelRadius / 2;
-		
-#else
+		this->fluidConfig = config;
+
+
+
 		particleSpacing = pow(gridPhysicalSize.x * gridPhysicalSize.y * gridPhysicalSize.z / particleCountWhenFull, 1.0 / 3.0);
 
 		particleSpacing = gridPhysicalSize.x / ceil(gridPhysicalSize.x / particleSpacing); // so that gridPhysicalSize is exact multiple.
@@ -462,14 +333,13 @@ namespace Fluid_3D_PCISPH {
 		kernelRadius2 = kernelRadius * kernelRadius;
 		kernelRadius6 = kernelRadius2 * kernelRadius2 * kernelRadius2;
 		kernelRadius9 = kernelRadius6 * kernelRadius2 * kernelRadius;
-#endif
+
 
 		
 
 		std::vector<Particle> particlesVec;
 
-		std::shared_ptr<FluidConfig3D> config3D = std::static_pointer_cast<FluidConfig3D, FluidConfig>(config);
-		for (const InitializationVolume& vol : config3D->initialVolumes) {
+		for (const InitializationVolume& vol : config.initialVolumes) {
 			if (vol.shapeType == ShapeType::Square) {
 				float3 minPos = make_float3(vol.params[0], vol.params[1], vol.params[2]);
 				float3 maxPos = make_float3(vol.params[3], vol.params[4], vol.params[5]);
@@ -546,6 +416,8 @@ namespace Fluid_3D_PCISPH {
 
 		mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
 		cudaDeviceSynchronize();
+
+		container = std::make_shared<Container>(gridPhysicalSize.x);
 	}
 
 	void Fluid::computeRestDensity() {
@@ -557,28 +429,9 @@ namespace Fluid_3D_PCISPH {
 	}
 
 
-	void Fluid::simulateAsParticles() {
-		for (int j = 0; j < 1; ++j) {
-			float particlesTimestep = 0.5;
 
-			float beforeHashing = glfwGetTime();
-
-			performSpatialHashing(particleHashes, particles, particleCount, kernelRadius, gridSize.x, gridSize.y, gridSize.z, numBlocks, numThreads, cellBegin, cellEnd, cellCount);
-
-			float afterHashing = glfwGetTime();
-
-			integrate << <numBlocks, numThreads >> > (particles, kernelRadius, particleCount, cellBegin, cellEnd, gridSize, gridPhysicalSize, kernelRadius, particlesTimestep, particleSpacing);
-
-			collide << <numBlocks, numThreads >> > (particles, kernelRadius, particleCount, cellBegin, cellEnd, gridSize, kernelRadius, particlesTimestep, particleSpacing);
-		}
-	}
-
-	
 	void Fluid::simulationStep() {
 
-#if SIMULATE_PARTICLES_NOT_FLUID
-		simulateAsParticles(); return;
-#endif
 
 		for (int i = 0; i < substeps; ++i) {
 
@@ -588,11 +441,8 @@ namespace Fluid_3D_PCISPH {
 			initPressure();
 
 			int iter = 0;
-			while (iter < minIterations || hasBigError()) {
-				if (iter > 4) {
-					//std::cout << "hit max iters" << std::endl;
-					break;
-				}
+			while (iter < iterations) {
+				
 				predictVelocityAndPosition();
 
 				predictDensityAndPressure();
@@ -607,16 +457,13 @@ namespace Fluid_3D_PCISPH {
 	}
 
 	void Fluid::computeExternalForces() {
-		computeExternalForcesImpl << <numBlocks, numThreads >> > (particles, particleCount);
+		computeExternalForcesImpl << <numBlocks, numThreads >> > (particles, particleCount,fluidConfig.gravity);
 	}
 
 	void Fluid::initPressure() {
 		initPressureImpl << <numBlocks, numThreads >> > (particles, particleCount);
 	}
 
-	bool Fluid::hasBigError() {
-		return true;
-	}
 
 	void Fluid::predictVelocityAndPosition() {
 		predictVelocityAndPositionImpl << <numBlocks, numThreads >> >
@@ -638,7 +485,19 @@ namespace Fluid_3D_PCISPH {
 			(particles, particleCount, timestep / (float)substeps, true, particleSpacing, gridPhysicalSize);
 	}
 
-	glm::vec2 Fluid::getCenter() {
-		return glm::vec2(gridPhysicalSize.x / 2, gridPhysicalSize.z / 2);
+	glm::vec3 Fluid::getCenter() {
+		return glm::vec3(gridPhysicalSize.x / 2, gridPhysicalSize.y / 2,gridPhysicalSize.z / 2);
+	}
+	Fluid::~Fluid() {
+		HANDLE_ERROR(cudaFree(particles));
+
+		HANDLE_ERROR(cudaFree(particleHashes));
+		HANDLE_ERROR(cudaFree(cellBegin));
+		HANDLE_ERROR(cudaFree(cellEnd));
+
+
+
+		HANDLE_ERROR(cudaFree(particleIndices));
+		HANDLE_ERROR(cudaFree(particlesCopy));
 	}
 }

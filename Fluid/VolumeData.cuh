@@ -77,3 +77,9 @@ VolumeData createField3D(int sizeX, int sizeY, int sizeZ, dim3 cudaGridSize, dim
 };
 
 
+
+inline void releaseField3D(VolumeData volume) {
+	HANDLE_ERROR(cudaFreeArray(volume.array));
+	HANDLE_ERROR(cudaDestroySurfaceObject(volume.surface));
+	HANDLE_ERROR(cudaDestroyTextureObject(volume.texture));
+}

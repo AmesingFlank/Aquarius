@@ -1,5 +1,4 @@
 
-in vec3 TexCoords;
 in vec4 VolumeFractions;
 
 layout(location = 0) out vec4 phaseThickness;

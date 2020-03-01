@@ -54,7 +54,7 @@ void inline performSpatialHashing2(int* particleIndices, int* particleHashes, Pa
 }
 
 
-void  applyGravity(float timeStep, MAC_Grid_3D& grid, float gravitationalAcceleration);
+void  applyGravity(float timeStep, MAC_Grid_3D& grid, float3 gravitationalAcceleration);
 
 void  fixBoundary(MAC_Grid_3D& grid);
 

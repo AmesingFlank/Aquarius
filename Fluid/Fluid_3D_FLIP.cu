@@ -307,7 +307,7 @@ namespace Fluid_3D_FLIP {
 		transferToGrid();
 		//grid->updateFluidCount();
 
-		applyGravity(timestep, *grid, gravitationalAcceleration);
+		applyGravity(timestep, *grid, config.gravity);
 
 		fixBoundary(*grid);
 
@@ -317,14 +317,14 @@ namespace Fluid_3D_FLIP {
 
 		//solvePressure(timestep,*grid);
 
-		solvePressureJacobi(timestep, *grid, 100);
+		solvePressureJacobi(timestep, *grid, config.FLIP.pressureIterations);
 
 
 		updateVelocityWithPressure(timestep, *grid);
 
 		extrapolateVelocity(timestep, *grid);
 
-		solveDiffusionJacobi(timestep, *grid, 100, fluidConfig->diffusionCoeff,cellPhysicalSize);
+		solveDiffusionJacobi(timestep, *grid, config.FLIP.diffusionIterations, config.diffusionCoeff,cellPhysicalSize);
 
 
 		transferToParticles();
@@ -395,7 +395,7 @@ namespace Fluid_3D_FLIP {
 			//updatePositionsAndPhasesVBO <<<numBlocksInkParticle, numThreadsInkParticle >>> (inkParticles, pointSpritesInk->positionsDevice, inkParticleCount, pointSprites->stride);
 			cudaDeviceSynchronize();
 
-			meshRenderer->drawWithInk(drawCommand,skybox.texSkyBox,*pointSprites,cellPhysicalSize/2,fluidConfig->phaseColors);
+			meshRenderer->drawWithInk(drawCommand,skybox.texSkyBox,*pointSprites,cellPhysicalSize/2,config.phaseColors);
 
 		}
 		else {
@@ -410,15 +410,14 @@ namespace Fluid_3D_FLIP {
 		printGLError();
 
 	}
-	void Fluid::init(std::shared_ptr<FluidConfig> config) {
+	void Fluid::init(FluidConfig config) {
 
-		std::shared_ptr<FluidConfig3D> config3D = std::static_pointer_cast<FluidConfig3D, FluidConfig>(config);
-		this->config = config3D;
+		this->config = config;
 
-		fluidConfig = config3D;
-		sizeX = config3D->sizeX;
-		sizeY = config3D->sizeY;
-		sizeZ = config3D->sizeZ;
+		timestep = config.FLIP.timestep;
+		sizeX = config.FLIP.sizeX;
+		sizeY = config.FLIP.sizeY;
+		sizeZ = config.FLIP.sizeZ;
 		cellCount = (sizeX + 1) * (sizeY + 1) * (sizeZ + 1);
 		cellPhysicalSize = gridPhysicalSize / (float)sizeY;
 
@@ -426,14 +425,14 @@ namespace Fluid_3D_FLIP {
 
 		grid = std::make_shared<MAC_Grid_3D>(sizeX, sizeY, sizeZ, cellPhysicalSize);
 
-		if (config3D->phaseCount > 4) {
+		if (config.phaseCount > 4) {
 			throw "Only supports up to 4 phases";
 		}
 
 		grid->fluidCount = 0;
 		std::vector <Particle> particlesHost;
 
-		for (const InitializationVolume& vol : config3D->initialVolumes) {
+		for (const InitializationVolume& vol : config.initialVolumes) {
 			if (vol.shapeType == ShapeType::Square) {
 				float3 minPos = make_float3(vol.params[0], vol.params[1], vol.params[2]);
 				float3 maxPos = make_float3(vol.params[3], vol.params[4], vol.params[5]);
@@ -449,6 +448,7 @@ namespace Fluid_3D_FLIP {
 
 		particleCount = particlesHost.size();
 
+		std::cout << "FLIP particle count " << particleCount << std::endl;
 		
 
 		HANDLE_ERROR(cudaMalloc(&particles, particleCount * sizeof(Particle)));
@@ -661,7 +661,7 @@ namespace Fluid_3D_FLIP {
 		inkParticlesSpacing = cellPhysicalSize / 4;
 
 
-		for (const InitializationVolume& vol : fluidConfig->initialVolumes) {
+		for (const InitializationVolume& vol : config.initialVolumes) {
 			if (vol.shapeType == ShapeType::Square) {
 				float3 minPos = make_float3(vol.params[0], vol.params[1], vol.params[2]);
 				float3 maxPos = make_float3(vol.params[3], vol.params[4], vol.params[5]);
@@ -710,8 +710,23 @@ namespace Fluid_3D_FLIP {
 	}
 
 
-	glm::vec2 Fluid::getCenter() {
-		return glm::vec2(gridPhysicalSize / 2, gridPhysicalSize / 2);
+	glm::vec3 Fluid::getCenter() {
+		return glm::vec3(gridPhysicalSize / 2, gridPhysicalSize / 2, gridPhysicalSize / 2);
+	}
+
+	Fluid::~Fluid() {
+		HANDLE_ERROR(cudaFree(particles));
+
+		HANDLE_ERROR(cudaFree(particleHashes ));
+		HANDLE_ERROR(cudaFree(cellStart ));
+		HANDLE_ERROR(cudaFree(cellEnd ));
+
+
+
+		HANDLE_ERROR(cudaFree(particleIndices));
+		HANDLE_ERROR(cudaFree(particlesCopy));
+
+		//HANDLE_ERROR(cudaFree(inkParticles));
 	}
 
 }

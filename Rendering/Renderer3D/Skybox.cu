@@ -5,13 +5,10 @@ Skybox::Skybox(const std::string& path, const std::string& extension) {
 	std::string vsPath = Shader::SHADERS_PATH("Skybox_vs.glsl");
 	std::string fsPath = Shader::SHADERS_PATH("Skybox_fs.glsl");
 
-	shader = new Shader(vsPath, fsPath);
+	shader = std::make_shared<Shader>(vsPath, fsPath);
 
 
-	vPos_location = glGetAttribLocation(shader->Program, "position");
-	model_location = glGetUniformLocation(shader->Program, "model");
-	view_location = glGetUniformLocation(shader->Program, "view");
-	projection_location = glGetUniformLocation(shader->Program, "projection");
+	GLint vPos_location = glGetAttribLocation(shader->program, "position");
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -57,16 +54,27 @@ Skybox::Skybox(const std::string& path, const std::string& extension) {
 void Skybox::draw(const DrawCommand& drawCommand) {
 
 	glDepthMask(GL_FALSE);
-	glUseProgram(shader->Program);
+	glUseProgram(shader->program);
 	glBindVertexArray(VAO);
+
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, texSkyBox);
+	shader->setUniform1i("skybox", 0);
+	
 
 	glm::mat4 newView = glm::mat4(glm::mat3(drawCommand.view));
-	glUniformMatrix4fv(model_location, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(model));
-	glUniformMatrix4fv(view_location, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(newView));
-	glUniformMatrix4fv(projection_location, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.projection));
+	shader->setUniformMat4("model", model);
+	shader->setUniformMat4("view", newView);
+	shader->setUniformMat4("projection", drawCommand.projection);
 
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 	glDepthMask(GL_TRUE);
+}
+
+Skybox::~Skybox() {
+	glDeleteBuffers(1, &VBO);
+	glDeleteVertexArrays(1, &VAO);
+
+	glDeleteTextures(1, &texSkyBox);
 }

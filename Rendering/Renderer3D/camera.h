@@ -8,124 +8,188 @@
 
 
 
-// Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
-enum Camera_Movement {
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT
+enum class CameraMovement {
+   
+	RotateUp,
+	RotateDown,
+	RotateRight,
+	RotateLeft,
+
+	MoveForward,
+	MoveBackward,
+	MoveRight,
+	MoveLeft,
 };
 
-// Default camera values
-const GLfloat YAW        = -90.0f;
-const GLfloat PITCH      =  0.0f;
-const GLfloat SPEED      =  3.0f;
-const GLfloat SENSITIVTY =  0.25f;
-const GLfloat ZOOM       =  45.0f;
+inline glm::vec3 eulerToVec(double yaw, double pitch) {
+	glm::vec3 v;
+	v.x = -sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	v.y = sin(glm::radians(pitch));
+	v.z = -cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	return glm::normalize(v);
+}
 
 
-// An abstract camera class that processes input and calculates the corresponding Eular Angles, Vectors and Matrices for use in OpenGL
+inline void vecToEuler(glm::vec3 v, double& yaw, double& pitch) {
+	v = glm::normalize(v);
+	pitch = glm::degrees(asin(v.y));
+
+	double sinYaw = -v.x / cos(glm::radians(pitch));
+	double cosYaw = -v.z / cos(glm::radians(pitch));
+
+	yaw = acos(cosYaw);
+	if (sinYaw < 0) {
+		yaw = -yaw;
+	}
+
+	yaw = glm::degrees(yaw);
+
+}
+
+inline void printVec3(glm::vec3 v) {
+	std::cout << v.x << " " << v.y << " " << v.z << std::endl;
+}
+
 class Camera
 {
 public:
-    // Camera Attributes
-    glm::vec3 Position;
-    glm::vec3 Front;
-    glm::vec3 Up;
-    glm::vec3 Right;
-    glm::vec3 WorldUp;
-    // Eular Angles
-    GLfloat Yaw;
-    GLfloat Pitch;
-    // Camera options
-    GLfloat MovementSpeed;
-    GLfloat MouseSensitivity;
-    GLfloat Zoom;
 
-    // Constructor with vectors
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), GLfloat yaw = YAW, GLfloat pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
+	glm::vec3 position;
+    glm::vec3 front;
+    glm::vec3 up;
+    glm::vec3 right;
+    glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+	double yaw;
+    double pitch;
+
+	double globalYaw;
+	double globalPitch;
+	float globalRadius = 20;
+
+	float globalRotationSpeed = 1;
+	float globalMovementSpeed = 0.3;
+	float perspectiveRotationSpeed = 0.3;
+
+
+	const float FOV = 45;
+
+	glm::vec3 lookCenter;
+
+
+
+    Camera(glm::vec3 lookCenter_) 
     {
-        this->Position = position;
-        this->WorldUp = up;
-        this->Yaw = yaw;
-        this->Pitch = pitch;
-        this->updateCameraVectors();
-    }
-    // Constructor with scalar values
-    Camera(GLfloat posX, GLfloat posY, GLfloat posZ, GLfloat upX, GLfloat upY, GLfloat upZ, GLfloat yaw, GLfloat pitch) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY), Zoom(ZOOM)
-    {
-        this->Position = glm::vec3(posX, posY, posZ);
-        this->WorldUp = glm::vec3(upX, upY, upZ);
-        this->Yaw = yaw;
-        this->Pitch = pitch;
-        this->updateCameraVectors();
-    }
+		this->lookCenter = lookCenter_;
 
-    // Returns the view matrix calculated using Eular Angles and the LookAt Matrix
-    glm::mat4 GetViewMatrix()
-    {
-        return glm::lookAt(this->Position, this->Position + this->Front, this->Up);
-    }
+		yaw = 180;
+        pitch = -30;
+
+		globalYaw = 0;
+		globalPitch = 30;
+
+		updatePositionWithEuler();
+		lookAtCenter();
+
+		printVec3(getActualPosition());
+		printVec3(position);
+		printVec3(front);
+		printVec3(up);
+		std::cout << globalYaw << " " << globalPitch << std::endl << std::endl;
+    } 
+
+	void updatePositionWithEuler() {
+		position = eulerToVec(globalYaw , globalPitch) * globalRadius;
+	}
+
+	void updateEulerWithPosition() {
+		vecToEuler(position, globalYaw, globalPitch);
+		globalRadius = glm::length(position);
+	}
+
+	void updateFrontWithEuler() {
+		front = eulerToVec(yaw, pitch);
+		updateRightUp();
+	}
 
 
-    float lastProcessKeyboardTime = -1;
-    // Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-    void ProcessKeyboard(Camera_Movement direction)
-    {
-        float now = glfwGetTime();
-        if(lastProcessKeyboardTime<0){
-            lastProcessKeyboardTime = now;
-        }
-        float deltaTime = now-lastProcessKeyboardTime;
-        GLfloat velocity = this->MovementSpeed * deltaTime;
-        if (direction == FORWARD)
-            this->Position += this->Front * velocity;
-        if (direction == BACKWARD)
-            this->Position -= this->Front * velocity;
-        if (direction == LEFT)
-            this->Position -= this->Right * velocity;
-        if (direction == RIGHT)
-            this->Position += this->Right * velocity;
-        lastProcessKeyboardTime = now;
-		//std::cout << "camera at " << Position.x << "  " << Position.y <<"  "<< Position.z << std::endl;
-    }
+	void lookAtCenter() {
+		front = glm::normalize(-position);
+		updateRightUp();
+	}
 
-    // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
-    void ProcessMouseMovement(GLfloat xoffset, GLfloat yoffset, GLboolean constrainPitch = true)
-    {
-        xoffset *= this->MouseSensitivity;
-        yoffset *= this->MouseSensitivity;
+	void updateRightUp() {
+		this->right = glm::normalize(glm::cross(this->front, this->worldUp));
+		this->up = glm::normalize(glm::cross(this->right, this->front));
+	}
 
-        this->Yaw   += xoffset;
-        this->Pitch += yoffset;
+	// The camera treats lookPosition and the center of world coordinates
+	glm::vec3 getActualPosition() {
+		return lookCenter + position;
+	}
 
-        // Make sure that when pitch is out of bounds, screen doesn't get flipped
-        if (constrainPitch)
-        {
-            if (this->Pitch > 89.0f)
-                this->Pitch = 89.0f;
-            if (this->Pitch < -89.0f)
-                this->Pitch = -89.0f;
-        }
-
-        // Update Front, Right and Up Vectors using the updated Eular angles
-        this->updateCameraVectors();
+    glm::mat4 getViewMatrix(){
+        return glm::lookAt(getActualPosition(), getActualPosition() + front, up);
     }
 
+	void clampPitch() {
+		pitch = max(-89.0, min(89.0, pitch));
+		globalPitch = max(-89.0, min(89.0, globalPitch));
+	}
 
 
-private:
-    // Calculates the front vector from the Camera's (updated) Eular Angles
-    void updateCameraVectors()
-    {
-        // Calculate the new Front vector
-        glm::vec3 front;
-        front.x = cos(glm::radians(this->Yaw)) * cos(glm::radians(this->Pitch));
-        front.y = sin(glm::radians(this->Pitch));
-        front.z = sin(glm::radians(this->Yaw)) * cos(glm::radians(this->Pitch));
-        this->Front = glm::normalize(front);
-        // Also re-calculate the Right and Up vector
-        this->Right = glm::normalize(glm::cross(this->Front, this->WorldUp));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-        this->Up    = glm::normalize(glm::cross(this->Right, this->Front));
-    }
+	void doMovement(CameraMovement move) {
+		if (move == CameraMovement::RotateLeft) {
+			globalYaw -= globalRotationSpeed;
+			yaw -= globalRotationSpeed;
+			updatePositionWithEuler();
+			updateFrontWithEuler();
+		}
+		if (move == CameraMovement::RotateRight) {
+			globalYaw += globalRotationSpeed;
+			yaw += globalRotationSpeed;
+			updatePositionWithEuler();
+			updateFrontWithEuler();
+		}
+		if (move == CameraMovement::RotateUp) {
+			globalPitch += globalRotationSpeed;
+			pitch -= globalRotationSpeed;
+			clampPitch();
+			updatePositionWithEuler();
+			updateFrontWithEuler();
+		}
+		if (move == CameraMovement::RotateDown) {
+			globalPitch -= globalRotationSpeed;
+			pitch += globalRotationSpeed;
+			clampPitch();
+			updatePositionWithEuler();
+			updateFrontWithEuler();
+		}
+		if (move == CameraMovement::MoveLeft) {
+			position -= right * globalMovementSpeed;
+			updateEulerWithPosition();
+		}
+		if (move == CameraMovement::MoveRight) {
+			position += right * globalMovementSpeed;
+			updateEulerWithPosition();
+		}
+		if (move == CameraMovement::MoveBackward) {
+			position -= front * globalMovementSpeed;
+			updateEulerWithPosition();
+		}
+		if (move == CameraMovement::MoveForward) {
+			position += front * globalMovementSpeed;
+			updateEulerWithPosition();
+		}
+		
+	}
+
+
+	void perspectiveChange(float dx, float dy) {
+		yaw -= dx * perspectiveRotationSpeed;
+		pitch += dy * perspectiveRotationSpeed;
+		clampPitch();
+		updateFrontWithEuler();
+	}
+
 };

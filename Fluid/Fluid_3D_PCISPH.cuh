@@ -60,8 +60,8 @@ namespace Fluid_3D_PCISPH {
 		int* cellBegin;
 		int* cellEnd;
 
-		float timestep = 0.005;
-		float substeps = 1;
+		float timestep ;
+		float substeps ;
 
 		float3 gridPhysicalSize = make_float3(10.f, 10.f, 10.f);
 
@@ -69,11 +69,11 @@ namespace Fluid_3D_PCISPH {
 
 		float restDensity;
 
-		float particleCountWhenFull = 3e5;
+		float particleCountWhenFull ;
 
 		float kernelRadiusToSpacingRatio = 2;
 
-		float stiffness = 15;
+		float stiffness;
 
 		float kernelRadius;
 		float kernelRadius2;
@@ -82,15 +82,13 @@ namespace Fluid_3D_PCISPH {
 
 		float particleSpacing;
 
-		float minIterations = 4;
-
-		float maxIterations = 10;
+		int iterations;
 
 
 
 		int numThreads, numBlocks;
 
-		//Container container = Container(glm::vec3(gridPhysicalSize.x, gridPhysicalSize.y, gridPhysicalSize.z));
+		std::shared_ptr<Container> container;
 
 		Skybox skybox = Skybox("resources/Skyboxes/GamlaStan2/",".jpg");
 
@@ -98,14 +96,16 @@ namespace Fluid_3D_PCISPH {
 		std::shared_ptr<FluidMeshRenderer> meshRenderer;
 		std::shared_ptr<PointSprites> pointSprites;
 
-		Fluid();
+		FluidConfig fluidConfig;
 
+		Fluid();
+		virtual ~Fluid() override;
 
 		virtual void draw(const DrawCommand& drawCommand) override;
 
-		virtual void init(std::shared_ptr<FluidConfig> config);
+		virtual void init(FluidConfig config);
 
-		virtual glm::vec2 getCenter() override;
+		virtual glm::vec3 getCenter() override;
 
 		void computeRestDensity();
 
@@ -114,7 +114,7 @@ namespace Fluid_3D_PCISPH {
 		void computeExternalForces();
 
 		void initPressure();
-		bool hasBigError();
+
 		void predictVelocityAndPosition();
 		void predictDensityAndPressure();
 
@@ -126,9 +126,6 @@ namespace Fluid_3D_PCISPH {
 		void createSquareFluid(std::vector<Particle>& particlesVec, float3 minPos, float3 maxPos);
 		void createSphereFluid(std::vector<Particle>& particlesVec, float3 center, float radius);
 
-
-		//simulate as particles (same as the one in cuda samples). For debugging only.
-		void simulateAsParticles();
 
 
 	};

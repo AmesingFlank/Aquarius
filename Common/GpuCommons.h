@@ -31,6 +31,7 @@
 
 #include <thrust/functional.h>
 #include <thrust/reduce.h>
+#include "Commons.h"
 
 inline const char* cublasGetErrorString(cublasStatus_t status)
 {
@@ -302,13 +303,5 @@ inline GLFWwindow* createWindowOpenGL(int screenWidth,int screenHeight){
     return window;
 }
 
-inline float random0to1(){
-    return (float)rand()/(float)RAND_MAX;
-}
-
-inline int divUp(int a,int b){
-    int result =  (a % b != 0) ? (a/b + 1) : (a / b);
-    return result;
-}
 
 #endif //AQUARIUS_GPUCOMMONS_H

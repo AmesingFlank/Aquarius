@@ -1,6 +1,5 @@
 {
-  "dimension": 3,
-  "method": "Fluid_3D_FLIP",
+  "method": "FLIP",
   "sizeX": 50,
   "sizeY": 50,
   "sizeZ": 50,
@@ -35,15 +34,16 @@
         0.5,
         0.8,
         0.5,
-        0.0
+        0.15
       ],
-      "phase": 1
+      "phase": 2
     }
   ],
-  "NumPhases": 2,
+  "NumPhases": 3,
   "PhaseColors": [
     [ 0.0, 0.0, 1.0, 1.0 ],
-    [ 1.0, 0.0, 1.0, 1.0 ]
+    [ 1.0, 0.0, 1.0, 1.0 ],
+    [ 1.0, 1.0, 1.0, 1.0 ]
   ],
   "diffusion": 0.01
 }
