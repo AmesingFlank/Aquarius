@@ -103,21 +103,13 @@ void ScreenSpaceNormal::smoothDepth(int smoothIterations, int smoothRadius, floa
 	smoothShader->use();
 	glBindVertexArray(quadVAO);
 
-	GLuint windowWidthLocation = glGetUniformLocation(smoothShader->program, "windowWidth");
-	glUniform1f(windowWidthLocation, WindowInfo::instance().windowWidth);
+	smoothShader->setUniform1f("windowWidth", WindowInfo::instance().windowWidth);
+	smoothShader->setUniform1f("windowHeight", WindowInfo::instance().windowHeight);
 
-	GLuint windowHeightLocation = glGetUniformLocation(smoothShader->program, "windowHeight");
-	glUniform1f(windowHeightLocation, WindowInfo::instance().windowHeight);
-
-	GLuint smoothRadiusXLocation = glGetUniformLocation(smoothShader->program, "smoothRadiusX");
-	GLuint smoothRadiusYLocation = glGetUniformLocation(smoothShader->program, "smoothRadiusY");
+	smoothShader->setUniform1f("sigma_d", sigma_d,true);
+	smoothShader->setUniform1f("sigma_r", sigma_r,true);
 
 
-	GLuint sigma_d_location = glGetUniformLocation(smoothShader->program, "sigma_d");
-	glUniform1f(sigma_d_location, sigma_d);
-
-	GLuint sigma_r_location = glGetUniformLocation(smoothShader->program, "sigma_r");
-	glUniform1f(sigma_r_location, sigma_r);
 
 	int smoothRadiusX = smoothRadius;
 	int smoothRadiusY = smoothRadius;
@@ -151,14 +143,13 @@ void ScreenSpaceNormal::smoothDepth(int smoothIterations, int smoothRadius, floa
 		static const float zero[] = { 0,0,0,0 };
 		glClearBufferfv(GL_COLOR, 0, zero);
 
+		smoothShader->setUniform1i("smoothRadiusX", smoothRadiusX,true);
+		smoothShader->setUniform1i("smoothRadiusY", smoothRadiusY,true);
 
-		glUniform1i(smoothRadiusXLocation, smoothRadiusX);
-		glUniform1i(smoothRadiusYLocation, smoothRadiusY);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, lastDepthTexture);
-		GLuint depthTextureLocation = glGetUniformLocation(smoothShader->program, "depthTexture");
-		glUniform1i(depthTextureLocation, 0);
+		smoothShader->setUniform1i("depthTexture", 0);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -189,17 +180,13 @@ void ScreenSpaceNormal::renderNormal(const DrawCommand& drawCommand) {
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, lastDepthTexture);
-	GLuint depthTextureLocation = glGetUniformLocation(normalShader->program, "depthTexture");
-	glUniform1i(depthTextureLocation, 0);
+	normalShader->setUniform1i("depthTexture", 0,true);
 
-	GLuint windowWidthLocation = glGetUniformLocation(normalShader->program, "windowWidth");
-	glUniform1f(windowWidthLocation, WindowInfo::instance().windowWidth);
+	normalShader->setUniform1f("windowWidth", WindowInfo::instance().windowWidth);
+	normalShader->setUniform1f("windowHeight", WindowInfo::instance().windowHeight);
 
-	GLuint windowHeightLocation = glGetUniformLocation(normalShader->program, "windowHeight");
-	glUniform1f(windowHeightLocation, WindowInfo::instance().windowHeight);
+	normalShader->setUniform1f("zoom", drawCommand.zoom);
 
-	GLuint zoomLocation = glGetUniformLocation(normalShader->program, "zoom");
-	glUniform1f(zoomLocation, drawCommand.zoom);
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 

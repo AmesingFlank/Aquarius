@@ -54,22 +54,19 @@ void FluidMeshRenderer::drawWithInk(const DrawCommand& drawCommand, GLuint skybo
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, points.phaseThicknessTexture);
-	GLuint phaseThicknessTextureLocation = glGetUniformLocation(shader->program, "phaseThicknessTexture");
-	glUniform1i(phaseThicknessTextureLocation, 0);
+	shader->setUniform1i("phaseThicknessTexture", 0);
 
-	GLuint usePhaseThicknessTextureLocation = glGetUniformLocation(shader->program, "usePhaseThicknessTexture");
-	glUniform1i(usePhaseThicknessTextureLocation, 1);
+
+	shader->setUniform1i("usePhaseThicknessTexture", 1);
 
 
 	for (int i = 0; i < phaseColors.size(); ++i) {
 		std::string name = "phaseColors[" + std::to_string(i) + "]";
-		GLuint location = glGetUniformLocation(shader->program, name.c_str());
 		float4 color = phaseColors[i];
-		glUniform4f(location, color.x, color.y, color.z, color.w);
+		shader->setUniform4f(name, color);
 	}
 
-	GLuint phaseCountLocation = glGetUniformLocation(shader->program,"phaseCount");
-	glUniform1i(phaseCountLocation,phaseColors.size());
+	shader->setUniform1i("phaseCount", phaseColors.size());
 
 
 	draw(drawCommand, skybox); 
@@ -94,33 +91,25 @@ void FluidMeshRenderer::draw(const DrawCommand& drawCommand, GLuint skybox) {
 	shader->use();
 	glBindVertexArray(VAO);
 
-	GLuint modelLocation = glGetUniformLocation(shader->program, "model");
-	GLuint viewLocation = glGetUniformLocation(shader->program, "view");
-	GLuint projectionLocation = glGetUniformLocation(shader->program, "projection");
-
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(model));
-	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.view));
-	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.projection));
+	shader->setUniformMat4("model", model);
+	shader->setUniformMat4("view", drawCommand.view);
+	shader->setUniformMat4("projection", drawCommand.projection);
 
 	/*
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, screenSpaceNormalTexture);
-	GLuint normalTextureLocation = glGetUniformLocation(shader->program, "normalTexture");
-	glUniform1i(normalTextureLocation, 0);
+	shader->setUniform1i("normalTexture", 0);
 	*/
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
-	GLuint skyboxLocation = glGetUniformLocation(shader->program, "skybox");
-	glUniform1i(skyboxLocation, 1);
+	shader->setUniform1i("skybox", 1);
 
 	glm::mat4 inverseView = glm::inverse(drawCommand.view);
-	GLuint inverseViewLocation = glGetUniformLocation(shader->program, "inverseView");
-	glUniformMatrix4fv(inverseViewLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(inverseView));
+	shader->setUniformMat4("inverseView", inverseView);
 
 	glm::vec3 cameraPos = drawCommand.cameraPosition;
-	GLuint cameraPositionLocation = glGetUniformLocation(shader->program, "cameraPosition");
-	glUniform3f(cameraPositionLocation, cameraPos.x, cameraPos.y, cameraPos.z);
+	shader->setUniform3f("cameraPosition", drawCommand.cameraPosition);
 
 
 	glDrawArrays(GL_TRIANGLES, 0, count);
@@ -135,13 +124,9 @@ void FluidMeshRenderer::drawDepth(const DrawCommand& drawCommand) {
 
 	glm::mat4  model = glm::mat4(1.0);
 
-	GLuint modelLocation = glGetUniformLocation(depthShader->program, "model");
-	GLuint viewLocation = glGetUniformLocation(depthShader->program, "view");
-	GLuint projectionLocation = glGetUniformLocation(depthShader->program, "projection");
-
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(model));
-	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.view));
-	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.projection));
+	shader->setUniformMat4("model", model);
+	shader->setUniformMat4("view", drawCommand.view);
+	shader->setUniformMat4("projection", drawCommand.projection);
 
 	glDrawArrays(GL_TRIANGLES, 0, count);
 }

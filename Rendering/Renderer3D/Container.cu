@@ -10,13 +10,9 @@ Container::Container(float size) {
 void Container::drawEdges(const DrawCommand& drawCommand) {
 	edgesShader->use();
 
-	GLuint modelLocation = glGetUniformLocation(edgesShader->program, "model");
-	GLuint viewLocation = glGetUniformLocation(edgesShader->program, "view");
-	GLuint projectionLocation = glGetUniformLocation(edgesShader->program, "projection");
-
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(model));
-	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.view));
-	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.projection));
+	edgesShader->setUniformMat4("model", model);
+	edgesShader->setUniformMat4("view", drawCommand.view);
+	edgesShader->setUniformMat4("projection", drawCommand.projection);
 
 	glBindVertexArray(edgesVAO);
 
@@ -58,28 +54,21 @@ void Container::drawBottom(const DrawCommand& drawCommand) {
 
 	glm::mat4 bottomModel = bottomTranslate * bottomScale;
 
+	
 
+	bottomShader->setUniformMat4("model", model);
+	bottomShader->setUniformMat4("view", drawCommand.view);
+	bottomShader->setUniformMat4("projection", drawCommand.projection);
 
-	GLuint modelLocation = glGetUniformLocation(bottomShader->program, "model");
-	GLuint viewLocation = glGetUniformLocation(bottomShader->program, "view");
-	GLuint projectionLocation = glGetUniformLocation(bottomShader->program, "projection");
+	bottomShader->setUniform3f("cameraPos", drawCommand.cameraPosition);
+	bottomShader->setUniform3f("lightPos", drawCommand.lightPos);
 
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(bottomModel));
-	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.view));
-	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.projection));
+	bottomShader->setUniform1f("boxSize", size);
 
-	GLuint cameraPosLocation = glGetUniformLocation(bottomShader->program, "cameraPos");
-	glUniform3f(cameraPosLocation, drawCommand.cameraPosition.x, drawCommand.cameraPosition.y, drawCommand.cameraPosition.z);
-
-	GLuint lightPosLocation = glGetUniformLocation(bottomShader->program, "lightPos");
-	glUniform3f(lightPosLocation, drawCommand.lightPos.x, drawCommand.lightPos.y, drawCommand.lightPos.z);
-
-	GLuint boxSizeLocation = glGetUniformLocation(bottomShader->program, "boxSize");
-	glUniform1f(boxSizeLocation, size);
 
 	glBindVertexArray(bottomVAO);
 
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glDrawArrays(GL_TRIANGLES, 0, 6);
 }
 
 void Container::initBottom() {
@@ -107,7 +96,7 @@ void Container::initBottom() {
 }
 
 void Container::draw(const DrawCommand& drawCommand) {
-	//drawBottom(drawCommand);
+	drawBottom(drawCommand);
 	
 	glDisable(GL_DEPTH_TEST);
 	drawEdges(drawCommand);

@@ -53,9 +53,22 @@ public:
 
 	~Shader();
 
+	GLint getUniformLocation(std::string name);
+
+	void setUniform1i(std::string name,int val,bool debug = false);
+	void setUniform1f(std::string name,float val, bool debug = false);
+
+	void setUniformMat4(std::string name, const glm::mat4& mat, bool debug = false);
+	void setUniform3f(std::string name, float3 val, bool debug = false);
+	void setUniform3f(std::string name, glm::vec3 val, bool debug = false);
+	void setUniform4f(std::string name, float4 val, bool debug = false);
+	void setUniform4f(std::string name, glm::vec4 val, bool debug = false);
+
+	
+
 private:
 	void checkCompileErrors(GLuint shader, std::string type);
-
+	
 
 
 };

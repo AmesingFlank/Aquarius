@@ -16,7 +16,7 @@ void PointSprites::draw(const DrawCommand& drawCommand, float radius, int skybox
 
 	drawThickness(drawCommand, radius);
 
-	drawScreen(drawCommand, skybox,normalTexture,depthTexture);
+	drawScreen(drawCommand, skybox,normalTexture,depthTexture,radius);
 	printGLError();
 }
 
@@ -183,7 +183,7 @@ void PointSprites::drawThickness(const DrawCommand& drawCommand, float radius) {
 
 }
 
-void PointSprites::drawScreen(const DrawCommand& drawCommand, int skybox,GLuint normalTexture,GLuint depthTexture) {
+void PointSprites::drawScreen(const DrawCommand& drawCommand, int skybox,GLuint normalTexture,GLuint depthTexture,float radius) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_BLEND);
@@ -193,45 +193,29 @@ void PointSprites::drawScreen(const DrawCommand& drawCommand, int skybox,GLuint 
 
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, depthTexture);
-	GLuint depthTextureLocation = glGetUniformLocation(screenShader->program, "depthTexture");
-	glUniform1i(depthTextureLocation, 0);
+	screenShader->setUniform1i("depthTexture", 0);
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, normalTexture);
-	GLuint normalTextureLocation = glGetUniformLocation(screenShader->program, "normalTexture");
-	glUniform1i(normalTextureLocation, 1);
+	screenShader->setUniform1i("normalTexture", 1);
 
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, thicknessTexture);
-	GLuint thicknessTextureLocation = glGetUniformLocation(screenShader->program, "thicknessTexture");
-	glUniform1i(thicknessTextureLocation, 2);
+	screenShader->setUniform1i("thicknessTexture", 2);
 
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
-	GLuint skyboxLocation = glGetUniformLocation(screenShader->program, "skybox");
-	glUniform1i(skyboxLocation, 3);
+	screenShader->setUniform1i("skybox", 3);
 
+	prepareShader(screenShader,drawCommand,radius);
 
-	GLuint projectionLocation = glGetUniformLocation(screenShader->program, "projection");
-	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(drawCommand.projection));
 
 	glm::mat4 inverseView = glm::inverse(drawCommand.view);
-	GLuint inverseViewLocation = glGetUniformLocation(screenShader->program, "inverseView");
-	glUniformMatrix4fv(inverseViewLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(inverseView));
 
-	GLuint windowWidthLocation = glGetUniformLocation(screenShader->program, "windowWidth");
-	glUniform1f(windowWidthLocation, drawCommand.windowWidth);
-
-	GLuint windowHeightLocation = glGetUniformLocation(screenShader->program, "windowHeight");
-	glUniform1f(windowHeightLocation, drawCommand.windowHeight);
-
-	GLuint zoomLocation = glGetUniformLocation(screenShader->program, "zoom");
-	glUniform1f(zoomLocation, drawCommand.zoom);
+	screenShader->setUniformMat4("inverseView",inverseView);
 
 
-	glm::vec3 cameraPos = drawCommand.cameraPosition;
-	GLuint cameraPositionLocation = glGetUniformLocation(screenShader->program, "cameraPosition");
-	glUniform3f(cameraPositionLocation, cameraPos.x, cameraPos.y, cameraPos.z);
+	screenShader->setUniform1f("zoom", drawCommand.zoom);
 
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -313,29 +297,18 @@ void PointSprites::drawPhaseThickness(const DrawCommand& drawCommand, float radi
 void PointSprites::prepareShader(std::shared_ptr<Shader> shader, const DrawCommand& drawCommand, float radius) {
 	shader->use();
 
+	shader->setUniform1f("windowWidth", drawCommand.windowWidth);
 
-	glUniform1f(glGetUniformLocation(shader->program, "windowWidth"), drawCommand.windowWidth);
-	glUniform1f(glGetUniformLocation(shader->program, "windowHeight"), drawCommand.windowHeight);
+	shader->setUniform1f("windowHeight", drawCommand.windowHeight);
 
-	glUniform1f(glGetUniformLocation(shader->program, "radius"), radius);
+	shader->setUniform1f("radius", radius);
 
-	glUniform3f(glGetUniformLocation(shader->program, "cameraPosition"), 
-		drawCommand.cameraPosition.x, drawCommand.cameraPosition.y, drawCommand.cameraPosition.z);
-
-
-	glm::mat4 view = drawCommand.view;
-	glm::mat4 projection = drawCommand.projection;
-	glm::vec3 cameraPos = drawCommand.cameraPosition;
+	shader->setUniform3f("cameraPosition", drawCommand.cameraPosition);
 
 
-	GLuint modelLocation = glGetUniformLocation(shader->program, "model");
-	GLuint viewLocation = glGetUniformLocation(shader->program, "view");
-	GLuint projectionLocation = glGetUniformLocation(shader->program, "projection");
-
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(model));
-	glUniformMatrix4fv(viewLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(view));
-	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, (const GLfloat*)glm::value_ptr(projection));
-
+	shader->setUniformMat4("model", model);
+	shader->setUniformMat4("view", drawCommand.view);
+	shader->setUniformMat4("projection", drawCommand.projection);
 
 }
 

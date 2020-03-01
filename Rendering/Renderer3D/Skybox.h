@@ -61,8 +61,7 @@ struct Skybox{
     };
 
     GLuint VBO,VAO, texSkyBox;
-    GLint model_location,view_location, projection_location, vPos_location;
-
+    
 
     glm::mat4  model = glm::mat4(1.0);
 

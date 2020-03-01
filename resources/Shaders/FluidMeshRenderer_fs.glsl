@@ -17,7 +17,7 @@ uniform vec4 phaseColors[4];
 uniform int phaseCount;
 
 vec4 traceRay(vec3 origin, vec3 direction) {
-	return vec4(texture(skybox, direction).rgb, 1);
+	//return vec4(texture(skybox, direction).rgb, 1);
 	float tHitGround = origin.y / -direction.y;
 	if (tHitGround > 0) {
 		vec3 hitPos = origin + tHitGround * direction;
