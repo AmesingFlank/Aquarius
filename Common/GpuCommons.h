@@ -11,27 +11,35 @@
 #include <iostream>
 #include <stdexcept>
 #include <stdio.h>
-#include <vcruntime_exception.h>
+//#include <vcruntime_exception.h>
 #include <helper_math.h>
 #include <device_launch_parameters.h>
 
-#include <cublas_v2.h>
-#include <cusparse_v2.h>
-#include <cusolverSp.h>
+
+
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+
+/*
 #include <amgx/amgx_c.h>
 
 #include <curand.h>
 #include <curand_kernel.h>
 
-#include "cuda_gl_interop.h"
+#include <cublas_v2.h>
+#include <cusparse_v2.h>
+#include <cusolverSp.h>
+*/
+
+#include <cuda_gl_interop.h>
 
 #include <stdarg.h>
 
 #include <thrust/functional.h>
 #include <thrust/reduce.h>
 #include "Commons.h"
+
+/*
 
 inline const char* cublasGetErrorString(cublasStatus_t status)
 {
@@ -82,12 +90,8 @@ inline const char* cusolverGetErrorString(cusolverStatus_t status)
 }
 
 
-inline static void HandleError( cudaError_t err,const char *file,int line ) {
-    if (err != cudaSuccess) {
-        printf( "CUDA error: %s in %s at line %d\n", cudaGetErrorString( err ), file, line );
-        exit( EXIT_FAILURE );
-    }
-}
+
+
 
 inline static void HandleError( cublasStatus_t err,const char *file,int line ) {
     if (err != CUBLAS_STATUS_SUCCESS) {
@@ -107,6 +111,15 @@ inline static void HandleError( cusolverStatus_t  err,const char *file,int line 
         printf( "CUSOLVER error: %s in %s at line %d\n", cusolverGetErrorString( err ), file, line );
         exit( EXIT_FAILURE );
     }
+}
+
+*/
+
+inline static void HandleError(cudaError_t err, const char* file, int line) {
+	if (err != cudaSuccess) {
+		printf("CUDA error: %s in %s at line %d\n", cudaGetErrorString(err), file, line);
+		exit(EXIT_FAILURE);
+	}
 }
 inline void __getLastCudaError(const char *errorMessage, const char *file, const int line)
 {
@@ -129,15 +142,17 @@ inline void __getLastCudaError(const char *errorMessage, const char *file, const
     HandleError( err, __FILE__, __LINE__ )
 
 
-#define HANDLE_NULL( a ) {if (a == NULL) { \
-                            printf( "Host memory failed in %s at line %d\n", \
-                                    __FILE__, __LINE__ ); \
-                            exit( EXIT_FAILURE );}}
+#define HANDLE_NULL( a ) {\
+	if (a == NULL) { \
+		printf( "Host memory failed in %s at line %d\n",  __FILE__, __LINE__ ); \
+		exit( EXIT_FAILURE ); \
+	}\
+}
 
 
 
 
-
+/*
 class CudaHandlesKeeper
 {
 public:
@@ -186,7 +201,7 @@ private:
 
     }
 };
-
+*/
 
 
 inline void printGLError(){

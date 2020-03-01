@@ -22,6 +22,14 @@
 
 #include "UI/ui.h"
 
+// TODO:
+// Improve Reflection/Refraction Calculation
+// Leave Comments
+// Convert To CMAKE
+// ScreenShots
+// Videos
+// Update README
+
 
 int main( void ) {
 
