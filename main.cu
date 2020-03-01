@@ -112,7 +112,7 @@ int main( void ) {
 			glm::vec3 lightPos(fluidCenter.x, 30, fluidCenter.y);
 
 			DrawCommand drawCommand = {
-			view,projection,camera->position,windowInfo.windowWidth,windowInfo.windowHeight,camera->FOV,near,far,
+			view,projection,camera->getActualPosition(),windowInfo.windowWidth,windowInfo.windowHeight,camera->FOV,near,far,
 			renderMode,paused,lightPos
 			};
 
