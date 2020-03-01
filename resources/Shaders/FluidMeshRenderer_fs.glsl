@@ -21,7 +21,7 @@ vec4 traceRay(vec3 origin, vec3 direction) {
 	float tHitGround = origin.y / -direction.y;
 	if (tHitGround > 0) {
 		vec3 hitPos = origin + tHitGround * direction;
-		if (hitPos.x >= -5 && hitPos.x <= 15 && hitPos.z >= -5 && hitPos.z <= 15) {
+		if (hitPos.x >= 0 && hitPos.x <= 10 && hitPos.z >= 0 && hitPos.z <= 10) {
 			int xi = int(hitPos.x + 100);
 			int zi = int(hitPos.z + 100);
 			if ((xi + zi) % 2 == 0)

@@ -577,7 +577,7 @@ namespace Fluid_3D_PBF {
 	}
 
 	glm::vec3 Fluid::getCenter() {
-		return glm::vec3(gridPhysicalSize.x/2,0, gridPhysicalSize.z / 2);
+		return glm::vec3(gridPhysicalSize.x / 2, gridPhysicalSize.y / 2, gridPhysicalSize.z / 2);
 	}
 
 	Fluid::~Fluid() {

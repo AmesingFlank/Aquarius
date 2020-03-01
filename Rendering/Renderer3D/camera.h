@@ -8,66 +8,150 @@
 
 
 
-// Defines several possible options for camera movement. Used as abstraction to stay away from window-system specific input methods
-enum Camera_Movement {
+enum class CameraMovement {
     FORWARD,
     BACKWARD,
     LEFT,
-    RIGHT
+    RIGHT,
+	RotateUp,
+	RotateDown,
+	RotateRight,
+	RotateLeft
 };
 
-enum class CameraMovement {
-	RotateUp, RotateDown,RotateLeft,RotateRight,
-	LookUp,LookDown,LookLeft,LookRight
-};
 
-// Default camera values
-const GLfloat YAW        = -90.0f;
-const GLfloat PITCH      =  0.0f;
 const GLfloat SPEED      =  3.0f;
 const GLfloat SENSITIVTY =  0.25f;
 
 
-// An abstract camera class that processes input and calculates the corresponding Eular Angles, Vectors and Matrices for use in OpenGL
+inline glm::vec3 eulerToVec(float yaw, float pitch) {
+	glm::vec3 v;
+	v.x = -sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	v.y = sin(glm::radians(pitch));
+	v.z = -cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	return glm::normalize(v);
+}
+
+
+inline void vecToEuler(glm::vec3 v, float& yaw, float& pitch) {
+	v = glm::normalize(v);
+	pitch = glm::degrees(asin(v.y));
+
+	float sinYaw = -v.x / cos(glm::radians(pitch));
+	float cosYaw = -v.z / cos(glm::radians(pitch));
+
+	yaw = acos(cosYaw);
+	if (sinYaw < 0) {
+		yaw = -yaw;
+	}
+
+	yaw = glm::degrees(yaw);
+
+}
+
+inline void printVec3(glm::vec3 v) {
+	std::cout << v.x << " " << v.y << " " << v.z << std::endl;
+}
+
 class Camera
 {
 public:
-    // Camera Attributes
-    glm::vec3 Position;
-    glm::vec3 Front;
-    glm::vec3 Up;
-    glm::vec3 Right;
-    glm::vec3 WorldUp;
-    // Eular Angles
-    GLfloat Yaw;
-    GLfloat Pitch;
-    // Camera options
-    GLfloat MovementSpeed;
+
+	glm::vec3 position;
+    glm::vec3 front;
+    glm::vec3 up;
+    glm::vec3 right;
+    glm::vec3 worldUp = glm::vec3(0.0f, 1.0f, 0.0f);
+
+	float yaw;
+    float pitch;
+
+	float globalYaw;
+	float globalPitch;
+	float globalRadius = 20;
+
+	float globalRotationSpeed = 1;
+
+	GLfloat MovementSpeed;
     GLfloat MouseSensitivity;
 
 	const float FOV = 45;
 
-    // Constructor with vectors
-    Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), GLfloat yaw = YAW, GLfloat pitch = PITCH) : Front(glm::vec3(0.0f, 0.0f, -1.0f)), MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY)
+	glm::vec3 lookCenter;
+
+
+
+    Camera(glm::vec3 lookCenter_) :  MovementSpeed(SPEED), MouseSensitivity(SENSITIVTY)
     {
-        this->Position = position;
-        this->WorldUp = up;
-        this->Yaw = yaw;
-        this->Pitch = pitch;
-        this->updateCameraVectors();
+		this->lookCenter = lookCenter_;
+
+		yaw = 0;
+        pitch = 0;
+
+		globalYaw = 0;
+		globalPitch = 30;
+
+		updatePositionWithEuler();
+		lookAtCenter();
+
+		printVec3(getActualPosition());
+		printVec3(position);
+		printVec3(front);
+		printVec3(up);
+		std::cout << globalYaw << " " << globalPitch << std::endl << std::endl;
+    } 
+
+	void updatePositionWithEuler() {
+		position = eulerToVec(globalYaw , globalPitch) * globalRadius;
+	}
+
+	void updateEulerWithPosition() {
+		vecToEuler(position, globalYaw, globalPitch);
+	}
+
+	void lookAtCenter() {
+		front = glm::normalize(-position);
+		updateRightUp();
+	}
+
+	void updateRightUp() {
+		this->right = glm::normalize(glm::cross(this->front, this->worldUp));
+		this->up = glm::normalize(glm::cross(this->right, this->front));
+	}
+
+	// The camera treats lookPosition and the center of world coordinates
+	glm::vec3 getActualPosition() {
+		return lookCenter + position;
+	}
+
+    glm::mat4 getViewMatrix()
+    {
+		
+        return glm::lookAt(getActualPosition(), getActualPosition() + front, up);
     }
 
 
-    // Returns the view matrix calculated using Eular Angles and the LookAt Matrix
-    glm::mat4 GetViewMatrix()
-    {
-        return glm::lookAt(this->Position, this->Position + this->Front, this->Up);
-    }
 
+	void doMovement(CameraMovement move) {
+		if (move == CameraMovement::RotateLeft) {
+			globalYaw -= globalRotationSpeed;
+		}
+		if (move == CameraMovement::RotateRight) {
+			globalYaw += globalRotationSpeed;
+		}
+		if (move == CameraMovement::RotateUp) {
+			globalPitch += globalRotationSpeed;
+		}
+		if (move == CameraMovement::RotateDown) {
+			globalPitch -= globalRotationSpeed;
+		}
+		updatePositionWithEuler();
+		lookAtCenter();
+	}
 
-    float lastProcessKeyboardTime = -1;
-    // Processes input received from any keyboard-like input system. Accepts input parameter in the form of camera defined ENUM (to abstract it from windowing systems)
-    void ProcessKeyboard(Camera_Movement direction)
+	float lastProcessKeyboardTime = -1;
+
+	void ProcessKeyboard(CameraMovement direction)
     {
         float now = glfwGetTime();
         if(lastProcessKeyboardTime<0){
@@ -75,16 +159,16 @@ public:
         }
         float deltaTime = now-lastProcessKeyboardTime;
         GLfloat velocity = this->MovementSpeed * deltaTime;
-        if (direction == FORWARD)
-            this->Position += this->Front * velocity;
-        if (direction == BACKWARD)
-            this->Position -= this->Front * velocity;
-        if (direction == LEFT)
-            this->Position -= this->Right * velocity;
-        if (direction == RIGHT)
-            this->Position += this->Right * velocity;
+        if (direction == CameraMovement::FORWARD)
+            this->position += this->front * velocity;
+        if (direction == CameraMovement::BACKWARD)
+            this->position -= this->front * velocity;
+        if (direction == CameraMovement::LEFT)
+            this->position -= this->right * velocity;
+        if (direction == CameraMovement::RIGHT)
+            this->position += this->right * velocity;
         lastProcessKeyboardTime = now;
-		//std::cout << "camera at " << Position.x << "  " << Position.y <<"  "<< Position.z << std::endl;
+		//std::cout << "camera at " << position.x << "  " << position.y <<"  "<< position.z << std::endl;
     }
 
     // Processes input received from a mouse input system. Expects the offset value in both the x and y direction.
@@ -93,19 +177,19 @@ public:
         xoffset *= this->MouseSensitivity;
         yoffset *= this->MouseSensitivity;
 
-        this->Yaw   += xoffset;
-        this->Pitch += yoffset;
+        this->yaw   -= xoffset;
+        this->pitch += yoffset;
 
         // Make sure that when pitch is out of bounds, screen doesn't get flipped
         if (constrainPitch)
         {
-            if (this->Pitch > 89.0f)
-                this->Pitch = 89.0f;
-            if (this->Pitch < -89.0f)
-                this->Pitch = -89.0f;
+            if (this->pitch > 89.0f)
+                this->pitch = 89.0f;
+            if (this->pitch < -89.0f)
+                this->pitch = -89.0f;
         }
 
-        // Update Front, Right and Up Vectors using the updated Eular angles
+        // Update front, right and up Vectors using the updated Eular angles
         this->updateCameraVectors();
     }
 
@@ -115,14 +199,15 @@ private:
     // Calculates the front vector from the Camera's (updated) Eular Angles
     void updateCameraVectors()
     {
-        // Calculate the new Front vector
-        glm::vec3 front;
-        front.x = cos(glm::radians(this->Yaw)) * cos(glm::radians(this->Pitch));
-        front.y = sin(glm::radians(this->Pitch));
-        front.z = sin(glm::radians(this->Yaw)) * cos(glm::radians(this->Pitch));
-        this->Front = glm::normalize(front);
-        // Also re-calculate the Right and Up vector
-        this->Right = glm::normalize(glm::cross(this->Front, this->WorldUp));  // Normalize the vectors, because their length gets closer to 0 the more you look up or down which results in slower movement.
-        this->Up    = glm::normalize(glm::cross(this->Right, this->Front));
+
+        this->front = eulerToVec(yaw,pitch);
+
+		if (abs(glm::length(front) - 1) > 1e-3) {
+			std::cout << "wat??" << std::endl;
+		}
+
+        // Also re-calculate the right and up vector
+        this->right = glm::normalize(glm::cross(this->front, this->worldUp)); 
+        this->up    = glm::normalize(glm::cross(this->right, this->front));
     }
 };

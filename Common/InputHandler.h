@@ -22,17 +22,23 @@ namespace InputHandler{
 		bool firstMouse = true;
 		std::shared_ptr<Camera> camera;
 
-		void Do_Movement()
+		void doMovement()
 		{
-			// Camera controls
-			if (keys[GLFW_KEY_W])
-				camera->ProcessKeyboard(FORWARD);
-			if (keys[GLFW_KEY_S])
-				camera->ProcessKeyboard(BACKWARD);
-			if (keys[GLFW_KEY_A])
-				camera->ProcessKeyboard(LEFT);
-			if (keys[GLFW_KEY_D])
-				camera->ProcessKeyboard(RIGHT);
+			if (!camera) {
+				return;
+			}
+			if (keys[GLFW_KEY_A]) {
+				camera->doMovement(CameraMovement::RotateLeft);
+			}
+			if (keys[GLFW_KEY_D]) {
+				camera->doMovement(CameraMovement::RotateRight);
+			}
+			if (keys[GLFW_KEY_W]) {
+				camera->doMovement(CameraMovement::RotateUp);
+			}
+			if (keys[GLFW_KEY_S]) {
+				camera->doMovement(CameraMovement::RotateDown);
+			}
 		}
 
 		void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)
@@ -63,7 +69,7 @@ namespace InputHandler{
 			lastX = xpos;
 			lastY = ypos;
 
-			camera->ProcessMouseMovement(xoffset, yoffset);
+			//camera->ProcessMouseMovement(xoffset, yoffset);
 		}
 
 	public:
@@ -79,9 +85,9 @@ namespace InputHandler{
     
 
 
-    inline void Do_Movement()
+    inline void doMovement()
     {
-		Handler::instance().Do_Movement();
+		Handler::instance().doMovement();
     }
 
     inline void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode)

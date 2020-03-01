@@ -40,6 +40,7 @@ int main( void ) {
 	getScreenDimensions(screenWidth, screenHeight);
 
 	WindowInfo& windowInfo = WindowInfo::instance();
+	InputHandler::Handler& inputHandler = InputHandler::Handler::instance();
 
 	windowInfo.windowWidth = screenWidth * 0.9;
 	windowInfo.windowHeight = windowInfo.windowWidth / 2;
@@ -51,9 +52,7 @@ int main( void ) {
     glfwSetKeyCallback(window, InputHandler::key_callback);
     glfwSetCursorPosCallback(window, InputHandler::mouse_callback);
 
-    std::shared_ptr<Camera> camera = std::make_shared<Camera>(glm::vec3(5,10,20));
-    InputHandler::Handler::instance().camera = camera;
-
+	std::shared_ptr<Camera> camera;
 	
 	double framesSinceLast = 0;
 	double lastSecond = glfwGetTime();
@@ -84,7 +83,9 @@ int main( void ) {
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
         glClearColor(0,0,0,1);
         glfwPollEvents();
-        InputHandler::Do_Movement();
+
+        InputHandler::doMovement();
+
 		if (InputHandler::Handler::instance().keys[GLFW_KEY_SPACE]) {
 			InputHandler::Handler::instance().keys[GLFW_KEY_SPACE] = false;
 			paused = !paused;
@@ -94,24 +95,24 @@ int main( void ) {
 			renderMode = (RenderMode)(((int)renderMode + 1) % (int)RenderMode::MAX);
 		}
 
-		float near = 0.1;
-		float far = 1000;
-
-        glm::mat4 view = camera->GetViewMatrix();
-		float widthHeightRatio = (float)windowInfo.windowWidth / (float)windowInfo.windowHeight;
-        glm::mat4 projection = glm::perspective(camera->FOV, widthHeightRatio, near,far);
-
-		
 
         double currentTime = glfwGetTime();
 
 		if (hasCreatedFluid) {
+
+			float near = 0.1;
+			float far = 1000;
+
+			glm::mat4 view = camera->getViewMatrix();
+			float widthHeightRatio = (float)windowInfo.windowWidth / (float)windowInfo.windowHeight;
+			glm::mat4 projection = glm::perspective(camera->FOV, widthHeightRatio, near, far);
+
 			glm::vec3 fluidCenter = fluid->getCenter();
 
 			glm::vec3 lightPos(fluidCenter.x, 30, fluidCenter.y);
 
 			DrawCommand drawCommand = {
-			view,projection,camera->Position,windowInfo.windowWidth,windowInfo.windowHeight,camera->FOV,near,far,
+			view,projection,camera->position,windowInfo.windowWidth,windowInfo.windowHeight,camera->FOV,near,far,
 			renderMode,paused,lightPos
 			};
 
@@ -148,6 +149,9 @@ int main( void ) {
 
 				fluid->init(config);
 				hasCreatedFluid = true;
+
+				camera = std::make_shared<Camera>(fluid->getCenter());
+				inputHandler.camera = camera;
 			}
 		);
 

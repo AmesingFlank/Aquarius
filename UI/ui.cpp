@@ -345,7 +345,7 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 			nk_layout_row_dynamic(ctx, rowHeight, 1);
 			int count = fluidConfig.PBF.maxParticleCount / 1000;
 			nk_label(ctx, "Max Particle Count (k)", NK_TEXT_LEFT);
-			nk_property_int(ctx, "", 10, &count, 100, 10, incPerPixel);
+			nk_property_int(ctx, "", 100, &count, 1000, 100, incPerPixel);
 			fluidConfig.PBF.maxParticleCount = count * 1000;
 		}
 	}
@@ -378,7 +378,7 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 			nk_layout_row_dynamic(ctx, rowHeight, 1);
 			int count = fluidConfig.PCISPH.maxParticleCount / 1000;
 			nk_label(ctx, "Max Particle Count (k)", NK_TEXT_LEFT);
-			nk_property_int(ctx, "", 10, &count, 100, 10, incPerPixel);
+			nk_property_int(ctx, "", 100, &count, 1000, 100, incPerPixel);
 			fluidConfig.PCISPH.maxParticleCount = count * 1000;
 
 			GAP_SMALL;

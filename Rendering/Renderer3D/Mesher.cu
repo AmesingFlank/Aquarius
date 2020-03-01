@@ -301,7 +301,7 @@ float getSDF(int x, int y, int z, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, f
 	
 	float3 position = make_float3(x-1, y-1, z-1) * cellPhysicalSize_mesh;
 	float3 sdfGridPosition = make_float3(1,1,1) + position / cellPhysicalSize_SDF;
-	float3& coord = sdfGridPosition;
+	float3 coord = sdfGridPosition;
 	return tex3D<float>(sdfTexture, coord.x, coord.y, coord.z);
 
 }
@@ -311,7 +311,7 @@ __device__ __forceinline__
 float getSDF(float3 position, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, float cellPhysicalSize_SDF, cudaTextureObject_t sdfTexture) {
 	
 	float3 sdfGridPosition = make_float3(1, 1, 1) + position / cellPhysicalSize_SDF;
-	float3& coord = sdfGridPosition;
+	float3 coord = sdfGridPosition;
 	return tex3D<float>(sdfTexture, coord.x, coord.y, coord.z);
 }
 
@@ -397,7 +397,7 @@ void marchingCubes(float* output, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, f
 
 			*position = pos;
 
-			float dx = cellPhysicalSize_mesh / 1 ;
+			float dx = cellPhysicalSize_mesh / 2 ;
 
 			float sdfLeft = 
 				getSDF(pos + make_float3(-dx,0, 0), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF,  sdfTexture);
@@ -567,5 +567,73 @@ void smoothSDF(int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, float pa
 	newSDF /= sumWeight;
 
 	surf3Dwrite<float>(newSDF, sdfSurface, x * sizeof(float), y, z);
+
+}
+
+
+Mesher::Mesher(float3 containerSize, float particleSpacing, int particleCount_, int numBlocksParticle_, int numThreadsParticle_) {
+
+	particleCount = particleCount_;
+	numBlocksParticle = numBlocksParticle_;
+	numThreadsParticle = numThreadsParticle_;
+
+
+	cellPhysicalSize_SDF = particleSpacing;
+	particleRadius = particleSpacing;
+
+	std::cout << "mesher particle radius " << particleRadius << std::endl;
+	cellPhysicalSize_mesh = containerSize.x / (float)(sizeX_mesh - 2);
+
+	sizeX_SDF = 3 + containerSize.x / cellPhysicalSize_SDF;
+	sizeY_SDF = 3 + containerSize.y / cellPhysicalSize_SDF;
+	sizeZ_SDF = 3 + containerSize.z / cellPhysicalSize_SDF;
+
+	std::cout << "mesher sizeX_SDF " << sizeX_SDF << std::endl;
+
+	cellCount_SDF = sizeX_SDF * sizeY_SDF * sizeZ_SDF;
+
+	numThreadsCell_SDF = min(1024, cellCount_SDF);
+	numBlocksCell_SDF = divUp(cellCount_SDF, numThreadsCell_SDF);
+
+	numThreadsCell_mesh = min(1024, cellCount_mesh);
+	numBlocksCell_mesh = divUp(cellCount_mesh, numThreadsCell_mesh);
+
+	triangleCount = 5 * 1 << 22;
+
+	std::cout << cellCount_mesh * 5 << std::endl;
+
+	HANDLE_ERROR(cudaMalloc(&cellStart, cellCount_SDF * sizeof(*cellStart)));
+	HANDLE_ERROR(cudaMalloc(&cellEnd, cellCount_SDF * sizeof(*cellEnd)));
+
+	HANDLE_ERROR(cudaMalloc(&hasSDF, cellCount_SDF * sizeof(*hasSDF)));
+	HANDLE_ERROR(cudaMalloc(&meanXCell, cellCount_SDF * sizeof(*meanXCell)));
+
+	HANDLE_ERROR(cudaMalloc(&occupiedCellIndex, sizeof(unsigned int)));
+
+
+
+
+	cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<float>();
+	cudaExtent extent = { sizeX_SDF,sizeY_SDF,sizeZ_SDF };
+	HANDLE_ERROR(cudaMalloc3DArray(&sdfTextureArray, &channelDesc, extent, cudaArraySurfaceLoadStore));
+
+	cudaResourceDesc resDesc;
+	memset(&resDesc, 0, sizeof(resDesc));
+	resDesc.resType = cudaResourceTypeArray;
+	resDesc.res.array.array = sdfTextureArray;
+
+	cudaTextureDesc texDesc;
+	memset(&texDesc, 0, sizeof(texDesc));
+	texDesc.addressMode[0] = cudaAddressModeBorder;
+	texDesc.addressMode[1] = cudaAddressModeBorder;
+	texDesc.addressMode[2] = cudaAddressModeBorder;
+	texDesc.filterMode = cudaFilterModeLinear;
+	texDesc.readMode = cudaReadModeElementType;
+	texDesc.normalizedCoords = 0;
+
+	HANDLE_ERROR(cudaCreateTextureObject(&sdfTexture, &resDesc, &texDesc, nullptr));
+
+	HANDLE_ERROR(cudaCreateSurfaceObject(&sdfSurface, &resDesc));
+
 
 }
