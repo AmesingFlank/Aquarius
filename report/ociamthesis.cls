@@ -36,6 +36,7 @@
 % The name of your Oxford college (e.g. Christ Church, Pembroke)
 \def\college#1{\gdef\@college{#1}}
 
+\def\supervisor#1{\gdef\@supervisor{#1}}
 
 %
 % Setup choosen crest/logo
@@ -107,7 +108,9 @@
     {{\@college} \par}
 \vspace*{1ex}
     {University of Oxford \par}
-\vspace*{25mm}
+\vspace*{12mm}
+    {Supervised by: {\@supervisor} \par}
+\vspace*{12mm}
     {{\submittedtext} \par}
 \vspace*{1ex}
     {\it {\@degree} \par}
