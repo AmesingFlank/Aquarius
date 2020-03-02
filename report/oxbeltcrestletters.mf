@@ -1,0 +1,668 @@
+% Definitions of letters for the "belted" crest, adapted from 
+% romanu.mf from the Computer Modern typeface.  Many of the
+% letters appear unchanged; some have been adapted where noted.
+% The extra instruction adjust_transform has been inserted
+% into each letter to place it in the correct position.
+
+% Instead of "beginchar" we use "beginletter", which provides
+% a similar environment allowing the character to be used
+% within another character.  Labels are disabled; otherwise
+% the many letters in the crest produce too many for gftodvi.
+def beginletter(expr letter,w_sharp,h_sharp,d_sharp) =
+ begingroup
+ interim proofing:=0;
+ interim charwd:=w_sharp;
+ interim charht:=h_sharp;
+ interim chardp:=d_sharp;
+ interim charic:=0;
+ save w;w:=hround(charwd*hppp);
+ save h;h:=vround(charht*hppp);
+ save d;d:=vround(chardp*hppp);
+ save l,r,x,y
+enddef;
+
+% And to end "beginletter" there is "endletter".  It makes each
+% letter evaluate to its character width.
+def endletter =
+ scantokens extra_endchar;
+ charwd
+ endgroup
+enddef;
+
+%def letterA =
+% beginletter("A",13u#,cap_height#,0);
+% adjust_fit(cap_serif_fit#,cap_serif_fit#);
+% adjust_transform;
+% numeric left_stem,right_stem,outer_jut,alpha;
+% right_stem=cap_stem-stem_corr;
+% left_stem=min(cap_hair if hefty: -3stem_corr fi,right_stem);
+% outer_jut=.8cap_jut; x1l=w-x4r=l+letter_fit+outer_jut+.5u; y1=y4=0;
+% x2-x1=x4-x3; x3r=x2r+apex_corr; y2=y3=h+apex_o+apex_oo;
+% alpha=diag_ratio(2,left_stem,y2-y1,x4r-x1l-apex_corr);
+% penpos1(alpha*left_stem,0); penpos2(alpha*left_stem,0);
+% penpos3(alpha*right_stem,0); penpos4(alpha*right_stem,0);
+% z0=whatever[z1r,z2r]=whatever[z3l,z4l];
+% if y0<h-cap_notch_cut: y0:=h-cap_notch_cut;
+%  fill z0+.5right{down}...{z4-z3}diag_end(3l,4l,1,1,4r,3r)
+%   --diag_end(4r,3r,1,1,2l,1l)--diag_end(2l,1l,1,1,1r,2r){z2-z1}
+%   ...{up}z0+.5left--cycle; % left and right diagonals
+% else: fill z0--diag_end(0,4l,1,1,4r,3r)--diag_end(4r,3r,1,1,2l,1l)
+%   --diag_end(2l,1l,1,1,1r,0)--cycle; fi % left and right diagonals
+% penpos5(whatever,angle(z2-z1)); z5=whatever[z1,z2];
+% penpos6(whatever,angle(z3-z4)); z6=whatever[z3,z4]; y6=y5;
+% if hefty: y5r else: y5 fi =5/12y0;
+% y5r-y5l=y6r-y6l=cap_band; penstroke z5e--z6e; % bar line
+% if serifs: numeric inner_jut; pickup tiny.nib;
+%  prime_points_inside(1,2); prime_points_inside(4,3);
+%  if rt x1'r+cap_jut+.5u+1<=lft x4'l-cap_jut: inner_jut=cap_jut;
+%  else: rt x1'r+inner_jut+.5u+1=lft x4'l-inner_jut; fi
+%  dish_serif(1',2,a,1/2,outer_jut,b,.6,inner_jut)(dark);  % left serif
+%  dish_serif(4',3,c,1/2,inner_jut,d,1/3,outer_jut); fi  % right serif
+% penlabels(0,1,2,3,4,5,6);
+% endletter
+%enddef;
+
+% The letter A for use in the book has a higher bar and the left-hand
+% stem sticks out a bit at the top.  It is slightly wider.
+def letterA =
+ beginletter("A",14u#,cap_height#,0);
+ adjust_fit(cap_serif_fit#,cap_serif_fit#);
+ adjust_transform;
+ numeric left_stem,right_stem,outer_jut,alpha;
+ right_stem=cap_stem-stem_corr;
+ left_stem=min(cap_hair if hefty: -3stem_corr fi,right_stem);
+ outer_jut=.8cap_jut; x1l=w-x4r=l+letter_fit+outer_jut+.5u; y1=y4=0;
+ x2-x1=x4-x3; x3r=x2r+1/2apex_corr; y2=y3=h+apex_o+apex_oo;
+ alpha=diag_ratio(2,left_stem,y2-y1,x4r-x1l-apex_corr);
+ penpos1(alpha*left_stem,0); penpos2(alpha*left_stem,0);
+ penpos3(alpha*right_stem,0); penpos4(alpha*right_stem,0);
+ z0=whatever[z1r,z2r]=whatever[z3l,z4l];
+ fill diag_end(3l,4l,1,1,4r,3r)--diag_end(4r,3r,1,1,3l,4l)--cycle;
+ fill diag_end(2r,1r,1,1,1l,2l)--diag_end(1l,2l,1,1,2r,1r)--cycle;
+ penpos5(whatever,angle(z2-z1)); z5=whatever[z1,z2];
+ penpos6(whatever,angle(z3-z4)); z6=whatever[z3,z4]; y6=y5;
+ if hefty: y5r else: y5 fi =7/12y0;
+ y5r-y5l=y6r-y6l=cap_band; penstroke z5e--z6e; % bar line
+ if serifs: numeric inner_jut; pickup tiny.nib;
+  prime_points_inside(1,2); prime_points_inside(4,3);
+  if rt x1'r+cap_jut+.5u+1<=lft x4'l-cap_jut: inner_jut=cap_jut;
+  else: rt x1'r+inner_jut+.5u+1=lft x4'l-inner_jut; fi
+  dish_serif(1',2,a,1/2,outer_jut,b,.6,inner_jut)(dark);  % left serif
+  dish_serif(4',3,c,1/2,inner_jut,d,1/3,outer_jut); fi  % right serif
+ penlabels(0,1,2,3,4,5,6);
+ endletter
+enddef;
+
+def letterD =
+ beginletter("D",13.5u#,cap_height#,0);
+ italcorr .7cap_height#*slant-.5u#;
+ adjust_fit(cap_serif_fit#,0);
+ adjust_transform;
+ pickup tiny.nib; pos1(cap_stem',0); pos2(cap_stem',0);
+ lft x1l=lft x2l=hround max(2u,3u-.5cap_stem'); top y1=h; bot y2=0;
+ filldraw stroke z1e--z2e; % stem
+ penpos3(cap_band,90); penpos4(cap_band,90);
+ penpos5(cap_curve-stem_corr,0);
+ penpos6(cap_band,-90); penpos7(cap_band,-90);
+ z3r=top z1; y4=y3; y5=.51[y4,y6]; y6=y7;
+ z7r=bot z2; x4=x6=.5w+.25u; x5r=hround(w-u);
+ x4l:=x6l:=x4-.25cap_curve;
+ fill stroke z3e..pulled_arc.e(4,5) & pulled_arc.e(5,6)..z7e;  % lobe
+ if serifs: nodish_serif(1,2,a,1/3,cap_jut,b,1/3,.5cap_jut);  % upper serif
+  nodish_serif(2,1,c,1/3,cap_jut,d,1/3,.5cap_jut); fi  % lower serif
+ math_fit(0,ic#-.5u#); penlabels(1,2,3,4,5,6,7);
+ endletter
+enddef;
+
+def letterE =
+ beginletter("E",12u#-width_adj#,cap_height#,0);
+ italcorr cap_height#*slant-beak_jut#-.5u#;
+ adjust_fit(cap_serif_fit#,0);
+ adjust_transform;
+ h:=vround(h-stem_corr);
+ pickup tiny.nib; pos1(cap_stem,0); pos2(cap_stem,0);
+ lft x1l=lft x2l=hround max(2u,3u-.5cap_stem); top y1=h; bot y2=0;
+ filldraw stroke z1e--z2e; % stem
+ pickup crisp.nib; pos3(slab,90); pos4(hair,0);
+ top y3r=h; x3=x1; rt x4r=hround(w-u); y4=good.y(y3l-beak)-eps;
+ arm(3,4,e,beak_darkness,beak_jut);  % upper arm and beak
+ pos5(cap_bar,-90); pos6(hair,0);
+ top y5l=vround(.52[y2,y1]+.5cap_bar); x5=x1;
+ pos0(cap_bar,90); pos7(hair,0);
+ z0=z5; x6=x7; y6-y5l=y0l-y7;
+ if serifs: rt x6r=hround(w-4.4u+.5hair); y6=good.y(y5l+.6beak)+eps;
+  rt x9r=hround(w-.5u);
+ else: rt x6r=hround(w-1.5u); y6=y5l+eps; rt x9r=hround(w-.75u); fi
+ arm(5,6,f,beak_darkness,0); arm(0,7,g,beak_darkness,0);  % middle arm and serif
+ pos8(slab if not serifs:+2stem_corr fi,-90); pos9(hair,0);
+ bot y8r=0; x8=x2; y9=good.y(y8l+7/6beak)+eps;
+ arm(8,9,h,beak_darkness,1.5beak_jut);  % lower arm and beak
+ if serifs: nodish_serif(1,2,a,1/3,cap_jut,b,1/3,.5cap_jut);  % upper serif
+  nodish_serif(2,1,c,1/3,cap_jut,d,1/3,.5cap_jut); fi  % lower serif
+ math_fit(0,.5ic#); penlabels(0,1,2,3,4,5,6,7,8,9);
+ endletter
+enddef;
+
+def letterF =
+ beginletter("F",11.5u#-width_adj#,cap_height#,0);
+ italcorr cap_height#*slant-beak_jut#-.25u#;
+ adjust_fit(cap_serif_fit#,0);
+ adjust_transform;
+ h:=vround(h-stem_corr);
+ pickup tiny.nib; pos1(cap_stem,0); pos2(cap_stem,0);
+ lft x1l=lft x2l=hround max(2u,3u-.5cap_stem); top y1=h; bot y2=0;
+ filldraw stroke z1e--z2e; % stem
+ pickup crisp.nib; pos3(slab,90); pos4(hair,0);
+ top y3r=h; x3=x1; rt x4r=hround(w-.75u); y4=good.y(y3l-beak)-eps;
+ arm(3,4,e,beak_darkness,beak_jut);  % upper arm and beak
+ pos5(cap_bar,-90); pos6(hair,0);
+ top y5l=vround(.5[y2,y1]+.5cap_bar); x5=x1;
+ pos0(cap_bar,90); pos7(hair,0);
+ z0=z5; x6=x7; y6-y5l=y0l-y7;
+ if serifs: rt x6r=hround(w-4u+.5hair); y6=good.y(y5l+.6beak)+eps;
+  rt x9r=hround(w-.5u);
+ else: rt x6r=hround(w-1.5u); y6=y5l+eps; rt x9r=hround(w-.75u); fi
+ arm(5,6,f,beak_darkness,0); arm(0,7,g,beak_darkness,0);  % middle arm and serif
+ if serifs: nodish_serif(1,2,a,1/3,cap_jut,b,1/3,.5cap_jut);  % upper serif
+  dish_serif(2,1,c,1/3,cap_jut,d,1/3,1.25cap_jut); fi  % lower serif
+ math_fit(0,ic#-2.5u#);penlabels(0,1,2,3,4,5,6,7,8,9);
+ endletter
+enddef;
+
+def letterI =
+ beginletter("I",max(6u#,4u#+cap_stem#),cap_height#,0);
+ italcorr cap_height#*slant-.25u#;
+ adjust_fit(cap_serif_fit#,cap_serif_fit#);
+ adjust_transform;
+ pickup tiny.nib; pos1(cap_stem,0); pos2(cap_stem,0);
+ lft x1l=lft x2l=hround(.5w-.5cap_stem); top y1=h; bot y2=0;
+ filldraw stroke z1e--z2e; % stem
+ if serifs: dish_serif(1,2,a,1/3,1.05cap_jut,b,1/3,1.05cap_jut);  % upper serif
+  dish_serif(2,1,c,1/3,1.05cap_jut,d,1/3,1.05cap_jut);  fi % lower serif
+ math_fit(0,.5ic#); penlabels(1,2);
+ endletter
+enddef;
+
+% The L has been made a bit wider.
+def letterL =
+ beginletter("L",13u#-width_adj#,cap_height#,0);
+ adjust_fit(cap_serif_fit#,0);
+ adjust_transform;
+ pickup tiny.nib; pos1(cap_stem,0); pos2(cap_stem,0);
+ lft x1l=lft x2l=hround max(2u,3u-.5cap_stem); top y1=h; bot y2=0;
+ filldraw stroke z1e--z2e; % stem
+ pickup crisp.nib; pos3(slab,-90); pos4(hair,0);
+ bot y3r=0; x3=x2; y4=y3l+7/6beak+eps; rt x4r=hround(w-.75u);
+ arm(3,4,e,1.2beak_darkness,beak_jut);  % lower arm and beak
+ if serifs: dish_serif(1,2,a,1/3,cap_jut,b,1/3,1.25cap_jut);  % upper serif
+  nodish_serif(2,1,c,1/3,cap_jut,d,1/3,.5cap_jut); fi  % lower serif
+ math_fit(0,u#); penlabels(1,2,3,4);
+ endletter
+enddef;
+
+%def letterM =
+% beginletter("M",16u#+width_adj#,cap_height#,0);
+% italcorr cap_height#*slant-cap_serif_fit#+cap_jut#-2.5u#+min(.5cap_stem#,u#);
+% adjust_fit(cap_serif_fit#,cap_serif_fit#);
+% adjust_transform;
+% numeric stem[]; % thicknesses of the four strokes
+% stem1=hround(fudged.hair+stem_corr);
+% stem2=hround(fudged.cap_stem-4stem_corr);
+% stem3=hround(fudged.hair-stem_corr);
+% stem4=hround(fudged.cap_stem-3stem_corr);
+% if stem4<stem1: stem4:=stem1; fi
+% pickup tiny.nib; pos1(stem1,0); pos2(stem1,0);
+% pos3(stem4,0); pos4(stem4,0);
+% x1=x2; x3=x4; x1l=w-x3r; rt x3r=hround min(w-2u,w-3u+.5stem4);
+% top y1=top y3=h; bot y2=bot y4=0;
+% filldraw stroke z1e--z2e; % left stem
+% filldraw stroke z3e--z4e; % right stem
+% penpos5(stem2,0); penpos6(stem2,0); penpos7(stem3,0); penpos8(stem3,0);
+% x5l=x1; x6l=x7l; x8=lft x3l; x6-x5=x8-x7; y5=y8=h; y6=y7;
+% if hefty: y6=if monospace: vround 1/3h else: o fi;
+%  numeric upper_notch,lower_notch;
+%  upper_notch=h-cap_notch_cut; lower_notch=y6+cap_notch_cut;
+%  x1'=rt x1r; z1'=whatever[z5l,z6l]; x3'=lft x3l; z3'=whatever[z7r,z8r];
+%  z0=whatever[z5r,z6r]=whatever[z7l,z8l];
+%  fill z5l..
+%   if y1'<upper_notch: {right}(x1'+1,upper_notch){down}... fi
+%   {z6-z5}diag_in(5l,6l,1,6r)..diag_out(7l,1,7r,8r){z8-z7}
+%   if y3'<upper_notch: ...{up}(x3'-1,upper_notch){right} fi
+%   ..z8r--diag_out(8r,1,8l,7l){z7-z8}
+%   if y0<=lower_notch: ..{z7-z8}z0{z5-z6}..
+%   else: ...{down}(x0+.5,lower_notch)--(x0-.5,lower_notch){up}... fi
+%   {z5-z6}diag_in(6r,5r,1,5l)--cycle;  % diagonals
+% else: y6=0; z0=whatever[z5r,z6r]=whatever[z7l,z8l];
+%  fill z5l..{z6-z5}diag_in(5l,6l,1,6r)..diag_out(7l,1,7r,8r){z8-z7}
+%   ..z8r--diag_out(8r,1,8l,7l){z7-z8}..{z7-z8}z0{z5-z6}
+%   ..{z5-z6}diag_in(6r,5r,1,5l)--cycle; fi  % diagonals
+% if serifs: serif(1,2,a,1/3,-cap_jut);  % upper left serif
+%  dish_serif(2,1,b,1/2,cap_jut,c,1/2,cap_jut)(dark); % lower left serif
+%  serif(3,4,d,1/3,cap_jut); %  upper right serif
+%  dish_serif(4,3,e,1/3,cap_jut,f,1/3,cap_jut); fi  % lower right serif
+% math_fit(0,max(.5ic#-.5u#,0));
+% penlabels(0,1,1',2,3,3',4,5,6,7,8);
+% endletter
+%enddef;
+
+% The letter M for the book has sloping sides.
+def letterM =
+ beginletter("M",18u#+width_adj#,cap_height#,0);
+ adjust_fit(cap_serif_fit#,cap_serif_fit#);
+ adjust_transform;
+ numeric stem[]; % thicknesses of the four strokes
+ stem1=hround(fudged.hair-0stem_corr);
+ stem2=hround(fudged.cap_stem-1stem_corr);
+ stem3=hround(fudged.hair-0stem_corr);
+ stem4=hround(fudged.cap_stem-1stem_corr);
+ if stem4<stem1: stem4:=stem1; fi
+ pickup tiny.nib; pos1(stem1,0); pos2(stem1,0);
+ pos3(stem4,0); pos4(stem4,0);
+ x2l=w-x4r; rt x4r=hround min(w-2u,w-3u+.5stem4);
+ x1-x2 = x4-x3 = hround (0.2(x4-x2));
+ top y1=top y3=h; bot y2=bot y4=0;
+ filldraw stroke z1e--z2e; % left stem
+ filldraw stroke z3e--z4e; % right stem
+ penpos5(stem2,0); penpos6(stem2,0); penpos7(stem3,0); penpos8(stem3,0);
+ lft x5=rt x1; x6l=x7r; rt x8=lft x3; x6-x5=x8-x7; y5=y8=h; y6=y7;
+ if hefty: y6=if monospace: vround 1/3h else: o fi;
+  numeric upper_notch,lower_notch;
+  upper_notch=h-cap_notch_cut; lower_notch=y6+cap_notch_cut;
+  x1'=rt x1r; z1'=whatever[z5l,z6l]; x3'=lft x3l; z3'=whatever[z7r,z8r];
+  z0=whatever[z5r,z6r]=whatever[z7l,z8l];
+  fill z5l..
+   if y1'<upper_notch: {right}(x1'+1,upper_notch){down}... fi
+   {z6-z5}diag_in(5l,6l,1,6r)..diag_out(7l,1,7r,8r){z8-z7}
+   if y3'<upper_notch: ...{up}(x3'-1,upper_notch){right} fi
+   ..z8r--diag_out(8r,1,8l,7l){z7-z8}
+   if y0<=lower_notch: ..{z7-z8}z0{z5-z6}..
+   else: ...{down}(x0+.5,lower_notch)--(x0-.5,lower_notch){up}... fi
+   {z5-z6}diag_in(6r,5r,1,5l)--cycle;  % diagonals
+ else: y6=0; z0=whatever[z5r,z6r]=whatever[z7l,z8l];
+  fill z5l..{z6-z5}diag_in(5l,6l,1,6r)..diag_out(7l,1,7r,8r){z8-z7}
+   ..z8r--diag_out(8r,1,8l,7l){z7-z8}..{z7-z8}z0{z5-z6}
+   ..{z5-z6}diag_in(6r,5r,1,5l)--cycle; fi  % diagonals
+ if serifs: serif(1,2,a,1/3,-cap_jut);  % upper left serif
+  dish_serif(2,1,b,1/2,cap_jut,c,1/2,cap_jut)(dark); % lower left serif
+  serif(3,4,d,1/3,cap_jut); %  upper right serif
+  dish_serif(4,3,e,1/3,cap_jut,f,1/3,cap_jut); fi  % lower right serif
+ math_fit(0,max(.5ic#-.5u#,0));
+ penlabels(0,1,1',2,3,3',4,5,6,7,8);
+ endletter
+enddef;
+
+def letterN =
+ beginletter("N",13u#+width_adj#,cap_height#,0);
+ italcorr cap_height#*slant-cap_serif_fit#+cap_jut#-2.5u#+min(.5cap_stem#,u#);
+ adjust_fit(cap_serif_fit#,cap_serif_fit#);
+ adjust_transform;
+ numeric thin_stem; thin_stem=hround(fudged.hair+stem_corr);
+ pickup tiny.nib; pos1(thin_stem,0); pos2(thin_stem,0);
+ pos3(thin_stem,0); pos4(thin_stem,0);
+ pickup tiny.nib; top y1=top y3=h; bot y2=bot y4=0;
+ x1=x2; x3=x4; x1l=w-x3r;
+ rt x3r=hround min(w-2u,w-3u+.5fudged.cap_stem);
+ filldraw stroke z1e--z2e; % left stem
+ filldraw stroke z3e--z4e; % right stem
+ if hefty: penpos5(fudged.cap_stem,0); penpos6(fudged.cap_stem,0);
+  x5l=x1; x6r=x4; y5=h; y6=0;
+  numeric upper_notch,lower_notch;
+  upper_notch=h-cap_notch_cut; lower_notch=cap_notch_cut;
+  x1'=rt x1r; z1'=whatever[z5l,z6l]; x4'=lft x4l; z4'=whatever[z5r,z6r];
+  fill z5l..
+   if y1'<upper_notch: {right}(x1'+1,upper_notch){down}... fi
+   {z6-z5}diag_in(5l,6l,1,6r)--z6r..
+   if y4'>lower_notch: {left}(x4'-1,lower_notch){up}... fi
+   {z5-z6}diag_in(6r,5r,1,5l)--cycle;  % diagonal
+ else: penpos5(whatever,0); penpos6(whatever,90);
+  z5l=z1l; z6l=z4l;
+  z7=z6l+(max(eps,cap_stem-3stem_corr-tiny),0) rotated (angle(z5l-z6l)-90);
+  z5r=z7+whatever*(z5l-z6l); z6r=z7+whatever*(z5l-z6l);
+  filldraw stroke z5e..z6e; fi  % diagonal
+ if serifs: if hefty: serif(1,2,a,1/3,-cap_jut); % upper left serif
+  else: serif(5,6,a,1/3,-cap_jut); fi  % upper left serif
+  dish_serif(2,1,b,1/2,cap_jut,c,1/2,cap_jut)(dark); % lower left serif
+  dish_serif(3,4,e,1/2,cap_jut,f,1/2,cap_jut)(dark); fi  % upper right serif
+ math_fit(0,max(.5ic#-.5u#,0)); penlabels(1,1',2,3,4,4',5,6,7);
+ endletter
+enddef;
+
+% The letter N for the book has a sharper point at the bottom right
+% and the diagonal protrudes slightly at the top left.
+def smallN =
+ beginletter("N",13u#+width_adj#,cap_height#,0);
+ italcorr cap_height#*slant-cap_serif_fit#+cap_jut#-2.5u#+min(.5cap_stem#,u#);
+ adjust_fit(cap_serif_fit#,cap_serif_fit#);
+ adjust_transform;
+ numeric thin_stem; thin_stem=hround(fudged.hair+stem_corr);
+ pickup tiny.nib; pos1(thin_stem,0); pos2(thin_stem,0);
+ pos3(thin_stem,0); pos4(thin_stem,0);
+ pickup tiny.nib; top y1=top y3=h; bot y2=bot y4=0;
+ x1=x2; x3=x4; x1l=w-x3r;
+ rt x3r=hround min(w-2u,w-3u+.5fudged.cap_stem);
+ penpos5(whatever,0); penpos6(whatever,90);
+ z1l-z5l=(2/3cap_jut,0); z6l=z4r;
+ z7=z6l+(max(eps,cap_stem-3stem_corr-tiny),0) rotated (angle(z5l-z6l)-90);
+ z5r=z7+whatever*(z5l-z6l); z6r=z7+whatever*(z5l-z6l);
+ filldraw stroke z1e--z2e;  % left stem
+ pos4'(thin_stem,0); x4'=x4; y4'=y6;
+ filldraw stroke z3e--z4'e;  % right stem
+ filldraw stroke z5e..z6e;  % diagonal
+ if serifs:
+  serif(1,2,a,1/3,-cap_jut); % upper left serif
+  dish_serif(2,1,b,1/2,cap_jut,c,1/2,cap_jut)(dark); % lower left serif
+  dish_serif(3,4,e,1/2,cap_jut,f,1/2,cap_jut)(dark); fi  % upper right serif
+ math_fit(0,max(.5ic#-.5u#,0)); penlabels(1,1',2,3,4,4',5,6,7);
+ endletter
+enddef;
+
+def letterO =
+ beginletter("O",14u#-width_adj#,cap_height#,0);
+ italcorr .7cap_height#*slant-.5u#;
+ adjust_fit(0,0);
+ adjust_transform;
+ penpos1(vair',90); penpos3(vround(vair+1.5vair_corr),-90);
+ penpos2(cap_curve,180); penpos4(cap_curve,0);
+ if monospace: x2r=hround 1.5u;
+  interim superness:=sqrt superness;  % make |"O"|, not |"0"|
+ else: x2r=hround u; fi
+ x4r=w-x2r; x1=x3=.5w; y1r=h+o; y3r=-o;
+ y2=y4=.5h-vair_corr; y2l:=y4l:=.52h;
+ penstroke pulled_super_arc.e(1,2)(.5superpull)
+  & pulled_super_arc.e(2,3)(.5superpull)
+  & pulled_super_arc.e(3,4)(.5superpull)
+  & pulled_super_arc.e(4,1)(.5superpull) & cycle;  % bowl
+ math_fit(-.3cap_height#*slant-.5u#,ic#-.5u#); penlabels(1,2,3,4);
+ endletter
+enddef;
+
+%def letterR =
+% beginletter("R",if serifs: 12u#+.5max(2u#,cap_curve#)
+%  else:12.5u#-.5width_adj# fi,cap_height#,0);
+% italcorr .75cap_height#*slant- if serifs: 1.75 else: .5 fi\\ u#;
+% adjust_fit(cap_serif_fit#,0);
+% adjust_transform;
+% pickup tiny.nib; pos1(cap_stem',0); pos2(cap_stem',0);
+% lft x1l=lft x2l=hround max(2u,3u-.5cap_stem'); top y1=h; bot y2=0;
+% filldraw stroke z1e--z2e; % stem
+% penpos3(cap_band,90); penpos4(cap_band,90);
+% penpos5(cap_curve if hefty:-3stem_corr fi,0);
+% penpos6(vair,-90); penpos7(vair,-90);
+% z3r=top z1; y4=y3; y5=.5[y4l,y6l]; y6=y7;
+% x7=x2; y7l=vround(.5h+.5vair); x4=x6;
+% if serifs: x4=.5w-.5u; x5r=hround(w-2.25u);
+% else: x4=.5w+.5u; x5r=hround(w-u); fi
+% x4l:=x6l:=x4-.125cap_curve;
+% fill stroke z3e..pulled_arc.e(4,5) & pulled_arc.e(5,6)..z7e;  % lobe
+% if serifs: pos6'(vair,-90); pos0(cap_stem,180);
+%  pos8(cap_curve,180); pos9(vair,-90); pos10(hair,0);
+%  z6'=z6; lft x0r=lft x8r=hround(x5-2/3u-.5cap_curve);
+%  y8=1/3[y2,y7]; y0=3/5[y2,y7]; x9=.5[x8l,x10r];
+%  bot y9r=-o; rt x10r=hround(w-.05u); y10=1/4[y2,y7];
+%  filldraw stroke z6'e{right}..z0e---z8e....z9e{right}..z10e{up};  % tail
+%  nodish_serif(1,2,a,1/3,cap_jut,b,1/3,.5cap_jut);  % upper serif
+%  dish_serif(2,1,c,1/3,cap_jut,d,1/3,cap_jut);  % lower serif
+% else: penpos8(cap_stem-2stem_corr,0); penpos9(cap_stem,0);
+%  x8=x6+.5u; y8=y6; x9r=hround(w-.5u); y9=0;
+%  fill z8l--diag_end(8l,9l,.5,1,9r,8r)--z8r--cycle; fi  % tail
+% math_fit(0,.75ic#); penlabels(0,1,2,3,4,5,6,7,8,9,10);
+% endletter
+%enddef;
+
+% This modified letter R has a straight tail instead of a curly one.
+def letterR =
+ beginletter("R",if serifs: 12u#+.5max(2u#,cap_curve#)
+  else:12.5u#-.5width_adj# fi,cap_height#,0);
+ italcorr .75cap_height#*slant- if serifs: 1.75 else: .5 fi\\ u#;
+ adjust_fit(cap_serif_fit#,cap_serif_fit#);
+ adjust_transform;
+ pickup tiny.nib; pos1(cap_stem',0); pos2(cap_stem',0);
+ lft x1l=lft x2l=hround max(2u,3u-.5cap_stem'); top y1=h; bot y2=0;
+ filldraw stroke z1e--z2e; % stem
+ penpos3(cap_band,90); penpos4(cap_band,90);
+ penpos5(cap_curve if hefty:-3stem_corr fi,0);
+ penpos6(vair,-90); penpos7(vair,-90);
+ z3r=top z1; y4=y3; y5=.5[y4l,y6l]; y6=y7;
+ x7=x2; y7l=vround(.5h+.5vair); x4=x6;
+ if serifs: x4=.5w-.5u; x5r=hround(w-2.25u);
+ else: x4=.5w+.5u; x5r=hround(w-u); fi
+ x4l:=x6l:=x4-.125cap_curve;
+ fill stroke z3e..pulled_arc.e(4,5) & pulled_arc.e(5,6)..z7e;  % lobe
+ if serifs:
+  pos8(cap_stem+stem_corr,0); pos9(cap_stem+stem_corr,0);
+  x8=x6+.5u; y8=y6; x9=hround(x5r); bot y9=0;
+  filldraw z8l--diag_end(8l,9l,.5,1,9r,8r)--z8r--cycle; % tail
+  serif(9,8,e,1/3,0.5cap_jut); % tail serif
+  nodish_serif(1,2,a,1/3,cap_jut,b,1/3,.5cap_jut);  % upper serif
+  dish_serif(2,1,c,1/3,cap_jut,d,1/3,cap_jut);  % lower serif
+ else: penpos8(cap_stem-2stem_corr,0); penpos9(cap_stem,0);
+  x8=x6+.5u; y8=y6; x9r=hround(w-.5u); y9=0;
+  fill z8l--diag_end(8l,9l,.5,1,9r,8r)--z8r--cycle; fi  % tail
+ math_fit(0,.75ic#); penlabels(0,1,2,3,4,5,6,7,8,9,10);
+ endletter
+enddef;
+
+def letterS =
+ beginletter("S",10u#,cap_height#,0);
+ italcorr cap_height#*slant-u#;
+ adjust_fit(0,0);
+ adjust_transform;
+ numeric theta; theta=90-angle(50u,h); slope:=-h/50u;  % angle at middle
+ numeric s_slab; s_slab=if serifs:slab else:vround .2[slab,cap_stem] fi;
+ numeric ess'; ess'=max(fine.breadth,cap_ess);
+ pickup fine.nib; pos2(max(fine.breadth,s_slab-vround vair_corr),-90);
+ pos0(ess',theta); pos7(s_slab,-90);
+ x2+x7=2x0=w; x7-x2=if serifs: u else: 0 fi; top y2l=h+o; bot y7r=-o;
+ y0=.52h; lft x3l=hround u; rt x6r=hround(w-u);
+ x3r-x3l=x6r-x6l=hround .5[s_slab,ess']-fine;
+ ellipse_set(2l,3l,4l,0l); ellipse_set(2r,3r,4r,0r); y3=y3r;
+ ellipse_set(7l,6l,5l,0l); ellipse_set(7r,6r,5r,0r); y6=y6r;
+ filldraw stroke super_arc.e(2,3) & z3e{down}
+  ..z4e---z5e..z6e{down} & super_arc.e(6,7);  % main stroke
+ if serifs: pos1(hair,180); pos8(hair,180);
+  rt x1l=hround(w-1.5u); lft x8r=hround u;
+  bot y1=vround 2/3h+1; top y8=vround 1/3h-1;
+  filldraw stroke z1e{x2-x1,10(y2-y1)}....{left}z2e;  % upper arc
+  filldraw stroke z7e{left}....{up}z8e;  % lower arc
+  path upper_arc, lower_arc;
+  upper_arc=z1{x2-x1,10(y2-y1)}....{left}z2;
+  lower_arc=z7{left}....{up}z8;
+  pos10(.3[fine.breadth,cap_hair],0); pos9(.3[fine.breadth,cap_hair],0);
+  x10r=x1l; top y10=top y2l; x9l=x8r; bot y9=bot y7r;
+  x1l-x1'=x8'-x8r=1.6cap_curve-fine; y1'=y1; y8'=y8;
+  numeric t; t=xpart(upper_arc intersectiontimes(z10l--z1'));
+  filldraw z1l--z10r--z10l--subpath(t,0) of upper_arc--cycle;  % upper barb
+  t:=xpart(lower_arc intersectiontimes(z9r--z8'));
+  filldraw z8r--z9l--z9r--subpath(t,1) of lower_arc--cycle;  % lower barb
+ else: pos1(1.2flare,-100); pos8(1.2flare,-100);
+  x1l=good.x(x1l+w-1.75u-rt x1); lft x8r=hround .8u;
+  top y1l=vround .93h+o; bot y8r=vround .1h-o;
+  filldraw stroke term.e(2,1,right,.9,4);  % upper arc and terminal
+  filldraw stroke term.e(7,8,left,1,4); fi  % lower arc and terminal
+ math_fit(0,.5ic#); penlabels(0,1,1',2,3,4,5,6,7,8,8',9,10);
+endletter
+enddef;
+
+def letterT =
+ beginletter("T",13u#-width_adj#,cap_height#,0);
+ italcorr cap_height#*slant-beak_jut#-.25u#;
+ adjust_fit(0,0);
+ adjust_transform;
+ h:=vround(h-2stem_corr);
+ pickup tiny.nib; pos1(cap_stem,0); pos2(cap_stem,0);
+ lft x1l=lft x2l=hround(.5w-.5cap_stem); top y1=h; bot y2=0;
+ filldraw stroke z1e--z2e; % stem
+ pickup crisp.nib; pos3(slab,90); pos4(hair,0);
+ top y3r=h; x3=x1; rt x4r=hround(w-.65u); y4=good.y(y3l-beak)-eps;
+ arm(3,4,e,beak_darkness,.7beak_jut);  % right arm and beak
+ pos5(hair,180); x5=w-x4; y5=y4;
+ arm(3,5,f,beak_darkness,-.7beak_jut);  % left arm and beak
+ if serifs: dish_serif(2,1,c,1/3,1.414cap_jut,d,1/3,1.414cap_jut);  % lower serif
+  nodish_serif(1,2,a,1/3,.5cap_jut,b,1/3,.5cap_jut); fi  % upper bracketing
+ math_fit(-.75cap_height#*slant,ic#-2.5u#); penlabels(1,2,3,4,5,6);
+ endletter
+enddef;
+
+def letterU =
+ beginletter("U",13u#+.5width_adj#,cap_height#,0);
+ italcorr cap_height#*slant-cap_serif_fit#+cap_jut#-2.5u#+min(.5cap_stem#,u#);
+ if monospace: adjust_fit(cap_serif_fit#-.5u#,cap_serif_fit#-.5u#)
+ else: adjust_fit(cap_serif_fit#,cap_serif_fit#) fi;
+ adjust_transform;
+ pickup tiny.nib; pos1(cap_stem,0); pos2(cap_stem,0);
+ pos2'(cap_stem,180); z2'=z2;
+ pos3(cap_band,-90);
+ pos4(cap_hair,0); pos5(cap_hair,0);
+ x1=x2; x3=.5[x1,x5]; x4=x5; x1l=w-x5r;
+ top y1=top y5=h; y2=y4=1/3h; bot y3r=-o;
+ lft x1l=hround max(2u,3u-.5cap_stem);
+ filldraw stroke z1e--z2e; % left stem
+ filldraw stroke pulled_arc.e(2',3)
+  & pulled_arc.e(3,4)&z4e--z5e; % arc and right stem
+ if serifs: dish_serif(1,2,a,1/3,cap_jut,b,1/3,cap_jut); % left serif
+  dish_serif(5,4,c,1/2,cap_jut,d,1/2,cap_jut)(dark); fi  % right serif
+ math_fit(-cap_serif_fit#-.3cap_height#*slant-min(cap_height#*slant,u#),
+  max(.5ic#-.5u#,0)); penlabels(1,2,3,4,5);
+ endletter
+enddef;
+
+def letterV =
+ beginletter("V",13u#,cap_height#,0);
+ italcorr cap_height#*slant+.25u#;
+ adjust_fit(cap_serif_fit#,cap_serif_fit#);
+ adjust_transform;
+ numeric left_stem,right_stem,outer_jut,alpha;
+ left_stem=cap_stem-stem_corr;
+ right_stem=min(cap_hair if hefty:-2stem_corr fi,left_stem);
+ outer_jut=.75cap_jut; x1l=w-x4r=l+letter_fit+outer_jut+.25u; y1=y4=h;
+ x2-x1=x4-x3; x2l+apex_corr=x3l; y2=y3=-apex_o;
+ alpha=diag_ratio(2,right_stem,y1-y2,x4r-x1l-apex_corr);
+ penpos1(alpha*left_stem,0); penpos2(alpha*left_stem,0);
+ penpos3(alpha*right_stem,0); penpos4(alpha*right_stem,0);
+ z0=whatever[z1r,z2r]=whatever[z3l,z4l];
+ if y0>cap_notch_cut: y0:=cap_notch_cut;
+   fill z0+.5right{up}...{z4-z3}diag_end(3l,4l,1,1,4r,3r)
+     --diag_end(4r,3r,1,1,2l,1l)--diag_end(2l,1l,1,1,1r,2r){z2-z1}
+     ...{down}z0+.5left--cycle; % left and right diagonals
+ else: fill z0--diag_end(0,4l,1,1,4r,3r)--diag_end(4r,3r,1,1,2l,1l)
+     --diag_end(2l,1l,1,1,1r,0)--cycle; fi % left and right diagonals
+ if serifs: numeric inner_jut; pickup tiny.nib;
+  prime_points_inside(1,2); prime_points_inside(4,3);
+  if rt x1'r+cap_jut+.5u+1<=lft x4'l-cap_jut: inner_jut=cap_jut;
+  else: rt x1'r+inner_jut+.5u+1=lft x4'l-inner_jut; fi
+  dish_serif(1',2,a,1/3,outer_jut,b,1/2,inner_jut);  % left serif
+  dish_serif(4',3,c,.6,inner_jut,d,1/2,outer_jut)(dark); fi  % right serif
+ math_fit(.75u#-cap_height#*slant,ic#-4u#); penlabels(0,1,2,3,4);
+ endletter
+enddef;
+
+% The V in the book has a sharper point.
+def smallV =
+ beginletter("V",13u#,cap_height#,0);
+ italcorr cap_height#*slant+.25u#;
+ adjust_fit(cap_serif_fit#,cap_serif_fit#);
+ adjust_transform;
+ numeric left_stem,right_stem,outer_jut,alpha;
+ left_stem=cap_stem-stem_corr;
+ right_stem=min(cap_hair if hefty:-2stem_corr fi,left_stem);
+ outer_jut=.75cap_jut; x1l=w-x4r=l+letter_fit+outer_jut+.25u; y1=y4=h;
+ x2-x1=x4-x3;
+ x2l=x3r; y2=y3=0;
+ alpha=diag_ratio(2,right_stem,y1-y2,x4r-x1l-apex_corr);
+ penpos1(alpha*left_stem,0); penpos2(alpha*left_stem,0);
+ penpos3(alpha*right_stem,0); penpos4(alpha*right_stem,0);
+ z0=whatever[z1r,z2r]=whatever[z3l,z4l];
+ if y0>cap_notch_cut: y0:=cap_notch_cut;
+   fill z0+.5right{up}...{z4-z3}diag_end(3l,4l,1,1,4r,3r)
+     --diag_end(4r,3r,1,1,2l,1l)--diag_end(2l,1l,1,1,1r,2r){z2-z1}
+     ...{down}z0+.5left--cycle; % left and right diagonals
+ else: fill z0--diag_end(0,4l,1,1,4r,3r)--diag_end(4r,3r,1,1,2l,1l)
+     --diag_end(2l,1l,1,1,1r,0)--cycle; fi % left and right diagonals
+ if serifs: numeric inner_jut; pickup tiny.nib;
+  prime_points_inside(1,2); prime_points_inside(4,3);
+  if rt x1'r+cap_jut+.5u+1<=lft x4'l-cap_jut: inner_jut=cap_jut;
+  else: rt x1'r+inner_jut+.5u+1=lft x4'l-inner_jut; fi
+  dish_serif(1',2,a,1/3,outer_jut,b,1/2,inner_jut);  % left serif
+  dish_serif(4',3,c,.6,inner_jut,d,1/2,outer_jut)(dark); fi  % right serif
+ math_fit(.75u#-cap_height#*slant,ic#-4u#); penlabels(0,1,2,3,4);
+ endletter
+enddef;
+
+def letterX =
+ beginletter("X",13u#,cap_height#,0);
+ italcorr cap_height#*slant-.25u#;
+ adjust_fit(cap_serif_fit#,cap_serif_fit#);
+ adjust_transform;
+ numeric stem[],outer_jut,xjut,alpha[];
+ stem1=cap_stem-2stem_corr; stem2=min(cap_hair,stem1);
+ outer_jut=.75cap_jut; xjut= if serifs: (stem1-stem2)/4 else: 0 fi;
+ x1l=l+letter_fit+.5u+outer_jut; x2r=r-letter_fit-u-outer_jut-xjut;
+ x3l=l+letter_fit+.25u+outer_jut+xjut; x4r=r-letter_fit-.25u-outer_jut;
+ y1=y2=h; y3=y4=0;
+ alpha1=diag_ratio(1,stem1,h,x4r-x1l);
+ alpha2=diag_ratio(1,stem2,h,x2r-x3l);
+ penpos1(alpha1*stem1,0); penpos2(alpha2*stem2,0);
+ penpos3(alpha2*stem2,0); penpos4(alpha1*stem1,0);
+ if hefty: z0=whatever[z1,z4]=whatever[z2,z3];
+  x12=x34=x0; y13=y24=y0;
+  z12=whatever[z2l,z3l]; z13=whatever[z2l,z3l];
+  z24=whatever[z2r,z3r]; z34=whatever[z2r,z3r];
+  forsuffixes $=13,24,34: z$'=.1[z$,z0]; endfor
+  fill diag_end(12,1r,.5,1,1l,13')--z13'--diag_end(13',3l,1,.5,3r,34')--z34'
+   --diag_end(34',4l,.5,1,4r,24')--z24'
+   --diag_end(24',2r,1,.5,2l,12)--z12--cycle; % diagonals
+ else: fill diag_end(4r,1r,.5,1,1l,4l)
+   --diag_end(1l,4l,.5,1,4r,1r)--cycle; % left diagonal
+  fill diag_end(2l,3l,.5,1,3r,2r)
+   --diag_end(3r,2r,.5,1,2l,3l)--cycle; fi  % right diagonal
+ if serifs: numeric inner_jut[]; pickup tiny.nib;
+  prime_points_inside(1,4); prime_points_inside(2,3);
+  prime_points_inside(3,2); prime_points_inside(4,1);
+  if rt x1'r+cap_jut+.5u+1<=lft x2'l-cap_jut-xjut: inner_jut1=cap_jut;
+  else: rt x1'r+inner_jut1+.5u+1=lft x2'l-inner_jut1-xjut; fi
+  if rt x3'r+cap_jut+.5u+1<=lft x4'l-cap_jut-xjut: inner_jut2=cap_jut;
+  else: rt x3'r+inner_jut2+.5u+1=lft x4'l-inner_jut2-xjut; fi
+  dish_serif(1',4,a,1/3,outer_jut,b,2/3,inner_jut1);  % upper left serif
+  dish_serif(4',1,c,2/3,inner_jut2,d,1/3,outer_jut);  % lower right serif
+  dish_serif(2',3,e,2/3,inner_jut1+xjut,
+   f,1/2,outer_jut+xjut)(dark);  % upper right serif
+  dish_serif(3',2,g,1/2,outer_jut+xjut,
+   h,2/3,inner_jut2+xjut)(dark); fi  % lower left serif
+ math_fit(0,.5ic#); penlabels(0,1,2,3,4,12,13,24,34);
+ endletter
+enddef;
+
+def letterY =
+ beginletter("Y",13u#,cap_height#,0);
+ italcorr cap_height#*slant+.45u#;
+ adjust_fit(cap_serif_fit#,cap_serif_fit#);
+ adjust_transform;
+ numeric left_stem,right_stem,outer_jut,dy,alpha;
+ left_stem=cap_stem-stem_corr;
+ right_stem=min(cap_hair if hefty:-2stem_corr fi,left_stem);
+ outer_jut=.75cap_jut; x1l=w-x4r=l+letter_fit+outer_jut+.05u;
+ x2l=x5l=hround(.5w-.5left_stem); x3r=x5r; y1=y4=h; y2=y3=y5=.4h;
+ dy=y1-y2; alpha=((x2l-x1l)++dy)/dy;
+ penpos1(alpha*left_stem,0); penpos2(alpha*left_stem,0);
+ penpos3(alpha*right_stem,0); penpos4(alpha*right_stem,0);
+ penpos5(left_stem,0); penpos6(left_stem,0); x5=x6; y6=0;
+ z0=whatever[z1r,z2r]=whatever[z3l,z4l];
+ if y0>y2+cap_notch_cut: y0:=y2+cap_notch_cut;
+   fill z0+.5right{up}...{z4-z3}diag_end(3l,4l,1,1,4r,3r)--z5r
+     --diag_end(5r,6r,1,1,6l,5l)--z5l--diag_end(2l,1l,1,1,1r,2r){z2-z1}
+     ...{down}z0+.5left--cycle; % diagonals and stem
+ else: fill z0--diag_end(0,4l,1,1,4r,3r)--z5r
+     --diag_end(5r,6r,1,1,6l,5l)--z5l
+     --diag_end(2l,1l,1,1,1r,0)--cycle; fi  % diagonals and stem
+ if serifs: numeric inner_jut; pickup tiny.nib;
+  prime_points_inside(1,2); prime_points_inside(4,3); prime_points_inside(6,5);
+  if rt x1'r+cap_jut+.5u+1<=lft x4'l-cap_jut: inner_jut=cap_jut;
+  else: rt x1'r+inner_jut+.5u+1=lft x4'l-inner_jut; fi
+  dish_serif(1',2,a,1/3,outer_jut,b,1/2,inner_jut);  % upper left serif
+  dish_serif(4',3,c,.6,inner_jut,d,1/2,outer_jut)(dark);  % upper right serif
+  dish_serif(6',5,e,1/3,cap_jut,f,1/3,cap_jut); fi  % lower serif
+ math_fit(.5u#-cap_height#*slant,ic#-4u#);
+ penlabels(0,1,2,3,4,5,6);
+ endletter
+enddef;
+

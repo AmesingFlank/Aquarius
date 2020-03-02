@@ -1,0 +1,307 @@
+% METAFONT program to draw Oxford University crest.
+
+mode_setup;
+
+def crown(suffix $) =
+
+   def spear (suffix i) =
+      z.i.c = z.i + (0, 2.5u);
+      z.i.a = z.i + (-0.25u, 0);  z.i.e = z.i.a reflectedabout (z.i, z.i.c);
+      z.i.b = z.i + (-0.6u, u);   z.i.d = z.i.b reflectedabout (z.i, z.i.c);
+   enddef;
+
+   def spearpath (suffix i)(expr theta) =   
+      (z.i.a{up}...{left}z.i.b--z.i.c--z.i.d{left}...{down}z.i.e)
+          rotatedaround (z.i,theta)
+   enddef;
+
+   def axis =
+      (z1$, z9$)
+   enddef;
+
+   z1$ = (7.5u, 0);
+   z2$ = (3.5u, u);
+   z3$ = (0, 7.5u);
+   z4$ = (1.75u, 6.5u);
+   z5$ = (2.5u, 5.5u);
+      z5$.a = (2u, 5.5u);
+   z6$ = (4.25u, 5.5u);   spear(6$);
+   z7$ = (5.5u, 6u);
+      z7$.a = (6u, 6.5u);
+   z8$ = (7u, 7u);
+   z9$ = (7.5u, 9.5u);
+   
+   path p;
+   p = z1${left}..z2${dir 135}..{dir 135}z3$ &
+       z3${dir 20}..{down}z4$ &
+       z4${dir 45}..{-dir 45}z5$ &
+       z5${up}..z5$.a{down}..spearpath(6$,15)..{left}z7$.a..{down}z7$ &
+       z7${dir 135}..{-dir 135}z8$ &
+       z8${dir 120}..z9$;
+   pickup pencircle scaled .01pt; 
+   fill (p -- (reverse p reflectedabout axis) -- cycle);
+   
+   penpos10$(.5u, -70); z10$l = (3u, 3.5u);
+   z11$l = z10$l reflectedabout axis;
+   z11$r = z10$r reflectedabout axis;
+   unfill z10$l{dir 20}..{dir -20}z11$l--z11$r{dir 160}..{dir 200}z10$r--cycle;
+   
+   unfill unitsquare shifted (-.5,-.5) rotated -45 xscaled .75u yscaled u 
+        shifted (7.5u, 3u);
+        
+   path ellipticaljewel;
+   ellipticaljewel = fullcircle xscaled .75u yscaled u rotated 15 
+       shifted (5.5u, 2.75u);
+   unfill ellipticaljewel;
+   unfill ellipticaljewel reflectedabout axis;
+   
+   path diamondjewel;
+   diamondjewel = unitsquare shifted (-.5,-.5) rotated -45 
+       xscaled .5u yscaled .75u rotated 20 shifted (4u, 2.4u);
+   unfill diamondjewel;
+   unfill diamondjewel reflectedabout axis;
+   
+   unfill fullcircle xscaled 6u yscaled 1.5u shifted (7.5u, u);
+   fill fullcircle xscaled 4.5u yscaled u shifted (7.5u, .85u);
+enddef;   
+
+def shield(suffix $) =
+   z1$ = (.5w, 0);
+   
+   def axis = (z1$, z1$ + (0,1)) enddef;
+   
+   z2$ = (0, 40u);
+   z3$ = z2$ reflectedabout axis;
+   
+   pickup pencircle scaled u;
+   draw z1${dir 160}..{dir 80}z2$---z3${dir -80}..{dir -160}z1$;
+
+enddef;
+
+def book(suffix $) = 
+   z1$ = (12.5u, 0);
+   
+   roundness := u;
+   thick := .4u;
+   thin := .25u;
+   
+   def axis = (z1$, z1$ + (0,1)) enddef;
+   
+   z2$ = z1$ + (-2u, 2u);
+   z3$ = z2$ + 2u*down; z3$a = z3$+roundness*up;    z3$b = z3$+roundness*left;
+   z4$ = (0,0);         z4$a = z4$+roundness*right; z4$b = z4$+roundness*up;
+   z5$ = (0, 13u);      z5$a = z5$+roundness*down;  z5$b = z5$+roundness*right;
+   z6$ = (2u, 12u);
+   
+   path p;
+   p = z1${left}..z2${up} & 
+       z2${down}..z3$a..z3$b---z4$a..z4$b---z5$a..z5$b..{dir -45}z6$;
+   
+   pickup pencircle scaled thick;
+   draw p;
+   draw (p reflectedabout axis);
+   
+   z7$ = z1$ + 2u*up;
+   z8$ = (3u, 3u);
+   
+   path pageedge;
+   pageedge = z7${dir 135}..z8${dir 150};
+   
+   path page;
+   page = pageedge --- (reverse pageedge shifted (10u*up)) --- cycle;
+   
+   pickup pencircle scaled thin;
+   draw page;
+   draw page reflectedabout axis;
+   
+   z9$ = z1$ + (-3u, 1.5u);
+   z10$ = (1.5u, 1.5u);
+   z11$ = z10$ + 10u*up;
+   
+   draw z10$--z8$;
+   draw z11$--(z8$ shifted (10u*up));
+   draw z10$--(z10$ + .5u*up);
+   
+   draw (z8$--z10$--z11$--(z8$ shifted (10u*up))) reflectedabout axis;
+   draw ((z10$+(.5u, .5u))--(z11$+(.5u, .5u))) reflectedabout axis;
+   draw ((z10$+(u, u))--(z11$+(u, u))) reflectedabout axis;
+   
+   path pages;
+   pages=(z9$..(z9$+.8u*up){left}..(z10$+(.8u, .8u)){dir 150}---z10$--- cycle)
+          shifted (.5thin * down);
+   fill pages;
+   fill pages reflectedabout axis;
+   
+   fill (halfcircle--cycle) xscaled 2u yscaled u shifted z7$;
+   fill (halfcircle--cycle) rotated 180 xscaled 2u yscaled 1.5u shifted z7$;
+
+   def blob(expr z) = 
+      fill fullcircle scaled 1.5u shifted z;
+   enddef;
+   
+   def dangle(suffix i) =
+      draw (z.i + .5u*right)--(z.i + 1.5u*left);
+      blob (z.i + 1.5u*left)
+   enddef;  
+   
+   z12$ = z10$ + (0, u); dangle (12$);
+   blob (z12$ +1.5u*up);
+   
+   z13$ = z12$ + (0, 3u); dangle (13$);
+   blob (z13$ +1.5u*up);
+   
+   z14$ = z13$ + (0, 3u); dangle (14$);
+   blob (z14$ +1.5u*up);
+   
+   z15$ = z14$ + (0, 3u); dangle (15$);
+
+   lht := 2u;
+   
+   def letterD ( expr p ) =
+      pair d.a, d.b;
+      d.a = p + lht*up;
+      d.b = p + (5/8lht, 1/2lht);
+      draw p--d.a{right}..d.b..{left}p;
+   enddef;
+   
+   def letterO ( expr p) = 
+      draw fullcircle xscaled 3/4lht yscaled lht shifted (p + (3/8lht,1/2lht));
+   enddef;
+   
+   def letterM ( expr p ) =
+      pair m.a, m.b, m.c, m.d;
+      m.a = p + lht*up;
+      m.c = m.a + lht*right;
+      m.d = p + lht*right;
+      m.b = .5[p, m.d];
+      draw p--m.a--m.b--m.c--m.d;
+   enddef;
+   
+   def letterI ( expr p ) =
+      draw p--(p+lht*up);
+   enddef;
+   
+   def letterN ( expr p ) =
+      pair m.a, m.b, m.c;
+      m.a = p + lht*up;
+      m.b = p + 3/4lht*right;
+      m.c = m.b + lht*up;
+      draw p--m.a--m.b--m.c;
+   enddef;
+   
+   def letterU ( expr p ) =
+      pair u.a, u.b, u.c;
+      u.a = p + lht*up;
+      u.c = u.a + 3/4lht*right;
+      u.b = p + 3/8lht*right;
+      draw u.a--u.b--u.c;
+   enddef;
+   
+   def letterS ( expr p ) =
+      pair s.a, s.b, s.c, s.d, s.e, s.f, s.g;
+      s.a = p + 1/4lht*up;
+      ypart s.b = ypart p; xpart s.b = .5[xpart s.a, xpart s.d];
+      ypart s.c = ypart p + lht; xpart s.c = xpart s.b;
+      s.d = p + 3/4lht*up + 3/4lht*right;
+      xpart s.f = xpart s.a; ypart s.f = ypart s.d;
+      s.e = .5[s.b, s.c];
+      s.g = s.f rotatedabout(s.e,180);
+      draw s.a..{right}s.b..s.g..{dir 160}s.e..s.f..{right}s.c..s.d;
+   enddef;
+   
+   def letterL ( expr p ) =
+      pair l.a, l.b;
+      l.a = p + lht*up;
+      l.b = p + 5/8lht*right;
+      draw l.a--p--l.b;
+   enddef;
+   
+   def letterA ( expr p ) =
+      pair a.b, a.c;
+      a.c = p + 7/8lht*right;
+      xpart a.b = .5[xpart p, xpart a.c]; ypart a.b = ypart p + lht;
+      draw p--a.b--a.c;
+      draw .4[p,a.b]--.4[a.c,a.b];
+   enddef;
+   
+   def letterT ( expr p ) =
+      pair t.a, t.b, t.c;
+      t.a = p + lht*up;
+      t.b = t.a + 3/4lht*right;
+      t.c = p + 3/8lht*right;
+      draw t.a--t.b;
+      draw (.5[t.a,t.b])--t.c;
+   enddef;
+   
+   def letterE ( expr p ) =
+      pair e.a, e.b, e.c, e.d;
+      e.a = p + lht*up;
+      e.b = e.a+3/4lht*right;
+      e.d = p  +3/4lht*right;
+      e.c = .5[p,e.a] + 1/2lht*right;
+      draw e.b--e.a--p--e.d;
+      draw .5[p,e.a]--e.c;
+   enddef;
+   
+   z16$ = (4.5u, 9.5u);
+   letterD ( z16$ );
+   letterO ( z16$ + 7/8lht*right);
+   letterM ( z16$ + 15/8lht*right);
+   letterI ( z16$ + 26/8lht*right);
+   
+   z17$ = z16$ + 1.4lht*down+1/4lht*left;
+   letterN ( z17$ + 1/2lht*right);
+   letterU ( z17$ + 3/2lht*right);
+   letterS ( z17$ + 21/8lht*right);
+   
+   z18$ = z16$ + 2.8lht*down;
+   letterI ( z18$ + 1/4lht*right);
+   letterL ( z18$ + 5/8lht*right);
+   letterL ( z18$ + 12/8lht*right);
+   letterU ( z18$ + 19/8lht*right);
+   
+   z19$ = z16$ + 9.5u*right;
+   letterM ( z19$ - 1/8lht*right);
+   letterI ( z19$ + 10/8lht*right);
+   letterN ( z19$ + 13/8lht*right);
+   letterA ( z19$ + 21/8lht*right);
+   
+   z20$ = z19$  + 1.4lht*down + 1/4lht*right;
+   letterT ( z20$ + 1/4lht*right);
+   letterI ( z20$ + 11/8lht*right);
+   letterO ( z20$ + 14/8lht*right);
+   
+   z21$ = z19$ + 2.8lht*down;
+   letterM ( z21$);
+   letterE ( z21$ + 11/8lht*right);
+   letterA ( z21$ + 19/8lht*right);
+
+enddef;
+
+beginchar(1, 35pt#, 40pt#, 0); "Crown";
+   
+   u := pt;
+   
+   transform tfm;
+   tfm := currenttransform;
+   
+   currenttransform := tfm shifted (round 2u, round 29u);
+   crown(a);
+   
+   currenttransform := tfm shifted (round 18u, round 29u);
+   crown(b);
+   
+   currenttransform := tfm shifted (round 10u, round 4u);
+   crown(c);
+   
+   currenttransform := tfm shifted (5u, 15u);
+   book(d);
+
+   currenttransform := tfm;
+   shield(e);
+
+endchar;
+
+end
+
+

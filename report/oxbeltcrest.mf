@@ -1,0 +1,962 @@
+% The "belted" crest of Oxford University.
+% MF source by Ian Collier, June 1997,
+% (C) Oxford University Computing Laboratory.
+%
+% The design drawn by this program is a trade mark of the University of
+% Oxford.  It may only be used for official University business, and
+% then only for non-commercial purposes.  More information is available
+% from ftp://micros.oucs.ox.ac.uk/graphics/crests/readme.1st or from Mrs
+% Patricia Whitehead, University Purchasing Officer.
+
+% If this is invoked in proof mode then reduce the resolution as
+% 36 pixels per pt is rather too large for this design.  Make sure
+% a large enough window is opened on the display.
+mode_def myproof = proof_; mode_param (pixels_per_inch, 600); enddef;
+if unknown mode: mode=myproof; fi
+def openit = openwindow currentwindow
+ from origin to (1152,1152) at (-50,800) enddef;
+
+% size# defines the diameter of the whole symbol.  It probably doesn't
+% help to change this.
+size# = 95pt#;
+
+if unknown cmbase: input cmbase fi
+
+font_identifier "crest"; font_size size#;
+font_coding_scheme "Char0";
+fontdimen 1: 0,0,0,0,0,0,0;
+def font_identifier text t = enddef;
+def font_size text t = enddef;
+def font_coding_scheme text t = enddef;
+
+% input the definitions of letters
+scantokens ("input " & jobname & "letters");
+
+% The larger letters will be based on cmr9.
+def generate primary p = enddef;
+input cmr9;
+
+mode_setup; font_setup; def t_ = transformed currenttransform enddef;
+
+% Things satisfying the vague description "parameters" follow.
+% Most numbers described as "position" are angles of elevation
+% relative to the centre of the crest.  It seems to be more
+% convenient to work in polar co-ordinates.
+% Names ending with f1, f2, etc describe parameters which didn't seem to
+% deserve more descriptive names.
+
+thick# = 1.2pt#;                  % pen width for outer circle and belt
+thin# = 0.33pt#;                  % pen width for inner circle and most details
+outer_diam# = size#-thick#        % diameter of outer circle
+ = 2outer_rad#;                   % radius of outer circle
+circle_gap# = 1.4pt#;             % circle-circle and circle-letter gap
+belt_left_angle = 236;            % position of edge of buckle
+belt_over_angle = -49;            % position 1 where belt crosses itself
+belt_under_angle = -67;           % position 2 where belt crosses itself
+buckle_vert = -7;                 % angle of vertical bit of buckle
+buckle_diam# = 3.5pt#;            % diameter of round ends
+buckle_width# = 3.5pt#;           % width of buckle at wide end
+pin_length# = 8pt#;               % length of pin
+pin_width# = 2.4pt#;              % width of pin
+fleur_depth# = 12pt#;             % depth of tip of fleur
+fleur_width# = 15pt#;             % width of fleur
+fleur_narrow# = 7pt#;             % width of fleur at narrow point
+bell_length# = 16pt#;             % length of bell-shaped part
+wavy_length# = 4.1pt#;            % length of black wavy bit
+wavy_width# = 2.0pt#;             % initial width of wavy bit
+wavy_dir = 4;                     % initial direction of wavy bit
+belt_gap1# = 0.9pt#;              % gap for horizontal belt
+belt_gap2# = 0.6pt#;              % gap for vertical belt
+beltf1 = -62;                     % horizontal belt/ra2 cross position
+beltf2 = 5;                       % horizontal belt/ra2 cross angle
+beltf3 = -65;                     % horizontal belt 1-2 cross position
+beltf4 = -59;                     % horizontal belt 2-3 cross position
+beltf5 = 5;                       % angular width of vertical belt curl
+beltf6 = -87;                     % position of top left of vertical belt
+beltf7 = -93;                     % position of bottom left of v.b.
+beltf8 = -80;                     % position of bottom right of v.b.
+beltf9 = -83;                     % position of top right of lower v.b.
+beltf10 = -96;                    % position of top left of lower v.b.
+beltf11# = 17pt#;                 % width of lower v.b. at widest point
+beltf12# = 55pt#;                 % depth of lower v.b. end
+dot_angle1 = -89;                 % position of first dot
+dot_angle2 = -79;                 % position of second dot
+fleurf1# = 2.9pt#;                % x-coord of inner point
+fleurf2# = 4pt#;                  % y-coord of inner point rel to tip
+fleurf3 = 10;                     % first direction
+fleurf4 = 65;                     % second direction
+fleurf5 = 105;                    % third direction
+fleurf6 = -15;                    % fourth direction
+fleurf7 = 80;                     % fifth direction
+fleurf8 = 50;                     % sixth direction
+fleurf9# = 9.8pt#;                % height of points rel to tip
+fleurf10# = 10pt#;                % height of narrowest point rel to tip
+book_width# = 38pt#;              % overall width of book
+book_height# = 22pt#;             % overall height of book
+book_inset# = 4.0pt#;             % distance between cover and top page
+book_thick# = 0.6pt#;             % thickness of line for book outline
+book_pos = 0.38;                  % how much of book is above centre line
+book_wave# = 0.4pt#;              % page deformation
+seal_offset# = 4.0pt#;            % horizontal length of seals
+seal_width# = 1.8pt#;             % width of seals
+seal_diam# = 3.0pt#;              % diameter of seals
+crown_width_b# = 14.2pt#;         % width of crown bottom
+crown_width_t# = 20.2pt#;         % width of crown between points
+crown_height# = 13.4pt#;          % total height of crown
+crown_band# = 3.0pt#;             % width of band at bottom of crown
+crown_mag = 1.15;                 % difference in size of bottom crown
+crown_gap# = 0.6pt#;              % gap in crown band
+crown_pos = 43;                   % angular position of top crowns
+crown_pos3# = 2.3pt#;             % height of bottom crown
+crownf1# = 1.4pt#;                % curve of crown bottom
+crownf2# = 1.1pt#;                % curve of crown band
+crownf3 = 80;                     % angle of points
+crownf4# = 1.0pt#;                % protrusion of points
+
+% At various places in the source there are arbitrary numbers determined
+% by trial and error.  Any number which is used in two or more places is
+% defined here.
+ff1 = 0.55;                       % fudge factor 1 (buckle)
+ff2 = -3;                         % fudge factor 2 (bell shape)
+ff3 = 0.7;                        % fudge factor 3 (belt)
+ff4 = 0.84;                       % fudge factor 4 (crown band)
+ff5 = 0.78;                       % fudge factor 5 (crown)
+ff6 = 5;                          % fudge factor 6 (crown)
+ff7 = 0.56;                       % fudge factor 7 (crown)
+ff8 = 0.35;                       % fudge factor 8 (crown)
+ff9 = 1.6;                        % fudge factor 9 (shape within vertical belt)
+
+% Conversion from degrees to radians and vice versa
+twopi=6.28318531;
+vardef rad primary d = save r; 360r=twopi*d; r enddef;
+vardef deg primary r = save d; 360r=twopi*d; d enddef;
+
+% It beats me why this useful definition was left out of plain.mf. :-)
+vardef good.xy primary p = (good.x xpart(p),good.y ypart(p)) enddef;
+
+% For positions which are expressed as angles, it is useful to know
+% at what point a path reaches that angle.  The time will be
+% angletime(path,dir) and the position will therefore be
+% point angletime(path,dir) of path.
+vardef radius primary d = (origin--2outer_rad*dir d) enddef;
+vardef angletime (expr p,d) = xpart (p intersectiontimes radius d) enddef;
+
+% Helper function for inner_path
+def offset(expr l) expr n of p = (unitvector direction n of p zscaled (0,l))
+enddef;
+
+% The following function takes a path p and a distance l and returns a
+% (approximate) parallel path at distance l from p.  If p goes
+% anti-clockwise and l is positive, the new path will be inside p.
+% The new path will be given f points for every point on the old path.
+% This doesn't work for paths which are cycles, but some cycles can
+% be hacked (see the shapes inside the lower belt).
+
+def inner_path (expr p,l,f) =
+ begingroup save a,b,t,d,q;
+  (point 0 of p shifted offset(l) epsilon of p){direction epsilon of p}
+  for n=1 upto f*length p-1:
+   ..
+   hide (
+    pair d[];
+    d2 = unitvector (direction (n/f-epsilon) of p);
+    d3 = unitvector (direction (n/f+epsilon) of p);
+    d5 = point n/f of p;
+   )
+   if abs ((d2 rotated 90) dotprod d3) < eps:
+    (d5 shifted offset(l) n/f of p){direction n/f of p}
+   elseif (d2 zscaled (0,l)) dotprod d3 < 0:
+    % An external point is being made.
+    hide (
+     d6 = d5 + d2 zscaled (0,l) + whatever*d2;
+     d6 = d5 + d3 zscaled (0,l) + whatever*d3;
+    )
+    d5 shifted (d2 zscaled (0,l)) .. {curl1}d6{curl1} ..
+    d5 shifted (d3 zscaled (0,l))
+   else:
+    % An internal point is being made
+    hide (
+     numeric t[]; path q[];
+     d1 = unitvector (direction (n-1)/f+epsilon of p);
+     d4 = unitvector (direction (n+1)/f-epsilon of p);
+     q1 = point (n-1)/f of p shifted (d1 zscaled (0,l)){d1}
+          ..{d2}point n/f of p shifted (d2 zscaled (0,l));
+     q2 = point n/f of p shifted (d3 zscaled (0,l)){d3}
+          ..{d4}point (n+1)/f of p shifted (d4 zscaled (0,l));
+     (t1,t2) = q1 intersectiontimes q2;
+     d0 = 1/2[point t1 of q1, point t2 of q2];
+    )
+    {direction t1 of q1}d0{direction t2 of q2}
+   fi
+  endfor
+  ..{direction (length p-epsilon) of p}
+  (point (length p) of p shifted offset(l) (length p-epsilon) of p)
+ endgroup
+enddef;
+
+% It seems convenient for most of these to be in whole pixels,
+% but parameters for the crown are going to be magnified by
+% crown_mag anyway so they might as well be exact numbers.
+define_whole_pixels(circle_gap,outer_rad);
+define_whole_pixels(buckle_diam,buckle_width,pin_length,bell_length,pin_width);
+define_whole_pixels(wavy_length);
+define_whole_blacker_pixels(wavy_width);
+define_whole_pixels(belt_gap1,belt_gap2,beltf11,beltf12);
+define_whole_pixels(fleur_depth,fleur_width,fleur_narrow);
+define_whole_pixels(fleurf1,fleurf2,fleurf9,fleurf10);
+define_whole_blacker_pixels(thick,thin);
+define_whole_pixels(book_width,book_height,book_inset,book_wave);
+define_whole_blacker_pixels(book_thick);
+define_whole_pixels(seal_offset,seal_width,seal_diam);
+define_pixels(crown_width_b,crown_width_t,crown_height,crown_band);
+define_pixels(crownf1,crownf2,crown_pos3);
+define_pixels(crownf4);
+define_pixels(crown_gap);
+
+pair centre;   % centre of whole figure
+centre=(hround(0.5size#*hppp),vround(0.5size#*hppp));
+
+% The radii of the four outer circles (ra1-4), plus the baseline
+% and centreline (ra5) for the outer lettering.
+ra1 = outer_rad-eps;
+ra2 = ra1-0.5[thin,thick]-circle_gap;
+baseline = ra2-0.5thin-circle_gap-cap_height;
+ra3 = baseline-circle_gap-0.5thin;
+ra4 = ra3-0.5[thin,thick]-circle_gap;
+ra5 = baseline+0.5cap_height;
+
+% Save some pens for later
+pickup pencircle scaled book_thick;
+book.nib := savepen;
+pickup pencircle scaled thick;
+thick.nib := savepen;
+pickup pencircle scaled thin;
+thin.nib := savepen;
+
+"The belted crest";
+beginchar(0,size#,size#,fleur_depth#+beltf12#-1/2size#);
+ adjust_fit(0pt#,0pt#);
+ % All co-ordinates are relative to the centre
+ currenttransform := identity shifted centre
+  if known currenttransform: transformed currenttransform fi;
+
+ % The belt and associated devices are calculated first.  They depend
+ % on things being drawn in the right order so that they overlap nicely.
+ message "(buckle,";
+ % Pin
+ pair d.pin[];
+ z.ptip1 = good.xy(ra5*dir belt_left_angle);
+ z.ptip2 = good.xy(ra5*dir (belt_left_angle+deg(pin_length/ra5)));
+ d.pin1 = 1/2pin_width*unitvector (z.ptip2-z.ptip1);
+ z.pcen1-z.ptip1 = d.pin1;
+ z.pcen2-z.ptip2 = -d.pin1;
+ d.pin2 = d.pin1 rotated 90;
+ z.pin1 = good.xy(z.pcen1+d.pin2);
+ z.pin2 = good.xy(z.pcen1-d.pin2);
+ z.pin3 = good.xy(z.pcen2-d.pin2);
+ z.pin4 = good.xy(z.pcen2+d.pin2);
+ labels(ptip1,ptip2,pin1,pin2,pin3,pin4);
+
+ % Arms of buckle
+ z.bcen0 = good.xy(0.38[z.pcen1,z.pcen2]);
+ pair d.b[];
+ d.b1 = dir (buckle_vert-90);
+ d.b2 = dir (2angle d.pin1 - (buckle_vert-90) + 3);
+ d.b3 = 1/2buckle_width*unitvector d.pin1;
+ buckle_length = (ra1-ra5)/(d.b1 dotprod -unitvector d.pin2);
+ path p.b[][];
+ z.bcen1 = good.xy(z.bcen0+buckle_length*d.b1);
+ z.bcen2 = good.xy(z.bcen0+(buckle_length-1/2thick)*d.b2);
+ for i=1,2:
+  p.b[i]1 = good.xy (z.bcen0-d.b3)--good.xy(z.bcen[i]-ff1*d.b3);
+  p.b[i]2 = good.xy (z.bcen0+d.b3)--good.xy(z.bcen[i]+ff1*d.b3);
+  p.b[i]3 = fullcircle scaled (buckle_diam-eps) shifted z.bcen[i];
+  t.b1[i] = xpart (p.b[i]3 intersectiontimes p.b[i]1);
+  t.b2[i] = xpart (p.b[i]3 intersectiontimes p.b[i]2);
+ endfor
+ labels(bcen0,bcen1,bcen2);
+
+ % Bell-shaped part
+ z.bel1 = z.bcen1-1/2thick*d.b1;
+ z.bel2 = z.bcen2-1/2thick*d.b2;
+ bell_angle = belt_left_angle + deg(bell_length/ra5);
+ z.bel3 = (ra1+0.6*buckle_diam)*dir (bell_angle+ff2);
+ z.bel4 = (ra4-0.4buckle_diam)*dir bell_angle;
+ path p.bel;
+ p.bel = z.bel1{z.bel1 rotated 90}..z.bel3--z.bel4..{z.bel2 rotated -90}z.bel2;
+ t1.bel = xpart (p.bel intersectiontimes p.b1 3);
+ t2.bel = xpart (p.bel intersectiontimes p.b2 3);
+ labels(bel1,bel2,bel3,bel4);
+
+ message " belt,";
+ % Horizontal belt - 4 paths, of which number 1 is the lowest.
+ pair d.hb[];
+ rb1 = ra2;
+ rb2 = rb1 - 1/2[thin,thick]-belt_gap1;
+ rb4 = ra3;
+ rb3 = rb4 + 1/2[thin,thick]+belt_gap1;
+ d.hb0 = dir (bell_angle+ff2);
+ for i=1 upto 4: z.hb[i]1 = rb[i]*d.hb0; endfor
+ d.hb1 = (z.bel2-z.bel1) rotated -90;
+ z.hb4 2 = ra1*dir belt_over_angle;
+ z.hb3 2 = z.hb4 2;
+
+ path p.hb[];
+ p.hb4 = z.hb4 1{d.hb1}..tension 1.5 and 1..(ra2*dir beltf1){dir beltf2}..{curl 1.5}z.hb4 2;
+ p.hb3 = subpath (0,ff3*length p.hb4) of (p.hb4 shifted (z.hb3 1-z.hb4 1))..{curl 1.5}z.hb3 2;
+ z.hb2 2 = point (angletime(p.hb3,beltf4)) of p.hb3;
+ p.hb2 = subpath (0,0.2*length p.hb3) of (p.hb3 shifted (z.hb2 1-z.hb3 1))..z.hb2 2;
+ z.hb1 2 = point (angletime(p.hb2,beltf3)) of p.hb2 shifted (thick*dir 45);
+ p.hb1 = subpath (0,ff3*length p.hb2) of (p.hb2 shifted (z.hb1 1-z.hb2 1))..z.hb1 2;
+ for i=1 upto 4: labels(z.hb[i]1,z.hb[i]2); endfor
+
+ % The two holes in the horizontal belt
+ save dot;
+ z.dot1 1 = point angletime(p.hb2,dot_angle1) of p.hb2;
+ z.dot1 2 = point angletime(p.hb3,dot_angle1) of p.hb3
+            - (0,1/2(thick-thin));
+ z.dot2 1 = point angletime(p.hb2,dot_angle2) of p.hb2;
+ z.dot2 2 = point angletime(p.hb3,dot_angle2) of p.hb3
+            - (0,1/2(thick-thin));
+ z.dot1 = good.xy (1/2[z.dot1 1,z.dot1 2]);
+ z.dot2 = good.xy (1/2[z.dot2 1,z.dot2 2]);
+ labels(dot1,dot2);
+
+ % The black wavy thing
+ path p.wavy; pair d.w[];
+ d.w0 = unitvector (z.bel3-z.bel4);
+ d.w1 = d.w0 rotated 90;
+ d.w2 = dir wavy_dir;
+ z.w0 = good.xy(fullcircle scaled (rb2+rb3-thin+thick)
+           intersectionpoint p.bel);
+ z.w1 = z.w0 - 1/2wavy_width*d.w0;
+ z.w2 = z.w0 + 1/2wavy_width*d.w0;
+ z.w3 = good.xy(z.w0 + 1/2wavy_width*d.w0 + wavy_length*d.w1);
+ z.w4 = 1/3wavy_length*dir wavy_dir;
+ p.wavy = z.w2---(z.w2+z.w4)..{curl 1}z.w3{curl 1}..
+          (z.w1+z.w4)---z.w1--cycle;
+ labels(w1,w2,w3);
+
+ % The upper vertical belt - four paths of which number 1 is on the right
+ % plus the top of the vertical belt (p.vb5) and the connection between
+ % the vertical belt and the bell-shaped part (p.vb6).
+ path p.vb[];
+ z.vb1 1 = point angletime(p.hb4,beltf8) of p.hb4;
+ z.vb1 2 = ra4*dir (belt_under_angle-beltf5);
+ z.vb1 3 = ra4*dir belt_under_angle;
+ p.vb1 = z.vb1 1..tension 1.5..z.vb1 2..z.vb1 3;
+ z.vb4 1 = point angletime(p.hb4,beltf7) of p.hb4;
+ z.vb4 2 = ra4*dir beltf6;
+ p.vb4 = z.vb4 1..tension 5 and 1..{direction 2 of p.vb1}z.vb4 2;
+ t.vb5 1 = xpart (fullcircle scaled 2ra4 intersectiontimes p.vb4);
+ t.vb5 2 = xpart (fullcircle scaled 2ra4 intersectiontimes p.vb1);
+ p.vb5 = subpath (t.vb5 2,t.vb5 1) of fullcircle scaled 2ra4;
+ z.vb6 1 = (fullcircle scaled 2ra4 intersectionpoint p.bel);
+ z.vb6 2 = (fullcircle scaled 2(ra4+thin) intersectionpoint p.vb4);
+ p.vb6 = z.vb6 2--z.vb6 1;
+ gap.vb = 1/2[thin,thick]+belt_gap2;
+ t.vb2 = xpart (p.vb1 shifted (-gap.vb,0) intersectiontimes p.vb5);
+ p.vb2 = subpath (0,t.vb2) of p.vb1 shifted (-gap.vb,0);
+ z.vb4 0 = direction 0 of p.vb4;
+ z.vb3 0 = point 0 of p.vb4 shifted (-thick*unitvector z.vb4 0);
+ p.vb3 = (z.vb3 0..p.vb4) shifted (gap.vb,0);
+ labels(vb1 1,vb1 2,vb1 3,vb4 1,vb4 2,vb6 1,vb6 2);
+
+ % left and right sections of the lower vertical belt
+ z.vb10 1 = point angletime(p.hb1,beltf9) of p.hb1;
+ z.vb10 2 = good.xy(0.5beltf11,-beltf12);
+ z.vb11 1 = point angletime(p.hb1,beltf10) of p.hb1;
+ z.vb11 2 = (-x.vb10 2,y.vb10 2);
+ p.vb10 = subpath (1,2) of (z.vb1 1..z.vb10 1..z.vb10 2);
+ p.vb11 = subpath (1,2) of (z.vb4 1..z.vb11 1..z.vb11 2);
+ labels(vb10 1,vb10 2,vb11 1,vb11 2);
+
+ % Fleur
+ z.tip = good.xy(0,-fleur_depth-beltf12);
+ y.tip = y.fl1-fleurf10 = y.fl2-fleurf9 = 
+         y.fl3-fleurf2 = y.fl4;
+ y.fl5 = y.fl3; y.fl6 = y.fl2; y.fl7 = y.fl1;
+ -x.fl1 = x.fl7 = 0.5fleur_narrow;
+ -x.fl2 = x.fl6 = 0.5fleur_width;
+ -x.fl3 = x.fl5 = fleurf1;
+ -x.fl4 = x.fl4;
+ p.vb12 = z.vb11 2{dir fleurf3}..{down}z.fl1..
+          {dir (180-fleurf4)}z.fl2{dir -fleurf5}..
+          {dir -fleurf6}z.fl3{dir -fleurf7}..
+          {dir -fleurf8}z.fl4{dir fleurf8}..
+          {dir fleurf7}z.fl5{dir fleurf6}..
+          {dir fleurf5}z.fl6{dir (180+fleurf4)}..
+          z.fl7{up}..{dir -fleurf3}z.vb10 2;
+ labels(fl1,fl2,fl3,fl4,fl5,fl6,fl7);
+
+ % The lower vertical belt is built up of the three above sections.
+ % Two parallel paths are created (one being for the inside of the
+ % thick line, and the other for the thin line).
+ p.vb21 = p.vb11 & p.vb12 & reverse p.vb10;
+ p.vb22 = inner_path(p.vb21, thick-hair,2);
+ p.vb23 = inner_path(p.vb21, 1/2thin+thick+belt_gap2,1);
+
+ % The trapezoidal shape inside the lower belt
+ d.vb24 = 1.5fine+belt_gap2;
+ z1.vb24 = point 0.95 of p.vb23 shifted (d.vb24,0);
+ z2.vb24 = point ff9 of p.vb23 shifted (d.vb24,0);
+ y3.vb24 = y2.vb24;
+ y4.vb24 = y1.vb24;
+ x3.vb24 = -x2.vb24;
+ x4.vb24 = -x1.vb24;
+ z5.vb24 = direction ff9 of p.vb23;
+ z6.vb24 = direction (1+eps) of p.vb23;
+ p.vb24 = z1.vb24{z6.vb24}..{z5.vb24}z2.vb24--
+          z3.vb24{(xpart z5.vb24,-ypart z5.vb24)}..
+          {(xpart z6.vb24,-ypart z6.vb24)}z4.vb24--cycle;
+ % Since p.vb24 is a cycle, a small hack is required to get the
+ % inner path.
+ p.vb25 = inner_path(z4.vb24--p.vb24, 2.5fine, 1);
+ p.vb26 = (subpath (1,length p.vb25-1) of p.vb25)--cycle;
+ labels(1.vb24,2.vb24,3.vb24,4.vb24);
+
+ % The pentagonal shape inside the lower belt
+ d.vb27 = 1/2thin+2.5fine;
+ z1.vb27 = point 2 of p.vb23 shifted (d.vb27,0);
+ z2.vb27 = point 2.3 of p.vb23 shifted (d.vb27,0);
+ y3.vb27-y2.vb27 = y2.vb27-y1.vb27;
+ y4.vb27 = y2.vb27;
+ y5.vb27 = y1.vb27;
+ x5.vb27 = -x1.vb27;
+ x4.vb27 = -x2.vb27;
+ x3.vb27 = -x3.vb27;
+ p.vb27 = z1.vb27--z2.vb27--z3.vb27--z4.vb27--z5.vb27--cycle;
+ p.vb28 = inner_path(z5.vb27--p.vb27, 2.5fine, 1);
+ p.vb29 = (subpath (1,length p.vb28-1) of p.vb28)--cycle;
+ labels(1.vb27,2.vb27,3.vb27,4.vb27,5.vb27);
+
+ % This is where everything calculated above gets drawn in order, but first...
+ % Draw outer circles
+ pickup thick.nib;
+ t.circ1a = xpart (fullcircle scaled 2ra1 intersectiontimes p.b1 3);
+ t.circ1b = xpart (fullcircle scaled 2ra1 intersectiontimes p.hb3);
+ draw subpath (t.circ1b,t.circ1a+8) of fullcircle scaled 2ra1;
+ t.circ4a = xpart (fullcircle scaled 2ra4 intersectiontimes p.b2 3);
+ t.circ4b = xpart (fullcircle scaled 2ra4 intersectiontimes p.vb1);
+ draw subpath (t.circ4b,t.circ4a+8) of fullcircle scaled 2ra4;
+ pickup thin.nib;
+ t.circ2a = xpart (fullcircle scaled 2ra2 intersectiontimes p.b1 1);
+ t.circ2b = xpart (fullcircle scaled 2ra2 intersectiontimes p.hb4);
+ draw subpath (t.circ2b,t.circ2a+8) of fullcircle scaled 2ra2;
+ t.circ3a = xpart (fullcircle scaled 2ra3 intersectiontimes p.b2 1);
+ t.circ3b = xpart (fullcircle scaled 2ra3 intersectiontimes p.vb1);
+ draw subpath (t.circ3b,t.circ3a+8) of fullcircle scaled 2ra3;
+
+ % Draw vertical belt
+ pickup thick.nib;
+ for i=1,4: draw p.vb[i]; endfor
+ pickup thin.nib;
+ for i=2,3,5,6: draw p.vb[i]; endfor
+ pickup pencircle scaled hair;
+ filldraw p.vb21--reverse p.vb22--cycle;
+ pickup thin.nib; draw p.vb23;
+ pickup fine.nib;
+ draw p.vb24; draw p.vb26;
+ draw p.vb27; draw p.vb29;
+
+ % Draw horizontal belt
+ pickup thick.nib;draw p.hb1;
+ erase fill p.hb2--cycle;
+ pickup thin.nib;draw p.hb2;
+ erase fill p.hb3--reverse(p.hb4)--cycle;
+ draw p.hb4;
+ pickup thick.nib;draw p.hb3;
+ pickup pencircle scaled dot_size;
+ drawdot z.dot1; drawdot z.dot2;
+ fill p.wavy;
+
+ % Draw bell-shaped part
+ pickup thin.nib;
+ erase fill (subpath (t1.bel,t2.bel) of p.bel)--cycle;
+ draw subpath (t1.bel,t2.bel) of p.bel;
+
+ % Draw buckle arms
+ for i=1,2:
+  draw p.b[i]1;
+  draw p.b[i]2;
+  erase fill p.b[i]3;
+ endfor
+ draw subpath (t.b1 1,t.b2 1+8) of p.b1 3;
+ draw subpath (t.b2 2,t.b1 2+8) of p.b2 3;
+
+ % Draw pin
+ erase fill z.pin2{d.pin1}..{d.pin1}z.pin3..{d.pin2}z.ptip2..
+       z.pin4{-d.pin1}..{-d.pin1}z.pin1..{-d.pin2}z.ptip1..cycle;
+ draw z.ptip1{-d.pin2}..z.pin2{d.pin1}..{d.pin1}z.pin3..{d.pin2}z.ptip2;
+ pickup pencircle yscaled thin xscaled 2thin rotated angle d.pin2;
+ draw z.ptip2{d.pin2}..z.pin4{-d.pin1}..{-d.pin1}z.pin1..{-d.pin2}z.ptip1;
+
+ message " lettering,";
+ letterstart = belt_left_angle;
+ letterend = 0.3[belt_under_angle,belt_over_angle];
+ letterspace*26 + 224u#*hppp = baseline*rad(letterstart-letterend);
+ % 224u# is an estimate of the width of the letters in 
+ % "UNIVERSITY OF OXFORD", so letterspace now contains an estimate of
+ % the amount of space between letters, leaving one space at the ends
+ % and two each side of each dot.
+
+ % "distance" is the distance around the circumference from the origin to 
+ % the current letter.
+ numeric distance;
+ distance = rad(letterstart)*(baseline)-letterspace;
+ % "adjust_transform" is called for each letter to place it in the right position.
+ transform tfm; tfm:=currenttransform;
+ def adjust_transform =
+  save currenttransform; transform currenttransform;
+  currenttransform :=
+   identity rotated (deg((distance-0.5w)/baseline)-90)
+            shifted (baseline*dir deg((distance+xoffset)/baseline))
+            transformed tfm
+ enddef;
+ % Here the word "UNIVERSITY" is printed.
+ for letter = 0 upto 9:
+  distance := distance - letterspace -
+   hppp*scantokens("letter" & substring(letter,letter+1) of "UNIVERSITY");
+ endfor;
+ university = distance;
+
+ distance := rad(letterend)*(baseline)+letterspace;
+ % The word "OXFORD" will be printed in reverse starting from the end point.
+ def adjust_transform =
+  save currenttransform; transform currenttransform;
+  currenttransform :=
+   identity rotated (deg((distance+0.5w)/baseline)-90)
+            shifted (baseline*dir deg((distance+r-l)/baseline))
+            transformed tfm
+ enddef;
+ numeric wid[]; % save the widths of all the letters
+ for letter = 5 downto 0:
+  wid[letter] := hppp*scantokens("letter" & substring(letter,letter+1) of "OXFORD");
+  distance := distance + letterspace + wid[letter];
+  % CM Roman fonts have a small kern inside "OX" and "FO".
+  if (letter=3) or (letter=1): distance := distance - 0.5u; fi
+ endfor;
+ oxford = distance;
+ Of = wid2+wid0+3letterspace;
+
+ % At this point, university and oxford hold the end points of the two words,
+ % including one letterspace after the word, and Of holds the width of OF,
+ % including one letterspace at each side.  The word OF can now be centred
+ % between the other two words and dots can be inserted.
+ 4dotspace+Of = university-oxford;
+ distance := 1/2[oxford,university] - 1/2Of + letterspace;
+ distance := distance + letterspace + hppp*letterF;
+ distance := distance + letterspace + hppp*letterO;
+ pickup pencircle scaled dot_size;
+ drawdot good.xy(ra5*dir deg((oxford+dotspace)/baseline));
+ drawdot good.xy(ra5*dir deg((university-dotspace)/baseline));
+
+ message " crowns,";
+ % The "leaves" of the crown are "almost" pointed and slightly curved.
+ % A tension of 3 seems to do it, so a short-cut is in order.
+ def -+- = ..tension 3.. enddef;
+
+ % This function draws a crown at point zc with magnification factor mag,
+ % and labels all the points with suffix s.  This may be dependent on the
+ % line width and other factors, so doesn't work at just any magnification.
+ def crown(expr zc,mag)(suffix s) =
+  cgap.s = round(crown_gap*mag);   % this number is used quite a lot
+
+  % the band
+  path p.cr[]s;
+  z.cr0s=good.xy zc;                        % bottom
+  z.cr1s=z.cr0s+round(0,mag*crownf1);       % centre of bottom
+  z.cr2s=z.cr1s+round(-mag*1/2crown_width_b,0);
+  y.cr3s=y.cr2s; x.cr3s-x.cr1s=x.cr1s-x.cr2s;
+  z.cr4s=z.cr1s+round(0,mag*crownf2);
+
+  z.ba1s=round (z.cr2s+(-1/2cgap.s,mag*crown_band));
+  z.ba2s=z.cr4s+round(0,mag*crown_band);
+  y.ba3s=y.ba1s;
+  x.ba3s-x.ba2s=x.ba2s-x.ba1s;
+
+  pickup thin.nib;
+  draw halfcircle xscaled (x.cr3s-x.cr2s) yscaled (2round(y.cr0s-y.cr1s)+eps)
+   shifted z.cr1s;
+  p.cr1s=halfcircle xscaled (x.cr3s-x.cr2s) yscaled (2round(y.cr4s-y.cr1s)-eps)
+   shifted (z.cr1s+(0,cgap.s));
+  draw p.cr1s; draw p.cr1s shifted (0,-cgap.s);
+  draw (z.cr0s+(-2cgap.s,cgap.s)){dir(180-ff6)}..{curl 5}(z.cr2s+(2cgap.s,0))..
+       (good.xy z.cr4s-(0,cgap.s+eps))..(z.cr3s-(2cgap.s,0)){curl5}..
+       {dir(180+ff6)}(z.cr0s+(2cgap.s,cgap.s));
+  p.cr2s=halfcircle xscaled (x.ba3s-x.ba1s) yscaled (2round(y.cr4s-y.cr1s)-eps)
+     shifted good.xy (z.cr1s+(0,y.ba1s-y.cr2s));
+  p.cr3s=p.cr2s shifted (0,cgap.s);
+  draw p.cr2s; draw p.cr3s;
+  for p = z.ba3s,z.ba1s,z.cr2s,z.cr3s:
+   draw p--(p shifted (0,cgap.s));
+  endfor
+
+  draw z.ba1s--(p.cr1s intersectionpoint (z.ba1s--
+    (z.ba1s+(1/2(crown_width_t-crown_width_b),-crown_height))));
+  draw z.ba3s--(p.cr1s intersectionpoint (z.ba3s--
+    (z.ba3s-(1/2(crown_width_t-crown_width_b),crown_height))));
+  labels(cr0s,cr1s,cr2s,cr3s,cr4s,ba1s,ba2s,ba3s);
+
+  % These two functions determine where the top and bottom of the jewels go
+  % with respect to the edge of the band.
+  vardef band_bot primary p = (xpart p,ypart p-0.9cgap.s) enddef;
+  vardef band_top primary p = (xpart p,ypart p+0.9cgap.s) enddef;
+
+  z.cir1s = 0.46[z.cr1s,z.cr2s];
+  band_bot z.cir1a.s = p.cr1s intersectionpoint (z.cir1s--(z.cir1s+(0,mag*crown_height)));
+  band_top z.cir1b.s = p.cr2s intersectionpoint (z.cir1s--(z.cir1s+(0,mag*crown_height)));
+  diam.s = round (length(z.cir1b.s-z.cir1a.s)) - eps;
+  z.cir1c.s = 1/2[z.cir1b.s,z.cir1a.s];
+  draw fullcircle scaled diam.s shifted good.xy z.cir1c.s;
+  z.cir2s = 0.46[z.cr1s,z.cr3s];
+  band_bot z.cir2a.s = p.cr1s intersectionpoint (z.cir2s--(z.cir2s+(0,mag*crown_height)));
+  band_top z.cir2b.s = p.cr2s intersectionpoint (z.cir2s--(z.cir2s+(0,mag*crown_height)));
+  z.cir2c.s = 1/2[z.cir2b.s,z.cir2a.s];
+  draw fullcircle scaled diam.s shifted good.xy z.cir2c.s;
+  labels(cir1c.s,cir2c.s);
+
+  z.dia1s.a = ff4[z.cr1s,z.cr2s];
+  z.dia1s.b = z.dia1s.a+(-1/2(crown_width_t-crown_width_b),crown_height);
+  band_bot z.dia1s1 = p.cr1s intersectionpoint (z.dia1s.a--z.dia1s.b);
+  band_top z.dia3s1 = p.cr2s intersectionpoint (z.dia1s.a--z.dia1s.b);
+  z.dia2s.a = ff4[z.cr1s,z.cr3s];
+  z.dia2s.b = z.dia2s.a+(1/2(crown_width_t-crown_width_b),crown_height);
+  band_bot z.dia1s2 = p.cr1s intersectionpoint (z.dia2s.a--z.dia2s.b);
+  band_top z.dia3s2 = p.cr2s intersectionpoint (z.dia2s.a--z.dia2s.b);
+  band_bot z.dia1s3 = good.xy z.cr4s+(0,cgap.s);
+  band_top z.dia3s3 = good.xy z.ba2s;
+  for i=1,2,3:
+   z.dia0s[i] = good.xy (1/2[z.dia1s[i],z.dia3s[i]]);
+   z.dia2s[i] = good.xy (z.dia0s[i] + (z.dia1s[i]-z.dia3s[i]) zscaled (0,-1.1));
+   z.dia4s[i]-z.dia0s[i] = z.dia0s[i]-z.dia2s[i];
+   erase fill good.xy z.dia1s[i]--z.dia2s[i]--good.xy z.dia3s[i]--z.dia4s[i]--cycle;
+   draw good.xy z.dia1s[i]--z.dia2s[i]--good.xy z.dia3s[i]--z.dia4s[i]--cycle;
+   labels(dia0s[i],dia1s[i],dia2s[i],dia3s[i],dia4s[i]);
+  endfor
+
+  % Calculate points for the centre "leaf" (right-hand half only).
+  % It is based on an equilateral triangle, raised slightly from the
+  % base of the crown.  The side of the triangle is divided equally into 4.
+  z.tip.s = good.xy (z.cr0s+(0,mag*crown_height));
+  hgt.s = length(z.tip.s-z.ba2s)-cgap.s;
+  y.tip.s - y.tri.s = trihgt.s = round(ff5*hgt.s);
+  z.tri.s - z.tip.s = whatever*dir-60;
+  z.circ.s = z.tip.s-2/3(0,trihgt.s);
+  draw fullcircle scaled diam.s shifted z.circ.s;
+  gap.s = round(0.7*(cgap.s+thin));
+  draw (z.tip.s-(0,gap.s))--(z.circ.s+(0,gap.s+1/2diam.s));
+  for j=1,2,3: z.tri[j]s = (j/4)[z.tip.s,z.tri.s]; endfor;
+  for j=1,2:
+   z.pt[j]s = 1/2[z.tri[j]s,z.tri[j+1]s] + mag*crownf4*dir30;
+  endfor
+  z.pt3s = z.tip.s+whatever*dir(-90+1/2crownf3);
+  z.pt3s = z.tri1s+whatever*dir30;
+  z.pt4s = z.tri.s+whatever*dir(150-1/2crownf3);
+  z.pt4s = z.tri3s+whatever*dir30;
+  z.pt5s = 1/2[z.pt3s,z.pt4s];
+  z.pt6s = z.pt3s+1/2mag*crownf4*dir225;
+  z.pt7s = z.pt4s+1/2mag*crownf4*left;
+  z.pt8s = (1/2diam.s+gap.s)*dir 36 + z.circ.s;
+  z.pt9s = z.tri.s+whatever*dir(150+1/2crownf3);
+  x.pt9s = ff7[x.tip.s,x.tri.s];
+  z.pt10s = z.pt9s+1/2mag*crownf4*dir135;
+  bot y.pt11s = y.ba2s+cgap.s;
+  x.pt11s = 1/2[x.tip.s,x.pt9s];
+  x.pt12s = x.pt13s = x.tip.s;
+  y.pt12s = y.pt11s+mag*0.6crownf4;
+  y.pt13s = y.circ.s-1/2diam.s-gap.s;
+  x.pt14s = x.pt9s;
+  y.pt14s = y.pt9s - ff8*mag*crownf4;
+  labels(tip.s,tri.s,circ.s,pt1s,pt2s,pt3s,pt4s,pt5s,pt6s,pt7s,pt8s,pt9s,
+         pt10s,pt11s,pt12s,pt13s,pt14s);
+
+  % Calculate points for the right-hand "leaf", a kind of rotated
+  % version of the centre one.
+  z.tipr.s = z.cr0s + round(1/2mag*crown_width_t,mag*0.85crown_height);
+  z.botr.s = good.xy (ff5[z.tipr.s,z.ba3s+(-cgap.s,cgap.s)]);
+  z.dirr1s = unitvector (z.tipr.s-z.botr.s);
+  z.dirr2s = z.dirr1s zscaled (0,1);
+  z.trir.s-z.botr.s = (z.tipr.s-z.botr.s) scaled 1/2 rotated 95;
+  z.cirr.s = good.xy (1/3[z.botr.s,z.tipr.s]);
+  path p.cir.s;
+  p.cir.s = fullcircle xscaled diam.s yscaled 1/2diam.s zscaled z.dirr1s
+   shifted z.cirr.s;
+  z.tipr1s = z.tipr.s - 1/2mag*crownf4*z.dirr2s;
+  z.tipr2s = z.tipr.s - mag*crownf4*z.dirr1s;
+  z.tipr3s = z.tipr.s+mag*0.7crownf4*z.dirr2s;
+  for j=1,2,3:
+   z.trir[j]s = (j/4)[z.tipr3.s,z.trir.s];
+  endfor
+  for j=1,2:
+   z.ptr[j]s = 1/2[z.trir[j]s,z.trir[j+1]s] + mag*crownf4*unitvector
+    ((z.tipr3s-z.trir.s)rotated 85);
+  endfor
+  z.ptr4s = z.trir.s+whatever*(dir(1/2crownf3) zscaled unitvector
+   (z.cirr.s-z.trir.s));
+  z.ptr4s = z.trir3s+whatever*z.dirr2s;
+  z.ptr3s = z.ptr4s+whatever*(z.tipr.s-z.trir.s);
+  z.ptr3s = z.trir1s+whatever*z.dirr2s;
+  z.ptr5s = 1/2[z.ptr3s,z.ptr4s];
+  z.ptr6s = z.ptr3s+1/3mag*crownf4*dir-65;
+  z.ptr7s = z.ptr4s+1/2mag*crownf4*dir-30;
+  z.ptr8s = z.ptr5s+2/3mag*crownf4*dir-40;
+  z.ptr9s = z.trir.s+whatever*(dir(-1/2crownf3) zscaled unitvector
+   (z.cirr.s-z.trir.s));
+  x.ptr9s = ff7[x.botr.s,x.trir.s];
+  z.ptr10s = z.ptr9s + 1/2mag*crownf4*dir45;
+  z.ptr12s = z.botr.s - mag*0.4crownf4*z.dirr1s;
+  z.ptr13s = z.ptr9s - (0,ff8*mag*crownf4);
+  z.ptr11s = 0.4[z.ptr13s,z.botr.s] - mag*0.4crownf4*z.dirr1s;
+  labels(tipr.s,botr.s,trir.s,cirr.s,tipr1s,tipr2s,tipr3s,
+         ptr1s,ptr2s,ptr3s,ptr4s,ptr5s,ptr6s,ptr7s,ptr8s,ptr9s,ptr10s,
+         ptr11s,ptr12s,ptr13s);
+
+  % Underneath the right-hand "leaf" appears to be a filled blob to
+  % fill the space between the "leaf" and the base of the crown.
+  path p.bl[]s;
+  p.bl1s = z.ba3s--(x.ba3s,y.tip.s);
+  p.bl2s = p.bl1s shifted round(x.ptr11s-x.ba3s,0);
+  p.bl3s = good.xy z.ptr13s-+-good.xy z.ptr11s-+-good.xy z.ptr12s---z.botr.s;
+  p.bl4s = good.xy(p.bl1s intersectionpoint p.bl3s)--
+           good.xy(p.bl1s intersectionpoint p.cr3s)--
+           good.xy(p.bl2s intersectionpoint p.cr3s)--
+           good.xy(p.bl2s intersectionpoint p.bl3s)--cycle;
+
+  % The bits in between the "leaves".
+  z.c0s = 0.5[z.circ.s,z.cirr.s];
+  z.c1s = good.xy (z.cir2c.s + (y.circ.s-1/2[y.dia1s3,y.dia3s3])*unitvector(z.c0s-z.cir2c.s));
+  z.c2s = (z.c1s--z.cir2c.s) intersectionpoint p.cr3s;
+  for i=1,2: z.c[i]a.s=z.c[i]s+(1/4diam.s,0);z.c[i]b.s=z.c[i]s-(1/4diam.s,0); endfor
+  forsuffixes i=a,b: z.c3i.s=0.6[z.c1i.s,z.c2i.s]; endfor
+  t.c1s = xpart (p.cr3s intersectiontimes ((z.c1s--z.cir2c.s) shifted (-diam.s,0)));
+  t.c2s = xpart (p.cr3s intersectiontimes ((z.c1s--z.cir2c.s) shifted (diam.s,0)));
+  z.c4s = z.c2s+1/2mag*crownf4*unitvector (z.c1s-z.cir2c.s);
+  labels(c0s,c1s,c2s,c4s,c1a.s,c1b.s,c2a.s,c2b.s,c3a.s,c3b.s);
+
+  % Now everything is drawn twice - once for the right and once for the left.
+  forsuffixes i=r,l:
+   draw (z.tri.s+gap.s*dir 150)--(z.circ.s-(gap.s+1/2diam.s)*dir 150);
+   draw z.tip.s{right}-+-good.xy z.pt3s-+-good.xy z.pt6s--good.xy z.pt3s-+-
+        good.xy z.pt1s-+-good.xy z.pt5s-+-good.xy z.pt8s--good.xy z.pt5s-+-
+        good.xy z.pt2s-+-good.xy z.pt4s-+-good.xy z.pt7s--good.xy z.pt4s-+-
+        {dir210}good.xy z.tri.s-+-good.xy z.pt9s-+-good.xy z.pt10s--
+        good.xy z.pt9s-+-good.xy z.pt14s-+-good.xy z.pt11s-+-good.xy z.pt12s---
+        good.xy z.pt13s;
+   draw z.botr.s---z.tipr2s..z.tipr1s;
+   erase fill p.cir.s; draw p.cir.s;
+   draw good.xy (z.trir.s+gap.s*dir10)--good.xy (z.cirr.s-(gap.s+0.3diam.s)*dir10);
+   draw good.xy z.tipr1s---good.xy z.tipr.s..good.xy z.ptr3s-+-good.xy z.ptr6s--
+        good.xy z.ptr3s-+-good.xy z.ptr1s-+-good.xy z.ptr5s-+-good.xy z.ptr8s--
+        good.xy z.ptr5s-+-good.xy z.ptr2s-+-good.xy z.ptr4s-+-good.xy z.ptr7s--
+        good.xy z.ptr4s-+-good.xy z.trir.s-+-good.xy z.ptr9s-+-good.xy z.ptr10s--
+        good.xy z.ptr9s-+-good.xy z.ptr13s-+-good.xy z.ptr11s-+-
+        good.xy z.ptr12s-+-good.xy z.botr.s;
+   fill p.bl4s;
+   draw z.c1b.s---z.c3b.s..tension 1 and 2..good.xy z.pt14s;
+   draw z.c1a.s---z.c3a.s..tension 1 and 2..good.xy z.ptr13s;
+   erase fill fullcircle scaled diam.s shifted z.c1s;
+   draw fullcircle scaled (diam.s-eps) shifted z.c1s;
+   draw (point t.c1s of p.cr3s){-direction t.c1s of p.cr3s}..z.c4s &
+        z.c4s..{-direction t.c2s of p.cr3s}(point t.c2s of p.cr3s);
+   drawdot point 2 of p.cr3s shifted (0,1/2thin);
+
+   currenttransform := identity reflectedabout (z.cr0s,z.tip.s) transformed
+    currenttransform;
+  endfor
+
+ enddef;
+
+ % Place the crowns
+ begingroup 
+  interim proofing:=0; % no labels (instead a separate crown - see below)
+  -x.pos1 = x.pos2 = round 1/2(ra4*cosd crown_pos-crownf4);
+  y.pos1 = y.pos2 = round (ra4*sind crown_pos-0.85crown_height);
+  crown(z.pos1,1,a)
+  crown(z.pos2,1,b)
+  crown((0,-ra4+crown_pos3),crown_mag,c)
+ endgroup;
+
+ message " book,";
+ % Book outline (left-hand half)
+ pickup pencircle scaled book_thick;
+ z.bk1l = good.xy (-1/2book_width,book_pos*book_height);
+ y.bk1l = y.bk0l = y.bk5l+book_wave = y.bk6l-book_wave = y.bk7l;
+ y.bk2l = y.bk3l = y.bk4l-2/3book_inset = y.bk1l-book_height;
+ x.bk1l = x.bk2l = x.bk0l - book_inset;
+ x.bk3l+0.85book_inset = x.bk4l = x.bk5l = 0;
+ x.bk6l = hround (0.33[x.bk5l,x.bk0l]);
+ x.bk7l = hround (0.67[x.bk5l,x.bk0l]);
+
+ z.bk0'l = z.bk0l - (book_thick,book_thick);
+ z.bk1'l = z.bk1l - (0,book_thick);
+ z.bk3'l = z.bk3l + 1/4(book_inset,book_inset);
+ z.bk3''l = z.bk3'l + (2/3book_thick,-1/3book_thick);
+
+ % The left-hand points are mirrored to form the right-hand points.
+ % A few of these suffixes are used below.
+ forsuffixes i=0,1,2,3,4,5,6,7,0',1',3',3'',9,10,11:
+  y.bk.i.r=y.bk.i.l; x.bk.i.r=-x.bk.i.l;
+ endfor;
+
+ % Draw outline.
+ forsuffixes i=l,r:
+  cutdraw good.xy z.bk0'i--good.xy z.bk1'i--good.xy z.bk2i---
+          good.xy z.bk3i..z.bk3'i;
+ endfor
+ labels(bk1l,bk2l,bk3l,bk4l,bk5l,bk6l,bk7l,bk3''l,bk0'r,bk1'r,bk3'r);
+
+ % Spine
+ pickup pencircle scaled book_thick;
+ vround y.bk3''l-y.bk9l = x.bk9l-hround x.bk3''l =
+  round (y.bk3'l-y.bk3l+1/2book_thick);
+ draw z.bk3''l..z.bk9l---z.bk9r..z.bk3''r;
+ pickup pencircle xscaled fine yscaled book_thick;
+ z.bk10l = 0.45[z.bk3''l,z.bk4l];
+ z.bk12 = 1/2[z.bk3l,z.bk3r] + (0,1/3book_thick);
+ x.bk11l = x.bk10l;
+ y.bk11l = 1/2[y.bk10l,y.bk12];
+ draw z.bk10l--z.bk11l{dir10}..{curl 5}z.bk12{curl5}..{dir-10}z.bk11r--z.bk10r;
+ labels(bk10l,bk11l,bk12);
+
+ % Page outline
+ pickup thin.nib;
+ forsuffixes i=l,r:
+  draw z.bk3''i--z.bk4i--z.bk5i{curl 1}..z.bk6i..z.bk7i..z.bk0i;
+ endfor
+
+ % The individual pages (left and right)
+ forsuffixes i=l,r:
+  pg := book_inset/5.5;
+  % One diagram of the crest has uneven pages on the left-hand side.  If that
+  % were desired the next line might read
+  % for p = if str i="l": 0,0.9,2,2.8,4 else: 0,1,2,3,4 fi:
+  % and that's why z.pg[] is calculated twice even though the left ones and
+  % the right ones are the same in this case.
+  for p = 0,1,2,3,4:
+   z.pg0[p]i = z.bk0l;
+   z.pg1[p]i = z.pg0[p]i-(p*pg,p*0.7pg);
+   x.pg2[p]i = x.pg1[p]i;
+   y.pg2[p]i = y.bk2l+book_inset-p*pg;
+   z.pg3[p]i = (p/4)[z.bk4l,z.bk3''l];
+   x.pg4[p]i = 0.33[x.pg2[p]i,x.pg3[p]i];
+   x.pg5[p]i = 0.67[x.pg2[p]i,x.pg3[p]i];
+   y.pg2[p]i = y.pg4[p]i = y.pg5[p]i-1/2book_wave;
+
+   draw z.pg0[p]i--z.pg1[p]i--z.pg2[p]i{curl1}..z.pg4[p]i..good.xy z.pg5[p]i..
+        good.xy z.pg3[p]i;
+  endfor
+  currenttransform := identity xscaled -1 transformed currenttransform;
+ endfor
+ for i=0 upto 5:labels(pg[i]1l); endfor
+
+ % The seven seals
+ seal_gap = round(seal_diam+1.5thin);
+ x.s0 = good.x(x.bk1l-seal_offset);
+ y.s0 = good.y(y.bk1l-1/2book_height+4seal_gap);
+ for i = 1 upto 7:
+  z.s[i] = z.s[i-1]-(0,seal_gap) if i=7: + round(0.15*seal_offset,0) fi;
+  z.s0[i] = z.bk1l-(0,(i-1/2)*1/7book_height);
+  z.s1[i] = z.s0[i]+(0,1/2seal_width);
+  z.s2[i] = z.s[i]+(0.35seal_diam,((i-1)/6)[0.35seal_diam,seal_width-0.35seal_diam]);
+  draw z.s1[i]--z.s2[i];
+  draw (z.s1[i]--z.s2[i]) shifted (0,-seal_width);
+  erase fill fullcircle scaled seal_diam shifted z.s[i];
+  draw fullcircle scaled (seal_diam-eps) shifted z.s[i];
+  labels(s[i],s0[i],s1[i],s2[i]);
+ endfor
+
+ message " book lettering)";
+ % The letters in the book will be based on cmbx5, but smaller, bolder and
+ % with smaller serifs.  They are made relatively taller and thinner.
+ % Such modifications look OK in the book but would probably not bear
+ % close inspection in general.
+
+ input cmbx5;
+ cap_height# := 1.5cap_height#;
+ u# := 0.93u#;
+ cap_stem# := 1.3cap_stem#;
+ cap_ess# := 1.4cap_ess#;
+ cap_curve# := 1.3cap_curve#;
+ hair#:=1.1hair#;
+ cap_jut# := 0.8cap_jut#;
+
+ % The following hack makes the letters 2/3 of their real size.
+ old_hppp := hppp;
+ old_vppp := vppp;
+ hppp := 2/3hppp;
+ vppp := 2/3vppp;
+ font_setup; 
+ hppp := old_hppp;
+ vppp := old_vppp;
+ forsuffixes i = u,cap_height,cap_serif_fit,width_adj:
+  i# := 2/3i#;
+ endfor
+
+ def t_ = transformed currenttransform enddef;
+ currenttransform := tfm;
+
+ let letterN = smallN;   % Use the variant forms of these letters
+ let letterV = smallV;
+
+ % When printing the letters the transform will be adjusted by
+ % the current value of xoffset.  tfm holds the position of each
+ % letter.
+ def adjust_transform =
+  save currenttransform; transform currenttransform;
+  currenttransform := tfm shifted (xoffset,0)
+ enddef;
+
+ string lett;
+ % Print letters.  The special letter k inserts a kern.  Some of the
+ % letters appear to need adjusting to make the spacing come out right.
+ % The letters are moved closer together by 1/2u.
+ def print_line (expr x,y,t) =
+  tfm := identity shifted round (x,y) transformed currenttransform;
+  for letter = 0 upto length(t)-1:
+   lett := substring(letter,letter+1) of t;
+   if lett = "A": tfm := tfm shifted (-hround 1.5u,0);
+   elseif lett="S" : tfm := tfm shifted (-hround u,0); fi
+   if lett = "k": tfm := tfm shifted (-hround 1.5u,0);
+   else:
+    wid := hppp*scantokens("letter" & lett) - 1/2u;
+    tfm := tfm shifted (hround wid,0);
+   fi
+   if (lett = "O") or (lett = "D") : tfm := tfm shifted (-hround u,0); fi
+  endfor
+ enddef;
+
+ % Do the printing.
+ save baseline;
+ 4baseline-cap_height = book_height-book_inset;
+ print_line(x.bk0l+4u,y.bk0l-baseline,"DOkMI");
+ print_line(x.bk0l+12u,y.bk0l-2baseline,"NVS");
+ print_line(x.bk0l+7u,y.bk0l-3baseline,"ILLkkV");
+ print_line(x.bk5l+3u,y.bk0l-baseline,"MINA");
+ print_line(x.bk5l+13u,y.bk0l-2baseline,"TIO");
+ print_line(x.bk5l+9u,y.bk0l-3baseline,"MEA");
+
+ % These assignments make MF put a suitable box round the character in the display.
+ currenttransform:=identity; body_height:=h; asc_height:=h/2; x_height:=3/4h; bar_height:=h/4;
+ desc_depth:=body_depth:=0; u:=w/4;
+endchar;
+
+if displaying>0: stop "Press RETURN to continue"; fi % display the crest
+
+if proofing>0: % Draw a big crown to help with the proofing
+ factor=3.6;
+ wid# = factor*crown_width_t#;
+ hgt# = factor*crown_height#;
+ "A large crown";
+ beginchar(1,wid#,hgt#,0);
+  thin# := 2thin#;
+  define_whole_blacker_pixels(thin);
+  pickup pencircle scaled thin;thin.nib:=savepen;
+  adjust_fit(0pt#,0pt#);
+  crown((w/2,0),factor,s);
+  body_height:=h; asc_height:=h/2; x_height:=3/4h;
+  desc_depth:=body_depth:=0; u:=w/4;
+ endchar;
+ if displaying>0: stop "Press RETURN to continue"; fi % display the crown
+fi
+end
