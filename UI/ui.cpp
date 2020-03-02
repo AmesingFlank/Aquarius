@@ -108,14 +108,7 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 	float widgetBoundary = windowWidth * 0.02;
 	float widgetWidth = windowWidth * 0.2;
 
-	float algoWidgetTop = widgetBoundary;
-	float algoWidgetHeight = windowHeight * 0.33;
-
-	float phaseWidgetTop = windowHeight*0.4;
-	float phaseWidgetHeight = windowHeight * 0.3;
-
-	float instructionsWidgetTop = windowHeight * 0.73;
-	float instructionsWidgetHeight = windowHeight * 0.25;
+	
 
 
 	float rightSideWidgetBegin = windowWidth - widgetWidth - widgetBoundary;
@@ -281,6 +274,21 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 	nk_end(ctx);
 
 
+	float algoWidgetTop = widgetBoundary;
+	float algoWidgetHeight = windowHeight * 0.28;
+
+	if (fluidConfig.method == "PCISPH") {
+		algoWidgetHeight = windowHeight * 0.33;
+	}
+
+
+	float phaseWidgetTop = windowHeight * 0.35;
+	float phaseWidgetHeight = windowHeight * 0.35;
+
+	float instructionsWidgetTop = windowHeight * 0.73;
+	float instructionsWidgetHeight = windowHeight * 0.25;
+
+
 	
 
 	if (fluidConfig.method == "FLIP") {
@@ -399,6 +407,14 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 			nk_layout_row_dynamic(ctx, rowHeight, 1);
 			nk_label(ctx, "Phase Count:", NK_TEXT_LEFT);
 			nk_property_int(ctx, "", 1, &fluidConfig.phaseCount, 4, 1, incPerPixel);
+
+			GAP_SMALL;
+
+			float log = log10(fluidConfig.diffusionCoeff);
+			nk_layout_row_dynamic(ctx, rowHeight, 1);
+			nk_label(ctx, "Diffusion Coeff (log10):", NK_TEXT_LEFT);
+			nk_property_float(ctx, "", -4, &log, 1, 0.5, incPerPixel);
+			fluidConfig.diffusionCoeff = pow(10, log);
 
 			while (fluidConfig.phaseColors.size() < fluidConfig.phaseCount) {
 				fluidConfig.phaseColors.push_back(make_float4(0, 0, 0, 0));
