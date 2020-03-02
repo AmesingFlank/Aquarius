@@ -114,7 +114,6 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="Fluid\FluidConfig.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_common.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_FLIP.cu" />
     <CudaCompile Include="Fluid\Fluid_3D_kernels.cu" />
@@ -160,7 +159,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
-    <None Include="resources\LaunchConfigs.json" />
     <None Include="resources\Shaders\Container_bottom_fs.glsl" />
     <None Include="resources\Shaders\Container_bottom_vs.glsl" />
     <None Include="resources\Shaders\Container_edges_fs.glsl" />

@@ -454,6 +454,7 @@ namespace Fluid_3D_PCISPH {
 
 			computeNewVelocityAndPosition();
 		}
+		physicalTime += timestep;
 	}
 
 	void Fluid::computeExternalForces() {

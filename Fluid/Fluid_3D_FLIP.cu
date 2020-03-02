@@ -333,6 +333,7 @@ namespace Fluid_3D_FLIP {
 
 		//transferToInkParticles();
 		//moveInkParticles(timestep);
+		physicalTime += timestep;
 	}
 
 

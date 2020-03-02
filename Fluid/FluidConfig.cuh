@@ -64,7 +64,7 @@ struct FluidConfig{
 	// Multiphase Settings
 	int phaseCount = 2;
 	std::vector<float4> phaseColors;
-	float diffusionCoeff = 0.01;
+	float diffusionCoeff = 0.001;
 
 
 	ConfigFLIP FLIP;
@@ -75,27 +75,21 @@ struct FluidConfig{
 		initialVolumes.push_back(
 			{
 				ShapeType::Square,
-				std::vector<float>({0,0,0, 0.5,0.2,1}),
+				std::vector<float>({0,0,0, 1,0.2,1}),
 				0
 			}
 		);
-		initialVolumes.push_back(
-			{
-				ShapeType::Square,
-				std::vector<float>({0.5,0,0, 1.0,0.2,1}),
-				1
-			}
-		);
+		
 		initialVolumes.push_back(
 			{
 				ShapeType::Sphere,
-				std::vector<float>({0.5,0.8,0.5,   0.15}),
+				std::vector<float>({0.5,0.67,0.5,   0.27}),
 				1
 			}
 		);
 
-		phaseColors.push_back(make_float4(0, 0, 1, 1));
-		phaseColors.push_back(make_float4(1, 0, 1, 1));
+		phaseColors.push_back(make_float4(0, 0, 1, 0.2));
+		phaseColors.push_back(make_float4(1, 0, 0, 1));
 	}
 };
 

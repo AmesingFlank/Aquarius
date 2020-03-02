@@ -431,8 +431,6 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 						color.a = fluidConfig.phaseColors[i].w;
 
 						nk_layout_row_dynamic(ctx, rowHeight, 1);
-						nk_label(ctx, "background:", NK_TEXT_LEFT);
-						nk_layout_row_dynamic(ctx, rowHeight, 1);
 						if (nk_combo_begin_color(ctx, nk_rgb_cf(color), nk_vec2(nk_widget_width(ctx), windowHeight*0.3))) {
 							nk_layout_row_dynamic(ctx, rowHeight*13, 1);
 							color = nk_color_picker(ctx, color, NK_RGBA);

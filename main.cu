@@ -164,8 +164,11 @@ int main( void ) {
         if(currentTime-lastSecond>=1){
             double FPS = (double)framesSinceLast/(currentTime-lastSecond);
             std::cout<<"FPS: "<<FPS<<std::endl;
-			std::string fpsText = "Aquarius  " + std::to_string(FPS) + " FPS";
-			glfwSetWindowTitle(window, fpsText.c_str());
+			std::string windowText = "Aquarius  " + std::to_string(FPS) + " FPS";
+			if (fluid) {
+				windowText += "             t:" + std::to_string(fluid->physicalTime);
+			}
+			glfwSetWindowTitle(window, windowText.c_str());
             lastSecond = currentTime;
             framesSinceLast = 0;
         }

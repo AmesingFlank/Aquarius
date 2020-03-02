@@ -517,6 +517,8 @@ namespace Fluid_3D_PBF {
 			updateVelocityAndPosition();
 			
 		}
+
+		physicalTime += timestep;
 	}
 
 	void Fluid::applyForces() {
