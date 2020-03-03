@@ -314,13 +314,13 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 			GAP_SMALL;
 
 			nk_layout_row_dynamic(ctx, rowHeight, 1);
-			nk_label(ctx, "Pressure Jacobian Solver Iterations:", NK_TEXT_ALIGN_LEFT);
+			nk_label(ctx, "Pressure Jacobi Solver Iterations:", NK_TEXT_ALIGN_LEFT);
 			nk_property_int(ctx, "", 30, &fluidConfig.FLIP.pressureIterations, 200, 10, incPerPixel);
 
 			GAP_SMALL;
 
 			nk_layout_row_dynamic(ctx, rowHeight, 1);
-			nk_label(ctx, "Diffusion Jacobian Solver Iterations:", NK_TEXT_LEFT);
+			nk_label(ctx, "Diffusion Jacobi Solver Iterations:", NK_TEXT_LEFT);
 			nk_property_int(ctx, "", 30, &fluidConfig.FLIP.diffusionIterations, 200, 10, incPerPixel);
 			
 		}
