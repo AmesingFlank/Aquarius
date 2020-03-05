@@ -4,7 +4,8 @@
 
 %load any additional packages
 \usepackage{amssymb}
-
+\usepackage{amsmath}
+\usepackage{physics}
 \usepackage{titlesec}
 \usepackage{lipsum}
 
@@ -59,9 +60,14 @@
 \end{romanpages}            % end roman page numbering
 
 %now include the files of latex for each of the chapters etc
-\include{chapter1}
-\include{chapter2}
-\include{conclusions}
+\include{ChapterIntro}
+\include{ChapterPhysics}
+
+\include{ChapterGrid}
+
+\include{ChapterParticle}
+\include{ChapterRender}
+
 
 %now enable appendix numbering format and include any appendices
 \appendix
