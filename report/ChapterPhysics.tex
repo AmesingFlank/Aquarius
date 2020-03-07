@@ -1,10 +1,163 @@
 \chapter{Physics of Fluids}
+\label{chapter physics}
+
+The mechanics of fluids are governed by the partial differential equations (PDEs) known as the \textit{Incompressible Navier-Stokes Equations}, or in case of inviscid fluids, the \textit{Euler Equations}. This chapter explains the meaning and intuition behind these equations, which are key to designing and implementing numerical simulation algorithms.
 
 \section{Vector Calculus}
+The fluid equations are commonly written in the language of vector calculus. A brief introduction of the main concepts and operators involved is given in this chapter. 
 
-\section{The Incompressible Euler and Navier-Stokes Equations}
+
+\gapM
+
+\textbf{Scaler Field}
+
+\gapS
+
+A \textit{scalar field} on $ \mathbb{R} ^3 $ is a mapping $\phi : \mathbb{R} ^3 \rightarrow \mathbb{R} $ from 3D cartesian coordinates to scalar values. Example scalar fields include fluid density, or pressure, where a scalar value can be sampled in each point of the 3D space.
+
+\gapM
+
+\textbf{Vector Field}
+
+\gapS
+
+A \textit{vector field} on $ \mathbb{R} ^3 $ is a mapping $\phi : \mathbb{R} ^3 \rightarrow \mathbb{R} ^3 $ from 3D cartesian coordinates to 3D vectors. A very commonly used vector field is the velocity field $\textbf{u}$, which describes the direction and speed of the fluid's movement at each point in the 3D space
+
+
+\gapM
+
+\textbf{The grad}
+
+\gapS
+
+Given a scalar field $\phi : \mathbb{R} ^3 \rightarrow \mathbb{R} $, the \textit{gradient} or \textit{grad} of the field is a vector field written as $\nabla \phi$, and it is defined by:
+\begin{equation*}
+    \nabla \phi = 
+    \left(
+    \begin{aligned}
+        \frac{\partial \phi}{\partial x} \\
+        \frac{\partial \phi}{\partial y} \\
+        \frac{\partial \phi}{\partial z}
+    \end{aligned} \right)
+\end{equation*} 
+The grad of a scalar quantity $\phi$ represents the rate of change of $\phi$ across each dimension. Moreover, $\nabla \phi$ computes the direction of movement which causes the greatest increase of $\phi$. 
+
+\gapM
+
+\textbf{The div}
+
+\gapS
+
+Given a vector field $\textbf{u} : \mathbb{R} ^3 \rightarrow \mathbb{R} ^3$, the \textit{divergence} or \textit{div} of the field is a scalar field written as $\nabla \cdot \textbf{u}$, and it is defined by:
+$$
+    \nabla \cdot \textbf{u} 
+    = \nabla \cdot 
+    \begin{pmatrix}
+        \textbf{u}_x \\
+        \textbf{u}_y \\
+        \textbf{u}_z
+    \end{pmatrix}
+    =
+    \frac{\partial \textbf{u}_x}{\partial x} +  
+    \frac{\partial \textbf{u}_y}{\partial y} +
+    \frac{\partial \textbf{u}_z}{\partial z}
+$$
+If $\textbf{u}$ is the velocity field, then the scalar field $\nabla \cdot \textbf{u}$ represents the speed at which the fluid is expanding or shrinking at each 3D location. Thus, a velocity field that satisfies $\nabla \cdot \textbf{u} = 0$ would keep the fluid in constant volume, which is how most fluids behave in the real world.
+
+
+\gapM
+
+\textbf{The curl}
+
+\gapS
+
+Given a vector field $\textbf{u} : \mathbb{R} ^3 \rightarrow \mathbb{R} ^3$, the \textit{curl} of the field is a scalar field written as $\nabla \cross \textbf{u}$, and it is defined by:
+$$
+    \nabla \cross \textbf{u} = 
+    \nabla \cross \begin{pmatrix}
+        \textbf{u}_x \\
+        \textbf{u}_y \\
+        \textbf{u}_z
+    \end{pmatrix}
+    =
+    \left(
+    \begin{aligned}
+        \frac{\partial \textbf{u}_z}{\partial y} - 
+            \frac{\partial \textbf{u}_y}{\partial z} \\
+        \frac{\partial \textbf{u}_x}{\partial z} - 
+            \frac{\partial \textbf{u}_z}{\partial x} \\
+        \frac{\partial \textbf{u}_y}{\partial x} - 
+            \frac{\partial \textbf{u}_x}{\partial y} \\
+    \end{aligned} \right)
+$$
+Informally, the curl of the velocity field is a measure of the local rotation of the fluid. Though not directly used in the equations and algorithms presented in this project, it is at the heart of a different class of algorithms, called the vortex methods\cite{angelidis2005simulation}.
+
+
+\gapM
+
+\textbf{The Laplacian}
+
+\gapS
+
+The \textit{Laplacian} operator, written $\nabla \cdot \nabla$, is defined to be the divergence of the gradient. For scalar field $\phi$, it can be computed that:
+$$
+\nabla \cdot \nabla \phi = 
+\frac{\partial ^2 \phi}{\partial x^2}+
+\frac{\partial ^2 \phi}{\partial y^2}+
+\frac{\partial ^2 \phi}{\partial z^2}
+$$
+The Laplacian describes the difference between the average value of $\phi$ in the neighborhood of a certain point and the value of $\phi$ at that point. As defined, this operator takes a scalar field and returns a scalar field. However, The Laplacian is also often extended to be applied to vector fields, where 
+$$
+\nabla \cdot \nabla \textbf{u} =
+    \begin{pmatrix}
+        \nabla \cdot \nabla \textbf{u}_x \\
+        \nabla \cdot \nabla \textbf{u}_y \\
+        \nabla \cdot \nabla \textbf{u}_z
+    \end{pmatrix}
+$$
+
+
+\section{The Eulerian and Lagrangian Viewpoints}
+
+For any physical quantity that represents some property of a fluid, the field of that quantity, either scalar or vector, could be constantly evolving as time passes. There are two different approaches to tracking this rate of change: the Eulerian viewpoint and the Lagrangian viewpoint.
+
+The Eulerian viewpoint considers the time derivative of quantities at fixed locations in the 3D space. For a scalar field $\phi$ which varies through time, its \textit{Eulerian derivative} is simply $\dfrac{\partial \phi}{\partial t}$. To be more precise, the Eulerian derivative $\dfrac{\partial \phi}{\partial t}$, evaluated at point $\textbf{x}$, is the rate of change of $\phi$ of the fluid at the fixed position $\textbf{x}$, despite the fact that the fluid could be in motion. This has the immediate consequence that the concept of Eulerian derivative fails to capture the fact that physical quantities are carried around (i.e advected) by the fluid. 
+
+The Lagrangian viewpoint, on the other hand, tracks the rates of changes of quantities as it moves along the velocity field $\textbf{u}$. In this approach, for a scalar field $\phi$, its derivative with respect to time is written as $\dfrac{D\phi}{Dt}$, and defined to be
+$$
+\frac{D\phi}{Dt} = \frac{\partial\phi}{\partial t} + \nabla \phi \cdot \textbf{u}
+$$ 
+This derivative, known as the \textit{Lagrangian derivative} or \textit{material derivative}, can be justified by treating the fluid as a collection of infinitesimal particles, each carrying some quantities and moving along the velocity field. At time $t$, for each particle $p$ with position $\textbf{x}$, the quantity of $\phi$ it carries is $\phi_p = \phi(t,\textbf{x}(p))$. The derivative with respect to $t$ of this term computes the rate of change of $\phi _p$:
+$$
+\begin{aligned}
+    \frac{d}{dt} \phi_p
+        &= \frac{d}{dt} \phi(t,\textbf{x}(t)) \\
+        &= \frac{\partial \phi}{\partial t} + \nabla \phi \cdot \frac{d\textbf{x}}{dt} \\ 
+        &= \frac{\partial \phi}{\partial t} + \nabla \phi \cdot \textbf{u} \\
+        &=\frac{D\phi}{Dt}
+\end{aligned}
+$$
+Which is precisely the Lagrangian derivative.
+
+When formalizing the Euler and Navier-Stokes equations, the Lagrangian derivative $\dfrac{D}{Dt}$ will be automatically extended to be applied to vector fields, where each component of the vector field is differentiated separately. This allows the term $\dfrac{D\textbf{u}}{Dt}$ to be written, representing the acceleration of the infinitesimal fluid particles. 
+
+As a flashforward to chapter \ref{chapter grid} and \ref{chapter particle}, the grid-based methods mainly employ the Eulerian viewpoint, storing quantities on a fixed grid, and using an explicit computational step called \textit{advection} to move around the quantities. In contrast, the particle-based methods always use the Lagrangian viewpoint, with quantities being recorded solely on particles.
+
+
+
+
+
+
+
+
+
+
+\section{The Euler and Navier-Stokes Equations}
 \label{Euler N-S Eqns}
 
+Using the previously defined notations, the Euler equations, which governs the motion of an incompressible and inviscid fluid
+%under gravity as the only external force
+, can be written as
 
 \begin{equation}
     \tag{Euler Equations}
@@ -15,8 +168,9 @@
     \end{aligned} \right.
     \label{eqn:Euler Equations}
 \end{equation} 
+where $\textbf{u}$ is the velocity field, $p$ is pressure, $\rho$ is the fluid's density, and $\textbf{g}$ the acceleration caused by an external force field (e.g gravity).
 
-
+A generalized version of these equations is the famous incompressible Navier-Stokes equations, in which a term that describes viscosity is added:
 \begin{equation}
     \tag{Navier-Stokes Equations}
     \left \{
@@ -26,4 +180,28 @@
     \end{aligned} \right.
     \label{eqn:Navier-Stokes Equations}
 \end{equation} 
+where $\nu$ is the kinematic viscosity coefficient.
+
+
+As described in the last section, the quantity $(\nabla \cdot \textbf{u})$ represents the rate at which the fluid is expanding or shrinking. Fluids in the real world usually remains in constant volume, unless in extreme conditions. This motivates the equation $\nabla \cdot \textbf{u} = 0$, included in both Euler and Navier-Stokes.
+
+
+Besides the incompressibility condition, both Euler and Navier-Stokes include another equation known as the momentum equation (which is in fact a set of equations, because the quantities are vectors). The momentum equation essentially specifies Newton's 2nd law: $\textbf{a}$ = $\dfrac{\textbf{F}}{m}$ , i.e the acceleration is the force divided by the mass.
+
+As previously explained, the quantity $\dfrac{D\textbf{u}}{Dt}$ represents the acceleration of the infinitesimal fluid particles. Thus, to explain the momentum equations, it remains to demonstrate that the right hand side correctly computes the force divided by the mass. Let the mass of the infinitesimal particle be $m$, and let the force be separated into the internal forces within the fluid $F_{in}$ and the external forces $F_{ext}$:
+$$
+\dfrac{D\textbf{u}}{Dt} = \frac{F_{in} + F_{ext}}{m}
+$$
+With $\textbf{g}$ representing the acceleration caused by an external force field (e.g gravity), this can be rewritten as
+$$
+\dfrac{D\textbf{u}}{Dt} = \frac{F_{in}}{m} + \textbf{g}
+$$
+The internal forces within a fluid is caused by an imbalance in pressure. Specifically, if one side of a infinitesimal particle has a greater pressure than the opposite side, then the particle will be pushed towards the low pressure region. This justifies why the pressure forces are in the direction of $-\nabla p$, which computes the direction of fastest decrease of pressure. From a dimensional analysis point of view, the unit of $p$ is $\dfrac{force}{length^2}$, thus the unit of $\nabla p$ is $\dfrac{force}{length^3}$. This indicates that to obtain the pressure force, it's necessary to multiply by the volume $V$ of the infinitesimal particle, which produces
+$$
+\dfrac{D\textbf{u}}{Dt} = -\frac{V \nabla p}{m} + \textbf{g}
+$$
+Using $\rho = \dfrac{m}{V}$, this becomes the Euler momentum equation:
+$$
+\dfrac{D\textbf{u}}{Dt} =  -\frac{\nabla p}{\rho} + \textbf{g}
+$$
 

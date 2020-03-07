@@ -4,7 +4,7 @@
 % The extra instruction adjust_transform has been inserted
 % into each letter to place it in the correct position.
 
-% Instead of "beginchar" we use "beginletter", which provides
+% Instead of "beginchar", "beginletter" is used, which provides
 % a similar environment allowing the character to be used
 % within another character.  Labels are disabled; otherwise
 % the many letters in the crest produce too many for gftodvi.
