@@ -200,8 +200,43 @@ The internal forces within a fluid is caused by an imbalance in pressure. Specif
 $$
 \dfrac{D\textbf{u}}{Dt} = -\frac{V \nabla p}{m} + \textbf{g}
 $$
-Using $\rho = \dfrac{m}{V}$, this becomes the Euler momentum equation:
+Using $\rho = \dfrac{m}{V}$, this becomes:
 $$
 \dfrac{D\textbf{u}}{Dt} =  -\frac{\nabla p}{\rho} + \textbf{g}
 $$
+Which is Euler's momentum equation. It is important to note that the justifications of the fluid equations given in this section is far from a rigorous mathematical derivation, which would not fit into this report due to its complexity. 
 
+
+The Navier-Stokes momentum equation extends the Euler momentum equation by considering viscosity. In a viscous fluid, the velocity of a particle tends to diffuse into its surrounding particles, causing the velocity in the neighborhood to converge into its average. The difference between the average of $\textbf{u}$ in the neighborhood and the value of $\textbf{u}$ of the particle is captured by the Laplacian of the velocity: $\nabla \cdot \nabla \textbf{u}$, thus adding a positive multiple of this quantity creates a viscous effect:
+$$
+\frac{D\textbf{u}}{Dt}   =   -\frac{\nabla p}{\rho} + \textbf{g} + \nu \nabla \cdot \nabla \textbf{u} 
+$$
+where $\nu$ is a constant property, known as the kinematic viscosity of the fluid. For water, which is a rather inviscid fluid, this quantity is almost negligible. When simulating water, considering the effects of viscosity requires considerable extra computation, while bringing little improvements to the visual fidelity. As a result, this project chooses to only solve the Euler equations during simulation. 
+
+
+\section{Boundary Conditions}
+
+For a fluid region that is not the entirety of $\mathbb{R}^3$, boundary conditions must be specified, which defines the behavior of the fluid in the physical boundary of the fluid region.
+
+When simulating liquids, there are two types of boundary conditions: the solid boundaries and the free surface boundaries. At a solid boundary, the condition is 
+$$
+    \textbf{u} \cdot \textbf{n} = 0
+$$
+where $\textbf{n}$ is the normal of the solid surface. This condition ensures that the fluid cannot flow into a solid. 
+
+The second type of boundary is the free surface boundary, which is the boundary between the liquids and some region of space that is not occupied by anything. In this case, that region of space will not exert any force. and therefore pressure, to the fluid, which motivates the condition
+$$
+p = 0
+$$
+This free surface condition can be also applied to the boundary between liquid and air, which is because air is significantly lighter than liquid, and hence does not influence the motion of the liquid.
+
+The liquid simulated in this project is contained within a cubic box. Moreover,it doesn't fill the box entirely and thus has a free surface. Consequently, both boundary condition will be applied during the numerical simulation. 
+
+\section{The Diffusion Equation}
+Finally, this section introduces an equation that governs the concentration changes in a mixture of more than one miscible fluids.
+Let $\alpha$ be the scalar field representing the concentration of a certain fluid, the diffusion equation specifies:
+\begin{equation}
+    \tag{Diffusion Equation}
+    \frac{\partial \alpha}{\partial t} = D\nabla \cdot \nabla \alpha
+\end{equation}
+Where $D$ is the diffusion coefficient. This is again justified by that fact that the Laplacian $D\nabla \cdot \nabla \alpha$ captures the difference between the average value of $\alpha$ in the neighborhood of a 3D location and the value of $\alpha$ at that location.
