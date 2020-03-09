@@ -215,7 +215,7 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 						if (isFLIP) {
 							nk_layout_row_dynamic(ctx, rowHeight, 3);
 							nk_label(ctx, "Phase:", NK_TEXT_LEFT);
-							nk_property_int(ctx, "", 0, &volume.phase, fluidConfig.phaseCount, 1, incPerPixel);
+							nk_property_int(ctx, "", 0, &volume.phase, fluidConfig.phaseCount-1, 1, incPerPixel);
 							GAP_SMALL;
 						}
 						nk_layout_row_dynamic(ctx, rowHeight, 1);
@@ -244,7 +244,7 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 						if (isFLIP) {
 							nk_layout_row_dynamic(ctx, rowHeight, 3);
 							nk_label(ctx, "Phase:", NK_TEXT_LEFT);
-							nk_property_int(ctx, "", 0, &volume.phase, fluidConfig.phaseCount, 1, incPerPixel);
+							nk_property_int(ctx, "", 0, &volume.phase, fluidConfig.phaseCount-1, 1, incPerPixel);
 							GAP_SMALL;
 						}
 						nk_layout_row_dynamic(ctx, rowHeight, 1);
@@ -420,7 +420,7 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 				fluidConfig.phaseColors.push_back(make_float4(0, 0, 0, 0));
 			}
 
-			if (nk_tree_push(ctx, NK_TREE_NODE, "Phase Colors", NK_MAXIMIZED))
+			if (nk_tree_push(ctx, NK_TREE_NODE, "Phases", NK_MAXIMIZED))
 			{
 				for (int i = 0; i < fluidConfig.phaseCount; ++i) {
 					if (nk_tree_push(ctx, NK_TREE_NODE, std::to_string(i).c_str(), NK_MAXIMIZED)) {
@@ -430,8 +430,9 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 						color.b = fluidConfig.phaseColors[i].z;
 						color.a = fluidConfig.phaseColors[i].w;
 
-						nk_layout_row_dynamic(ctx, rowHeight, 1);
-						if (nk_combo_begin_color(ctx, nk_rgb_cf(color), nk_vec2(nk_widget_width(ctx), windowHeight*0.3))) {
+						nk_layout_row_dynamic(ctx, rowHeight, 2);
+						nk_label(ctx, "Color:", NK_TEXT_LEFT);
+						if (nk_combo_begin_color(ctx, nk_rgb_cf(color), nk_vec2(nk_widget_width(ctx), windowHeight*0.25))) {
 							nk_layout_row_dynamic(ctx, rowHeight*13, 1);
 							color = nk_color_picker(ctx, color, NK_RGBA);
 							nk_layout_row_dynamic(ctx, rowHeight, 1);
@@ -441,6 +442,11 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 							color.a = nk_propertyf(ctx, "#A:", 0, color.a, 10.0f, 0.05f, 0.005f);
 							nk_combo_end(ctx);
 						}
+
+
+						nk_layout_row_dynamic(ctx, rowHeight, 2);
+						nk_label(ctx, "Density(g/cc):", NK_TEXT_LEFT);
+						nk_property_float(ctx, "", 0.2, ((float*)(&fluidConfig.phaseDensities))+i, 5, 0.2, incPerPixel);
 
 
 						fluidConfig.phaseColors[i].x = color.r;

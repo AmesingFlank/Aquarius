@@ -89,7 +89,7 @@ void main()
 			}
 		}
 		
-		float attenuate = max(exp(0.5 * -colorThickness) ,0.2);
+		float attenuate = max(exp(0.2 * -colorThickness) ,0.2);
 
 		
 		refractColor = mix(tintColor, traceRay(fragPos, refractedRay), attenuate);

@@ -64,6 +64,7 @@ struct FluidConfig{
 	// Multiphase Settings
 	int phaseCount = 2;
 	std::vector<float4> phaseColors;
+	float4 phaseDensities = make_float4(1,1,1,1);
 	float diffusionCoeff = 0.001;
 
 

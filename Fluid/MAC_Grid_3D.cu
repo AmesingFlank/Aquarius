@@ -68,6 +68,7 @@ MAC_Grid_3D::MAC_Grid_3D(int X, int Y, int Z, float cellPhysicalSize_) :
 	volumes.volumeFractions = createField3D<float4>(sizeX  , sizeY , sizeZ , cudaGridSize, cudaBlockSize, make_float4(0, 0, 0, 0), false);
 	volumes.newVolumeFractions = createField3D<float4>(sizeX , sizeY , sizeZ , cudaGridSize, cudaBlockSize, make_float4(0, 0, 0, 0), false);
 
+	volumes.density = createField3D<float>(sizeX, sizeY, sizeZ, cudaGridSize, cudaBlockSize, 0.f, false);
 
 
 	updateFluidCount();

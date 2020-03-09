@@ -1,7 +1,6 @@
 #include "Fluid_3D_kernels.cuh"
 
 
-
 __global__  void applyGravityImpl(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float timeStep, float3 gravitationalAcceleration) {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -129,17 +128,30 @@ __global__  void updateVelocityWithPressureImpl(VolumeCollection volumes, int si
 
 	int thisCellContent = volumes.content.readSurface<int>(x, y, z);
 	float thisPressure = volumes.pressure.readSurface<float>(x, y, z);
+	float thisDensity = volumes.density.readSurface<float>(x, y, z);
 
 	float4 thisNewVelocity = volumes.newVelocity.readSurface<float4>(x, y, z);
 
+	float densityUsed; // technically, a MAC descritization of the density field should be used. This here is an approximation
+
+
 	if (x > 0) {
 		
-
 		int leftContent = volumes.content.readSurface<int>(x-1, y, z);
 		float leftPressure = volumes.pressure.readSurface<float>(x-1, y, z);
-		
+
 		if (thisCellContent == CONTENT_FLUID || leftContent == CONTENT_FLUID) {
-			float uX = thisNewVelocity.x -  (thisPressure - leftPressure);
+			densityUsed = thisDensity;
+			float leftDensity = volumes.density.readSurface<float>(x-1, y, z);
+			if (thisCellContent == CONTENT_FLUID &&  leftContent == CONTENT_FLUID) {
+				densityUsed = (leftDensity + thisDensity) / 2;
+			}
+			else if(leftContent == CONTENT_FLUID){
+				densityUsed = leftDensity;
+			}
+
+
+			float uX = thisNewVelocity.x -  (thisPressure - leftPressure) / densityUsed;
 			thisNewVelocity.x = uX;
 			hasVelocity.x = true;
 		}
@@ -149,7 +161,17 @@ __global__  void updateVelocityWithPressureImpl(VolumeCollection volumes, int si
 		int downContent = volumes.content.readSurface<int>(x, y-1, z);
 		float downPressure = volumes.pressure.readSurface<float>(x, y-1, z);
 		if (thisCellContent == CONTENT_FLUID || downContent == CONTENT_FLUID) {
-			float uY = thisNewVelocity.y -  (thisPressure - downPressure);
+
+			densityUsed = thisDensity;
+			float downDensity = volumes.density.readSurface<float>(x, y-1, z);
+			if (thisCellContent == CONTENT_FLUID && downContent == CONTENT_FLUID) {
+				densityUsed = (downDensity + thisDensity) / 2;
+			}
+			else if (downContent == CONTENT_FLUID) {
+				densityUsed = downDensity;
+			}
+
+			float uY = thisNewVelocity.y -  (thisPressure - downPressure) / densityUsed;
 			thisNewVelocity.y = uY;
 			hasVelocity.y = true;
 		}
@@ -158,8 +180,23 @@ __global__  void updateVelocityWithPressureImpl(VolumeCollection volumes, int si
 		
 		int backContent = volumes.content.readSurface<int>(x, y, z-1);
 		float backPressure = volumes.pressure.readSurface<float>(x, y, z-1);
+
 		if (thisCellContent == CONTENT_FLUID || backContent == CONTENT_FLUID) {
-			float uZ = thisNewVelocity.z -  (thisPressure - backPressure);
+
+			densityUsed = thisDensity;
+			float backDensity = volumes.density.readSurface<float>(x, y, z-1);
+			if (thisCellContent == CONTENT_FLUID && backContent == CONTENT_FLUID) {
+				densityUsed = (backDensity + thisDensity) / 2;
+			}
+			else if (backContent == CONTENT_FLUID) {
+				densityUsed = backDensity;
+
+			}
+
+			
+
+
+			float uZ = thisNewVelocity.z -  (thisPressure  - backPressure) / densityUsed;
 			thisNewVelocity.z = uZ;
 			hasVelocity.z = true;
 		}
@@ -434,23 +471,34 @@ __global__  void jacobiImpl(VolumeCollection volumes, int sizeX, int sizeY, int 
 		return;
 	}
 
-	float RHS = -volumes.divergence.readSurface<float>(x, y, z);
+	float thisDensity = volumes.density.readTexture<float>(x, y, z);
+	// technically, a MAC descritization of the density field should be used. This here is an approximation
+
+
+
+	float RHS = -volumes.divergence.readSurface<float>(x, y, z)*thisDensity;
 
 	float newPressure = 0;
 
-	float centerCoeff = 6;
+	
+
+	float centerCoeff = 6 ;
 
 
-	newPressure += volumes.pressure.readTexture<float>(x+1, y, z);
-	newPressure += volumes.pressure.readTexture<float>(x-1, y, z);
-	newPressure += volumes.pressure.readTexture<float>(x, y+1, z);
-	newPressure += volumes.pressure.readTexture<float>(x, y-1, z);
-	newPressure += volumes.pressure.readTexture<float>(x, y, z+1);
-	newPressure += volumes.pressure.readTexture<float>(x, y, z-1);
+	newPressure += volumes.pressure.readTexture<float>(x+1, y, z) ;
+	newPressure += volumes.pressure.readTexture<float>(x-1, y, z) ;
+	newPressure += volumes.pressure.readTexture<float>(x, y+1, z) ;
+	newPressure += volumes.pressure.readTexture<float>(x, y-1, z) ;
+	newPressure += volumes.pressure.readTexture<float>(x, y, z+1) ;
+	newPressure += volumes.pressure.readTexture<float>(x, y, z-1) ;
 
 
 	newPressure += RHS;
 	newPressure /= centerCoeff;
+
+	if (x == 25 && z == 25 && y == 2) {
+		//printf("%f\n", newPressure);
+	}
 
 
 	volumes.pressure.writeSurface<float>(newPressure, x, y, z);

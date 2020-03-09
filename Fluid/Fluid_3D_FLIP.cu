@@ -4,6 +4,7 @@
 #include <thread>
 namespace Fluid_3D_FLIP {
 
+
 	__global__  void transferToCellAccumPhase(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd,Particle* particles, int particleCount) {
 
 
@@ -114,11 +115,12 @@ namespace Fluid_3D_FLIP {
 		}
 	}
 
-	__global__  void transferVolumeFractionsToCell(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd, Particle* particles, int particleCount) {
+	__global__  void transferVolumeFractionsToCell(VolumeCollection volumes, int sizeX, int sizeY, int sizeZ, float cellPhysicalSize, int* cellStart, int* cellEnd, Particle* particles, int particleCount,float4 phaseDensities) {
 
 		int x = blockIdx.x * blockDim.x + threadIdx.x;
 		int y = blockIdx.y * blockDim.y + threadIdx.y;
 		int z = blockIdx.z * blockDim.z + threadIdx.z;
+
 
 		if (x >= sizeX || y >= sizeY || z >= sizeZ) return;
 
@@ -149,10 +151,13 @@ namespace Fluid_3D_FLIP {
 
 		if (weight > 0) {
 			fractions /= weight;
+
+			float fractionsSum = fractions.x + fractions.y + fractions.z + fractions.w;
+			fractions /= fractionsSum;
 		}
-
 		
-
+		float density = dot(phaseDensities, fractions);
+		volumes.density.writeSurface<float>(density, x, y, z);
 
 		volumes.volumeFractions.writeSurface<float4>(fractions, x, y, z);
 		volumes.newVolumeFractions.writeSurface<float4>(fractions, x, y, z);
@@ -210,7 +215,13 @@ namespace Fluid_3D_FLIP {
 		float4 fractionsOld = volumes.volumeFractions.readSurface<float4>(cellX, cellY, cellZ);
 		float4 fractionsNew = volumes.newVolumeFractions.readSurface<float4>(cellX, cellY, cellZ);
 
+		//particle.volumeFractions += fractionsNew - fractionsOld;
 		particle.volumeFractions = fractionsNew;
+
+		float fractionsSum = dot(particle.volumeFractions, make_float4(1, 1, 1, 1));
+		if (fractionsSum > 0) {
+			particle.volumeFractions /= fractionsSum;
+		}
 
 
 	}
@@ -358,7 +369,7 @@ namespace Fluid_3D_FLIP {
 		transferToCellDividePhase << < grid->cudaGridSize, grid->cudaBlockSize >> > ( grid->volumes, sizeX, sizeY, sizeZ, cellPhysicalSize, cellStart, cellEnd, particles, particleCount);
 		CHECK_CUDA_ERROR("transfer to cell");
 
-		transferVolumeFractionsToCell << < grid->cudaGridSize, grid->cudaBlockSize >> > (grid->volumes, sizeX, sizeY, sizeZ, cellPhysicalSize, cellStart, cellEnd, particles, particleCount);
+		transferVolumeFractionsToCell << < grid->cudaGridSize, grid->cudaBlockSize >> > (grid->volumes, sizeX, sizeY, sizeZ, cellPhysicalSize, cellStart, cellEnd, particles, particleCount,config.phaseDensities);
 		CHECK_CUDA_ERROR("transfer VF to cell");
 	}
 
@@ -396,7 +407,9 @@ namespace Fluid_3D_FLIP {
 			//updatePositionsAndPhasesVBO <<<numBlocksInkParticle, numThreadsInkParticle >>> (inkParticles, pointSpritesInk->positionsDevice, inkParticleCount, pointSprites->stride);
 			cudaDeviceSynchronize();
 
-			meshRenderer->drawWithInk(drawCommand,skybox.texSkyBox,*pointSprites,cellPhysicalSize/2,config.phaseColors);
+			meshRenderer->drawWithInk(drawCommand,skybox.texSkyBox,*pointSprites,cellPhysicalSize,config.phaseColors);
+
+			//meshRenderer->draw(drawCommand, skybox.texSkyBox);
 
 		}
 		else {

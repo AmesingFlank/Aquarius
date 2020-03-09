@@ -413,6 +413,7 @@ void marchingCubes(float* output, int sizeX_SDF, int sizeY_SDF, int sizeZ_SDF, f
 				getSDF(pos + make_float3(0, 0, -dx), sizeX_SDF, sizeY_SDF, sizeZ_SDF, cellPhysicalSize_SDF, sdfTexture);
 
 			float3 norm = make_float3(sdfRight - sdfLeft, sdfUp - sdfDown, sdfFront - sdfBack);
+
 			*normal = normalize(norm);
 		}
 	}

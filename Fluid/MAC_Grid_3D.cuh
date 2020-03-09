@@ -36,6 +36,8 @@ struct VolumeCollection {
 
 	VolumeData volumeFractions;
 	VolumeData newVolumeFractions;
+
+	VolumeData density;
 };
 
 class MAC_Grid_3D{
