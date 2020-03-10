@@ -139,7 +139,17 @@ $$
 $$
 Which is precisely the Lagrangian derivative.
 
-When formalizing the Euler and Navier-Stokes equations, the Lagrangian derivative $\dfrac{D}{Dt}$ will be automatically extended to be applied to vector fields, where each component of the vector field is differentiated separately. This allows the term $\dfrac{D\textbf{u}}{Dt}$ to be written, representing the acceleration of the infinitesimal fluid particles. 
+When formalizing the Euler and Navier-Stokes equations, the Lagrangian derivative $\dfrac{D}{Dt}$ will be automatically extended to be applied to vector fields, where each component of the vector field is differentiated separately. This allows the term $\dfrac{D\textbf{u}}{Dt}$ to be written, representing the acceleration of the infinitesimal fluid particles:
+\begin{equation}
+    \label{Du/Dt}
+    \frac{D\textbf{u}}{Dt} = \frac{\partial\textbf{u}}{\partial t}
+    + \begin{pmatrix}
+       \nabla \textbf{u}_x  \cdot \textbf{u}\\
+        \nabla \textbf{u}_y \cdot \textbf{u}\\
+        \nabla \textbf{u}_z \cdot \textbf{u}
+     \end{pmatrix}
+\end{equation}
+
 
 As a flashforward to chapter \ref{chapter grid} and \ref{chapter particle}, the grid-based methods mainly employ the Eulerian viewpoint, storing quantities on a fixed grid, and using an explicit computational step called \textit{advection} to move around the quantities. In contrast, the particle-based methods always use the Lagrangian viewpoint, with quantities being recorded solely on particles.
 

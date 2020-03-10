@@ -1,4 +1,69 @@
 \chapter{Grid-Based Simulations}
 \label{chapter grid}
 
-This chapter introduces the algorithm known as \textbf{FLIP}(Fluid Implicit Particle). The algorithm is based on a spatial discretization of the Euler equations 
+This chapter introduces a grid-based multiphase fluid simulation scheme and its CUDA implementation in this project. This scheme has three key components: a \textbf{MAC} (Marker and Cell) grid for discretizing the Euler equations, a \textbf{FLIP} (Fluid Implicit Particle) algorithm for advection, and a Jacobi linear solver for solving the diffusion equation and the Poisson pressure equation (which ensures incompressibility).
+
+\section{Operator Splitting}
+
+A common way for numerically solving differential equations is the \textit{splitting} approach. As a simple example, consider the simple differential equation:
+$$
+\frac{dx}{dt} = f(x)+g(x) ~~~~\mbox{With boundary condition $x(0)=x_0$}
+$$
+To numerically solve this, decide on some small time step $\triangle t$, and let $x_{[n]}$ be the value of $x$ at the $n$th time step. The goal is to find $x_{[n]}$ for increasing larger $n$. To do this, start with $x_{[0]}=x_0$ and consider the two differential equations:
+\begin{equation*}
+    \begin{aligned}
+        \frac{dx}{dt} = f(x)\\
+        \frac{dx}{dt} = g(x)
+    \end{aligned}
+\end{equation*}
+Suppose there exists some good solutions (either analytical or numerical) for these two equations, then these solutions can be used to find a good solution for the original equation. Specifically, suppose $F_{f_0}(t)$ is a solution of $\dfrac{dx}{dt} = f(x)$ with boundary condition $x(0)=f_0$, and $G_{g_0}(t)$ is a solution of $\dfrac{dx}{dt} = g(x)$ with boundary condition $x(0)=g_0$, then, the original equation can be solved as 
+\begin{equation*}
+    \begin{aligned}
+        \widetilde{x} = F_{x_{[n]}}(\triangle t) \\
+        x_{[n+1]} = G_{\widetilde{x}}(\triangle t) \\
+    \end{aligned}
+\end{equation*}
+In essence, this approach splits the equation into a few more easily solved differential equations, and accumulates the solution of each over a small time step. 
+
+This same splitting approach can be applied to the Euler equations. To do so, the Euler momentum equation is first written in a form where the material derivative is expanded using equation (\ref{Du/Dt}):
+$$
+\frac{\partial \textbf{u}}{\partial t}   =  -\begin{pmatrix}
+    \nabla \textbf{u}_x  \cdot \textbf{u}\\
+     \nabla \textbf{u}_y \cdot \textbf{u}\\
+     \nabla \textbf{u}_z \cdot \textbf{u}
+  \end{pmatrix}
+  + \textbf{g}
+  -\frac{\nabla p}{\rho} 
+$$
+This then allows the equation, and therefore the algorithm of solving the equation, to be split into three parts:
+\begin{itemize}
+    \item The equation
+    $$
+    \frac{\partial \textbf{u}}{\partial t}   =  -\begin{pmatrix}
+        \nabla \textbf{u}_x  \cdot \textbf{u}\\
+         \nabla \textbf{u}_y \cdot \textbf{u}\\
+         \nabla \textbf{u}_z \cdot \textbf{u}\end{pmatrix} 
+    $$
+    Again using equation (\ref{Du/Dt}), this can be rewritten back into the material derivative form:
+    $$
+    \dfrac{D\textbf{u}}{Dt} = 0
+    $$
+    Intuitively, solving this equation means to move the fluid according to its velocity field, in a way such that the velocity of each infinitesimal fluid partial remains unchanged. This is the step known as \textit{advection}. 
+
+    \item The equation
+    $$
+    \frac{\partial \textbf{u}}{\partial t}   = \textbf{g}
+    $$
+    Solving this equation is the process of exerting external forces (e.g gravity) on the fluid, straightforwardly achievable by adding $\triangle t\textbf{g}$ to velocity field output by the advection step.
+
+    \item The equation
+    $$
+    \frac{\partial \textbf{u}}{\partial t}   = -\frac{\nabla p}{\rho} 
+    $$
+    Importantly, since this is the last step of the splitting, it is essential to make sure that the results of solving this equation satisfies the incompressibility condition $\nabla \cdot \textbf{u} = 0$. This amounts to finding a pressure field $p$ such that, subtracting by $\triangle t \dfrac{\nabla p}{\rho}$ makes the velocity have zero divergence. This step enforces the incompressibility of the fluid.
+
+\end{itemize}
+
+
+
+\section{Discretization}
