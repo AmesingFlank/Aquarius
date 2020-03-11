@@ -35,8 +35,8 @@ $$
   + \textbf{g}
   -\frac{\nabla p}{\rho} 
 $$
-This then allows the equation, and therefore the algorithm of solving the equation, to be split into three parts:
-\begin{itemize}
+This then allows the equation, and therefore the simulation algorithm, to be split into three parts:
+\begin{enumerate}
     \item The equation
     $$
     \frac{\partial \textbf{u}}{\partial t}   =  -\begin{pmatrix}
@@ -62,8 +62,178 @@ This then allows the equation, and therefore the algorithm of solving the equati
     $$
     Importantly, since this is the last step of the splitting, it is essential to make sure that the results of solving this equation satisfies the incompressibility condition $\nabla \cdot \textbf{u} = 0$. This amounts to finding a pressure field $p$ such that, subtracting by $\triangle t \dfrac{\nabla p}{\rho}$ makes the velocity have zero divergence. This step enforces the incompressibility of the fluid.
 
-\end{itemize}
+\end{enumerate}
 
 
 
 \section{Discretization}
+Throughout the simulation, a discretized representation of the velocity is needed. A obvious choice is to maintain a 2D grid, with each grid cell storing a vector quantity that is the velocity sampled at the center of the grid cell. This projects implements a slightly more sophisticated method, known as the \textbf{MAC}(Marker and Cell) grid, which offers more convenience and higher accuracy when computing the divergence $\nabla \cdot \textbf{u}$ during the incompressibility step.
+
+Instead of storing the value of $\textbf{u} = (\textbf{u}_x,\textbf{u}_y,\textbf{u}_z)$ sampled at the cell center, an MAC grid stores different components of $\textbf{u}$ sampled at different locations. Specifically, the grid cell at position $(x,y,z)$ stores the value of $\textbf{u}_x$ sampled at the center of its left face, it stores the value of $\textbf{u}_y$ sampled at its lower face, and it stores the value of $\textbf{u}_z$ sampled at its back face, as illustrated in this figure:
+
+\begin{figure}[!h]
+    \centering
+        \begin{tikzpicture} 
+
+            \newcommand{\sizef}{4}
+            \newcommand{\halff}{2}
+
+            \draw[dashed,->] (0,0,0) -- (\sizef + 1,0,0) node[right] {+x};
+            \draw[dashed,->] (0,0,0) -- (0,\sizef + 1,0) node[above] {+y};
+            \draw[dashed,->] (0,0,0) -- (0,0,\sizef + 1) node[below] {+z};
+
+
+            \foreach \a in {0,1}{
+                \foreach \b in {0,1}{
+                    \ifthenelse{  \a  = 0 \AND \b = 0  }
+                    {
+                        \draw[dashed] (\a * \sizef,\b * \sizef,0) 
+                        -- (\a * \sizef,\b * \sizef,\sizef);
+
+                        \draw[dashed] (\a * \sizef,0,\b * \sizef) 
+                            -- (\a * \sizef,\sizef,\b * \sizef);
+
+                        \draw[dashed] (0,\a * \sizef,\b * \sizef) 
+                            -- (\sizef,\a * \sizef,\b * \sizef);
+                    }
+                    {
+
+                        \draw (\a * \sizef,\b * \sizef,0) 
+                        -- (\a * \sizef,\b * \sizef,\sizef);
+
+                        \draw (\a * \sizef,0,\b * \sizef) 
+                            -- (\a * \sizef,\sizef,\b * \sizef);
+
+                        \draw (0,\a * \sizef,\b * \sizef) 
+                            -- (\sizef,\a * \sizef,\b * \sizef);
+                    }
+
+                }
+            }
+
+            
+
+            \node[draw,circle, fill, inner sep=1] at (\halff,\halff,0){};
+            \node[below] at (\halff,\halff,0){\large{$\textbf{u}_{x,y,z-\frac{1}{2}}$}};
+
+           
+
+            \node[draw,circle, fill, inner sep=1] at (\halff,0,\halff){};
+            \node[below] at (\halff,0,\halff){\large{$\textbf{u}_{x,y-\frac{1}{2},z}$}};
+
+            
+            \node[draw,circle, fill, inner sep=1] at (0,\halff,\halff){};
+            \node[below] at (0,\halff,\halff){\large{$\textbf{u}_{x-\frac{1}{2},y,z}$}};
+           
+        
+
+            % \node[draw,circle, fill, inner sep=1] at (\halff,\halff,\sizef){};
+            % \node[right] at (\halff,\halff,\sizef){\large{$\textbf{u}_{x,y,z+\frac{1}{2}}$}};
+
+            % \node[draw,circle, fill, inner sep=1] at (\halff,\sizef,\halff){};
+            % \node[above] at (\halff,\sizef,\halff){\large{$\textbf{u}_{x,y+\frac{1}{2},z}$}};
+
+            % \node[draw,circle, fill, inner sep=1] at (\sizef,\halff,\halff){};
+            % \node[right] at (\sizef,\halff,\halff){\large{$\textbf{u}_{x+\frac{1}{2},y,z}$}};
+
+        
+         \end{tikzpicture}
+    
+    \caption{a 2D MAC grid cell and the velocity data it stores}
+    \label{mac cell 1}
+\end{figure}
+
+
+The quantities $\textbf{u}_{x,y,z-\frac{1}{2}}$, $\textbf{u}_{x,y-\frac{1}{2},z}$, $\textbf{u}_{x-\frac{1}{2},y,z}$ are all scalars, representing the velocity pointing at the $x$, $y$, and $z$ direction, respectively. Furthermore, notice that the values of $\textbf{u}_{x+\frac{1}{2},y,z}$, $\textbf{u}_{x,y+\frac{1}{2},z}$, and $\textbf{u}_{x,y,z+\frac{1}{2}}$, which are respectively sampled at the right, upper, and front faces, will also be available. This is because $\textbf{u}_{x+\frac{1}{2},y,z} = \textbf{u}_{x+1-\frac{1}{2},y,z}$, that is, the value of $\textbf{u}_x$ sampled at the right face of the cell is exactly the value of $\textbf{u}_x$ sampled at the neighboring cell to the right. The same can be applied for the upper and front faces. As a result, there are 6 velocity values associated with each grid cell:
+
+\begin{figure}[]
+    \centering
+        \begin{tikzpicture} 
+
+            \newcommand{\sizef}{4}
+            \newcommand{\halff}{2}
+
+            \draw[dashed,->] (0,0,0) -- (\sizef + 1,0,0) node[right] {+x};
+            \draw[dashed,->] (0,0,0) -- (0,\sizef + 1,0) node[above] {+y};
+            \draw[dashed,->] (0,0,0) -- (0,0,\sizef + 1) node[below] {+z};
+
+
+            \foreach \a in {0,1}{
+                \foreach \b in {0,1}{
+                    \ifthenelse{  \a  = 0 \AND \b = 0  }
+                    {
+                        \draw[dashed] (\a * \sizef,\b * \sizef,0) 
+                        -- (\a * \sizef,\b * \sizef,\sizef);
+
+                        \draw[dashed] (\a * \sizef,0,\b * \sizef) 
+                            -- (\a * \sizef,\sizef,\b * \sizef);
+
+                        \draw[dashed] (0,\a * \sizef,\b * \sizef) 
+                            -- (\sizef,\a * \sizef,\b * \sizef);
+                    }
+                    {
+
+                        \draw (\a * \sizef,\b * \sizef,0) 
+                        -- (\a * \sizef,\b * \sizef,\sizef);
+
+                        \draw (\a * \sizef,0,\b * \sizef) 
+                            -- (\a * \sizef,\sizef,\b * \sizef);
+
+                        \draw (0,\a * \sizef,\b * \sizef) 
+                            -- (\sizef,\a * \sizef,\b * \sizef);
+                    }
+
+                }
+            }
+
+            \node[draw,circle, fill, inner sep=1] at (\halff,\halff,0){};
+            \node[below] at (\halff,\halff,0){\large{$\textbf{u}_{x,y,z-\frac{1}{2}}$}};
+
+           
+
+            \node[draw,circle, fill, inner sep=1] at (\halff,0,\halff){};
+            \node[below] at (\halff,0,\halff){\large{$\textbf{u}_{x,y-\frac{1}{2},z}$}};
+
+            
+            \node[draw,circle, fill, inner sep=1] at (0,\halff,\halff){};
+            \node[below] at (0,\halff,\halff){\large{$\textbf{u}_{x-\frac{1}{2},y,z}$}};
+
+            
+            \node[draw,circle, fill, inner sep=1] at (\halff,\halff,\sizef){};
+            \node[right] at (\halff,\halff,\sizef){\large{$\textbf{u}_{x,y,z+\frac{1}{2}}$}};
+
+            \node[draw,circle, fill, inner sep=1] at (\halff,\sizef,\halff){};
+            \node[above] at (\halff,\sizef,\halff){\large{$\textbf{u}_{x,y+\frac{1}{2},z}$}};
+
+            \node[draw,circle, fill, inner sep=1] at (\sizef,\halff,\halff){};
+            \node[right] at (\sizef,\halff,\halff){\large{$\textbf{u}_{x+\frac{1}{2},y,z}$}};
+
+        
+         \end{tikzpicture}
+    
+    \label{mac cell 2}
+\end{figure}
+
+Using these quantities, a finite difference approximation of the value of the divergence of the velocity, $\nabla \cdot \textbf{u}$, can be easily computed:
+\begin{equation}
+    \begin{aligned}
+        \nabla \cdot \textbf{u} 
+        &=
+        \frac{\partial \textbf{u}_x}{\partial x} +  
+        \frac{\partial \textbf{u}_y}{\partial y} +
+        \frac{\partial \textbf{u}_z}{\partial z} \\
+        &\approx 
+        \frac{\triangle \textbf{u}_x}{\triangle x} +  
+        \frac{\triangle \textbf{u}_y}{\triangle y} +
+        \frac{\triangle \textbf{u}_z}{\triangle z}\\
+        &= 
+        \frac{\textbf{u}_{x+\frac{1}{2},y,z} - \textbf{u}_{x-\frac{1}{2},y,z}}{\triangle x} +  
+        \frac{\textbf{u}_{x,y+\frac{1}{2},z} - \textbf{u}_{x,y-\frac{1}{2},z}}{\triangle x} +
+        \frac{\textbf{u}_{x,y,z+\frac{1}{2}} - \textbf{u}_{x,y,z-\frac{1}{2}}}{\triangle x}
+    \end{aligned}
+\end{equation}
+
+In the MAC grid, only the velocity field is stored in this pattern. Other scaler quantities, such as pressure, are all sampled at the center of each grid cell. This arrangement offers a convenient discretization of the equation $\dfrac{\partial \textbf{u}}{\partial t}   = -\dfrac{\nabla p}{\rho}$, used in step 3 of the simulation.
+
+
+

@@ -43,7 +43,7 @@ void clearField3D(VolumeData field, int sizeX, int sizeY, int sizeZ,T valueToCle
 
 template<typename T>
 inline
-VolumeData createField3D(int sizeX, int sizeY, int sizeZ, dim3 cudaGridSize, dim3 cudaBlockSize,T initialValue, bool filter) {
+VolumeData createField3D(int sizeX, int sizeY, int sizeZ, dim3 cudaGridSize, dim3 cudaBlockSize,T initialValue, bool filter, cudaTextureAddressMode addressMode = cudaAddressModeClamp) {
 	VolumeData result;
 
 	cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<T>();
@@ -57,9 +57,8 @@ VolumeData createField3D(int sizeX, int sizeY, int sizeZ, dim3 cudaGridSize, dim
 
 	cudaTextureDesc texDesc;
 	memset(&texDesc, 0, sizeof(texDesc));
-	texDesc.addressMode[0] = cudaAddressModeClamp;
-	texDesc.addressMode[1] = cudaAddressModeClamp;
-	texDesc.addressMode[2] = cudaAddressModeClamp;
+	
+	texDesc.addressMode[0] = addressMode;
 	if (filter)
 		texDesc.filterMode = cudaFilterModeLinear;
 	else
