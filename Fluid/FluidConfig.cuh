@@ -34,6 +34,7 @@ struct ConfigFLIP {
 	int pressureIterations = 100;
 	int diffusionIterations = 100;
 	float timestep = 0.033;
+	float FLIPcoeff = 0.95;
 };
 
 struct ConfigPBF {

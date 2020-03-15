@@ -4,7 +4,7 @@
 This chapter introduces a grid-based multiphase fluid simulation scheme and its CUDA implementation in this project. This scheme has three key components: a \textbf{MAC} (Marker and Cell) grid for discretizing the Euler equations, a \textbf{FLIP} (Fluid Implicit Particle) algorithm for advection, and a Jacobi linear solver for solving the diffusion equation and the Poisson pressure equation (which ensures incompressibility).
 
 \section{Operator Splitting}
-
+\label{section splitting}
 A common way for numerically solving differential equations is the \textit{splitting} approach. As a simple example, consider the simple differential equation:
 $$
 \frac{dx}{dt} = f(x)+g(x) ~~~~\mbox{With boundary condition $x(0)=x_0$}
@@ -27,49 +27,228 @@ In essence, this approach splits the equation into a few more easily solved diff
 
 This same splitting approach can be applied to the Euler equations. To do so, the Euler momentum equation is first written in a form where the material derivative is expanded using equation (\ref{Du/Dt}):
 $$
-\frac{\partial \textbf{u}}{\partial t}   =  -\begin{pmatrix}
-    \nabla \textbf{u}_x  \cdot \textbf{u}\\
-     \nabla \textbf{u}_y \cdot \textbf{u}\\
-     \nabla \textbf{u}_z \cdot \textbf{u}
+\frac{\partial \u}{\partial t}   =  -\begin{pmatrix}
+    \nabla \u_x  \cdot \u\\
+     \nabla \u_y \cdot \u\\
+     \nabla \u_z \cdot \u
   \end{pmatrix}
   + \textbf{g}
   -\frac{\nabla p}{\rho} 
 $$
 This then allows the equation, and therefore the simulation algorithm, to be split into three parts:
 \begin{enumerate}
-    \item The equation
+    \item
     $$
-    \frac{\partial \textbf{u}}{\partial t}   =  -\begin{pmatrix}
-        \nabla \textbf{u}_x  \cdot \textbf{u}\\
-         \nabla \textbf{u}_y \cdot \textbf{u}\\
-         \nabla \textbf{u}_z \cdot \textbf{u}\end{pmatrix} 
+    \frac{\partial \u}{\partial t}   =  -\begin{pmatrix}
+        \nabla \u_x  \cdot \u\\
+         \nabla \u_y \cdot \u\\
+         \nabla \u_z \cdot \u\end{pmatrix} 
     $$
     Again using equation (\ref{Du/Dt}), this can be rewritten back into the material derivative form:
     $$
-    \dfrac{D\textbf{u}}{Dt} = 0
+    \dfrac{D\u}{Dt} = 0
     $$
     Intuitively, solving this equation means to move the fluid according to its velocity field, in a way such that the velocity of each infinitesimal fluid partial remains unchanged. This is the step known as \textit{advection}. 
 
-    \item The equation
+    \item
     $$
-    \frac{\partial \textbf{u}}{\partial t}   = \textbf{g}
+    \frac{\partial \u}{\partial t}   = \textbf{g}
     $$
-    Solving this equation is the process of exerting external forces (e.g gravity) on the fluid, straightforwardly achievable by adding $\triangle t\textbf{g}$ to velocity field output by the advection step.
+    Solving this equation is the process of exerting external forces (e.g gravity) on the fluid. The solid boundary conditions, as mentioned in section \ref{section boundary conditions}, can also be enforced in this step.
 
-    \item The equation
+    \item
     $$
-    \frac{\partial \textbf{u}}{\partial t}   = -\frac{\nabla p}{\rho} 
+    \frac{\partial \u}{\partial t}   = -\frac{\nabla p}{\rho} 
     $$
-    Importantly, since this is the last step of the splitting, it is essential to make sure that the results of solving this equation satisfies the incompressibility condition $\nabla \cdot \textbf{u} = 0$. This amounts to finding a pressure field $p$ such that, subtracting by $\triangle t \dfrac{\nabla p}{\rho}$ makes the velocity have zero divergence. This step enforces the incompressibility of the fluid.
+    Since this is the last step of the splitting, it is essential to make sure that the results of solving this equation satisfies the incompressibility condition $\nabla \cdot \u = 0$. This amounts to finding a pressure field $p$ such that, subtracting by $\triangle t \dfrac{\nabla p}{\rho}$ makes the velocity have zero divergence. This step enforces the incompressibility of the fluid.
 
 \end{enumerate}
 
 
 
 \section{Discretization}
-Throughout the simulation, a discretized representation of the velocity is needed. A obvious choice is to maintain a 2D grid, with each grid cell storing a vector quantity that is the velocity sampled at the center of the grid cell. This projects implements a slightly more sophisticated method, known as the \textbf{MAC}(Marker and Cell) grid, which offers more convenience and higher accuracy when computing the divergence $\nabla \cdot \textbf{u}$ during the incompressibility step.
 
-Instead of storing the value of $\textbf{u} = (\textbf{u}_x,\textbf{u}_y,\textbf{u}_z)$ sampled at the cell center, an MAC grid stores different components of $\textbf{u}$ sampled at different locations. Specifically, the grid cell at position $(x,y,z)$ stores the value of $\textbf{u}_x$ sampled at the center of its left face, it stores the value of $\textbf{u}_y$ sampled at its lower face, and it stores the value of $\textbf{u}_z$ sampled at its back face, as illustrated in this figure:
+The Euler equations involve two important quantities: the the pressure scalar field $p$, and the velocity vector field $\u$. For a numerical simulation, discretized versions of both fields need to maintained. A straightforward choice, which is used for the pressure field, is to maintain a 3d grid, where each cubic grid cell stores the pressure value sampled at the center of the cell. As an example, this figure shows the cell with location $(x,y,z)$, and 3 of its neighbors:
+
+
+\begin{figure}[!h]
+    \centering
+    
+    \tdplotsetmaincoords{-30}{0}
+    \tdplotsetrotatedcoords{-0}{-20}{-0}
+
+        \begin{tikzpicture}[tdplot_main_coords,tdplot_rotated_coords]
+
+            
+
+            
+            \newcommand{\sizef}{4}
+            \newcommand{\halff}{2}
+
+            
+
+            \draw[dashed] (0,0,0) -- (\sizef,0,0) ;
+            \draw[dashed] (0,0,0) -- (0,\sizef,0);
+            \draw[dashed] (0,0,0) -- (0,0,\sizef) ;
+
+            \draw[dashed,->] (\sizef*2,0,0) -- (\sizef*2+1,0,0) node[right] {+x};
+            \draw[dashed,->] (0,\sizef*2,0) -- (0,\sizef*2+1,0) node[above] {+y};
+            \draw[dashed,->]  (0,0,\sizef*2) -- (0,0,\sizef*2+1) node[below] {+z};
+
+            \foreach \x in {0,1}{
+                \foreach \y in {0,1}{
+                    \foreach \z in {0,1}{
+
+                        
+
+                        \pgfmathparse{
+                            ifthenelse(equal(abs(\x)+abs(\y)+abs(\z),1),1,0) 
+                        }
+
+                        \ifthenelse{ 
+                            \equal{\pgfmathresult}{1}
+                            
+                        }{
+
+                            \foreach \a in {0,1}{
+                                \foreach \b in {0,1}{
+                                    \ifthenelse{\a  = 0 \AND \b = 0}{
+
+                                        \draw [dashed]
+                                        (
+                                            \x * \sizef + \a * \sizef,
+                                            \y * \sizef + \b * \sizef,
+                                            \z * \sizef
+                                        ) 
+
+                                        -- 
+                                        (
+                                            \x * \sizef + \a * \sizef,
+                                            \y * \sizef + \b * \sizef,
+                                            \z * \sizef + \sizef
+                                        ) ;
+                                        
+                                        \draw [dashed]
+                                        (
+                                            \x * \sizef + \a * \sizef,
+                                            \y * \sizef,
+                                            \z * \sizef + \b * \sizef,
+                                        ) 
+
+                                        -- 
+                                        (
+                                            \x * \sizef + \a * \sizef,
+                                            \y * \sizef + \sizef,
+                                            \z * \sizef + \b * \sizef,
+                                        )  ;
+
+                                        \draw [dashed]
+                                        (
+                                            \x * \sizef ,
+                                            \y * \sizef + \a * \sizef,
+                                            \z * \sizef + \b * \sizef,
+                                        ) 
+
+                                        -- 
+                                        (
+                                            \x * \sizef  + \sizef,
+                                            \y * \sizef + \a * \sizef,
+                                            \z * \sizef + \b * \sizef,
+                                        )  ;
+                                    
+                                    }{
+                                        \draw 
+                                        (
+                                            \x * \sizef + \a * \sizef,
+                                            \y * \sizef + \b * \sizef,
+                                            \z * \sizef
+                                        ) 
+
+                                        -- 
+                                        (
+                                            \x * \sizef + \a * \sizef,
+                                            \y * \sizef + \b * \sizef,
+                                            \z * \sizef + \sizef
+                                        ) ;
+                                        
+                                        \draw 
+                                        (
+                                            \x * \sizef + \a * \sizef,
+                                            \y * \sizef,
+                                            \z * \sizef + \b * \sizef,
+                                        ) 
+
+                                        -- 
+                                        (
+                                            \x * \sizef + \a * \sizef,
+                                            \y * \sizef + \sizef,
+                                            \z * \sizef + \b * \sizef,
+                                        )  ;
+
+                                        \draw 
+                                        (
+                                            \x * \sizef ,
+                                            \y * \sizef + \a * \sizef,
+                                            \z * \sizef + \b * \sizef,
+                                        ) 
+
+                                        -- 
+                                        (
+                                            \x * \sizef  + \sizef,
+                                            \y * \sizef + \a * \sizef,
+                                            \z * \sizef + \b * \sizef,
+                                        )  ;
+                                    }
+
+                                }
+                            }
+
+                        }{}
+
+                        
+                    }
+                }
+            }
+            
+            \node[draw,circle, fill, inner sep=1] at (\halff,\halff,\halff){};
+            \node[below] at (\halff,\halff,\halff){\large{$p_{x,y,z}$}};
+
+            \node[draw,circle, fill, inner sep=1] at (\halff+\sizef,\halff,\halff){};
+            \node[below] at (\halff+\sizef,\halff,\halff){\large{$p_{x+1,y,z}$}};
+
+            \node[draw,circle, fill, inner sep=1] at (\halff,\halff+\sizef,\halff){};
+            \node[below] at (\halff,\halff+\sizef,\halff){\large{$p_{x,y+1,z}$}};
+
+            \node[draw,circle, fill, inner sep=1] at (\halff,\halff,\halff+\sizef){};
+            \node[below] at (\halff,\halff,\halff+\sizef){\large{$p_{x,y,z+1}$}};
+
+
+        
+         \end{tikzpicture}
+    
+    \label{pressure cell}
+\end{figure}
+Other than being simple to understand and implement, this discretization scheme also has the advantage that the finite difference approximation of the Laplacian of the pressure field, sampled at the center of the cells, can be easily computed:
+
+\begin{equation}
+    \begin{aligned}
+        \nabla \cdot \nabla p 
+        &= 
+        \frac{\partial ^2 p}{\partial x^2}+
+        \frac{\partial ^2 p}{\partial y^2}+
+        \frac{\partial ^2 p}{\partial z^2} \\
+        &\approx 
+        \frac{p_{x+1,y,z}+p_{x-1,y,z}-2p_{x,y,z}}{(\triangle x)^2}+ \\
+        &~~~~\frac{p_{x,y+1,z}+p_{x,y-1,z}-2p_{x,y,z}}{(\triangle x)^2}+ \\
+        &~~~~\frac{p_{x,y,z+1}+p_{x,y,z-1}-2p_{x,y,z}}{(\triangle x)^2}\\
+        &= \frac{p_{x+1,y,z}+p_{x-1,y,z}+p_{x,y+1,z}+p_{x,y-1,z}+p_{x,y,z+1}+p_{x,y,z-1}-6p_{x,y,z}}{(\triangle x)^2}
+    \end{aligned}
+    \label{eqn discrete laplacian pressure}
+\end{equation}
+Where $\triangle x$ is the edge length of the cubic cell. 
+
+
+For the velocity field $\u$, a slightly more sophisticated method known as the \textbf{MAC}(Marker and Cell) grid is used. Instead of storing the value of $\u = (\u_x,\u_y,\u_z)$ sampled at the cell center, an MAC grid stores different components of $\u$ sampled at different locations. Specifically, the grid cell at position $(x,y,z)$ stores the value of $\u_x$ sampled at the center of its left face, it stores the value of $\u_y$ sampled at its lower face, and it stores the value of $\u_z$ sampled at its back face, as illustrated in this figure:
 
 \begin{figure}[!h]
     \centering
@@ -114,39 +293,39 @@ Instead of storing the value of $\textbf{u} = (\textbf{u}_x,\textbf{u}_y,\textbf
             
 
             \node[draw,circle, fill, inner sep=1] at (\halff,\halff,0){};
-            \node[below] at (\halff,\halff,0){\large{$\textbf{u}_{x,y,z-\frac{1}{2}}$}};
+            \node[below] at (\halff,\halff,0){\large{$\u_{x,y,z-\frac{1}{2}}$}};
 
            
 
             \node[draw,circle, fill, inner sep=1] at (\halff,0,\halff){};
-            \node[below] at (\halff,0,\halff){\large{$\textbf{u}_{x,y-\frac{1}{2},z}$}};
+            \node[below] at (\halff,0,\halff){\large{$\u_{x,y-\frac{1}{2},z}$}};
 
             
             \node[draw,circle, fill, inner sep=1] at (0,\halff,\halff){};
-            \node[below] at (0,\halff,\halff){\large{$\textbf{u}_{x-\frac{1}{2},y,z}$}};
+            \node[below] at (0,\halff,\halff){\large{$\u_{x-\frac{1}{2},y,z}$}};
            
         
 
             % \node[draw,circle, fill, inner sep=1] at (\halff,\halff,\sizef){};
-            % \node[right] at (\halff,\halff,\sizef){\large{$\textbf{u}_{x,y,z+\frac{1}{2}}$}};
+            % \node[right] at (\halff,\halff,\sizef){\large{$\u_{x,y,z+\frac{1}{2}}$}};
 
             % \node[draw,circle, fill, inner sep=1] at (\halff,\sizef,\halff){};
-            % \node[above] at (\halff,\sizef,\halff){\large{$\textbf{u}_{x,y+\frac{1}{2},z}$}};
+            % \node[above] at (\halff,\sizef,\halff){\large{$\u_{x,y+\frac{1}{2},z}$}};
 
             % \node[draw,circle, fill, inner sep=1] at (\sizef,\halff,\halff){};
-            % \node[right] at (\sizef,\halff,\halff){\large{$\textbf{u}_{x+\frac{1}{2},y,z}$}};
+            % \node[right] at (\sizef,\halff,\halff){\large{$\u_{x+\frac{1}{2},y,z}$}};
 
         
          \end{tikzpicture}
     
-    \caption{a 2D MAC grid cell and the velocity data it stores}
+    \caption{a 3D MAC grid cell and the velocity data it stores}
     \label{mac cell 1}
 \end{figure}
 
 
-The quantities $\textbf{u}_{x,y,z-\frac{1}{2}}$, $\textbf{u}_{x,y-\frac{1}{2},z}$, $\textbf{u}_{x-\frac{1}{2},y,z}$ are all scalars, representing the velocity pointing at the $x$, $y$, and $z$ direction, respectively. Furthermore, notice that the values of $\textbf{u}_{x+\frac{1}{2},y,z}$, $\textbf{u}_{x,y+\frac{1}{2},z}$, and $\textbf{u}_{x,y,z+\frac{1}{2}}$, which are respectively sampled at the right, upper, and front faces, will also be available. This is because $\textbf{u}_{x+\frac{1}{2},y,z} = \textbf{u}_{x+1-\frac{1}{2},y,z}$, that is, the value of $\textbf{u}_x$ sampled at the right face of the cell is exactly the value of $\textbf{u}_x$ sampled at the neighboring cell to the right. The same can be applied for the upper and front faces. As a result, there are 6 velocity values associated with each grid cell:
+The quantities $\u_{x,y,z-\frac{1}{2}}$, $\u_{x,y-\frac{1}{2},z}$, $\u_{x-\frac{1}{2},y,z}$ are all scalars, representing the velocity pointing at the $x$, $y$, and $z$ direction, respectively. Furthermore, notice that the values of $\u_{x+\frac{1}{2},y,z}$, $\u_{x,y+\frac{1}{2},z}$, and $\u_{x,y,z+\frac{1}{2}}$, which are respectively sampled at the right, upper, and front faces, will also be available. This is because $\u_{x+\frac{1}{2},y,z} = \u_{x+1-\frac{1}{2},y,z}$, that is, the value of $\u_x$ sampled at the right face of the cell is exactly the value of $\u_x$ sampled at the left face of the neighboring cell to the right. The same can be applied for the upper and front faces. As a result, there are 6 velocity values associated with each grid cell:
 
-\begin{figure}[]
+\begin{figure}[!h]
     \centering
         \begin{tikzpicture} 
 
@@ -187,26 +366,26 @@ The quantities $\textbf{u}_{x,y,z-\frac{1}{2}}$, $\textbf{u}_{x,y-\frac{1}{2},z}
             }
 
             \node[draw,circle, fill, inner sep=1] at (\halff,\halff,0){};
-            \node[below] at (\halff,\halff,0){\large{$\textbf{u}_{x,y,z-\frac{1}{2}}$}};
+            \node[below] at (\halff,\halff,0){\large{$\u_{x,y,z-\frac{1}{2}}$}};
 
            
 
             \node[draw,circle, fill, inner sep=1] at (\halff,0,\halff){};
-            \node[below] at (\halff,0,\halff){\large{$\textbf{u}_{x,y-\frac{1}{2},z}$}};
+            \node[below] at (\halff,0,\halff){\large{$\u_{x,y-\frac{1}{2},z}$}};
 
             
             \node[draw,circle, fill, inner sep=1] at (0,\halff,\halff){};
-            \node[below] at (0,\halff,\halff){\large{$\textbf{u}_{x-\frac{1}{2},y,z}$}};
+            \node[below] at (0,\halff,\halff){\large{$\u_{x-\frac{1}{2},y,z}$}};
 
             
             \node[draw,circle, fill, inner sep=1] at (\halff,\halff,\sizef){};
-            \node[right] at (\halff,\halff,\sizef){\large{$\textbf{u}_{x,y,z+\frac{1}{2}}$}};
+            \node[right] at (\halff,\halff,\sizef){\large{$\u_{x,y,z+\frac{1}{2}}$}};
 
             \node[draw,circle, fill, inner sep=1] at (\halff,\sizef,\halff){};
-            \node[above] at (\halff,\sizef,\halff){\large{$\textbf{u}_{x,y+\frac{1}{2},z}$}};
+            \node[above] at (\halff,\sizef,\halff){\large{$\u_{x,y+\frac{1}{2},z}$}};
 
             \node[draw,circle, fill, inner sep=1] at (\sizef,\halff,\halff){};
-            \node[right] at (\sizef,\halff,\halff){\large{$\textbf{u}_{x+\frac{1}{2},y,z}$}};
+            \node[right] at (\sizef,\halff,\halff){\large{$\u_{x+\frac{1}{2},y,z}$}};
 
         
          \end{tikzpicture}
@@ -214,26 +393,241 @@ The quantities $\textbf{u}_{x,y,z-\frac{1}{2}}$, $\textbf{u}_{x,y-\frac{1}{2},z}
     \label{mac cell 2}
 \end{figure}
 
-Using these quantities, a finite difference approximation of the value of the divergence of the velocity, $\nabla \cdot \textbf{u}$, can be easily computed:
+Using these quantities, an approximation of the divergence of the velocity, $\nabla \cdot \u$, sampled at cell centers, can be easily computed:
 \begin{equation}
     \begin{aligned}
-        \nabla \cdot \textbf{u} 
+        \nabla \cdot \u 
         &=
-        \frac{\partial \textbf{u}_x}{\partial x} +  
-        \frac{\partial \textbf{u}_y}{\partial y} +
-        \frac{\partial \textbf{u}_z}{\partial z} \\
+        \frac{\partial \u_x}{\partial x} +  
+        \frac{\partial \u_y}{\partial y} +
+        \frac{\partial \u_z}{\partial z} \\
         &\approx 
-        \frac{\triangle \textbf{u}_x}{\triangle x} +  
-        \frac{\triangle \textbf{u}_y}{\triangle y} +
-        \frac{\triangle \textbf{u}_z}{\triangle z}\\
+        \frac{\triangle \u_x}{\triangle x} +  
+        \frac{\triangle \u_y}{\triangle y} +
+        \frac{\triangle \u_z}{\triangle z}\\
         &= 
-        \frac{\textbf{u}_{x+\frac{1}{2},y,z} - \textbf{u}_{x-\frac{1}{2},y,z}}{\triangle x} +  
-        \frac{\textbf{u}_{x,y+\frac{1}{2},z} - \textbf{u}_{x,y-\frac{1}{2},z}}{\triangle x} +
-        \frac{\textbf{u}_{x,y,z+\frac{1}{2}} - \textbf{u}_{x,y,z-\frac{1}{2}}}{\triangle x}
+        \frac{\u_{x+\frac{1}{2},y,z} - \u_{x-\frac{1}{2},y,z}}{\triangle x} +  
+        \frac{\u_{x,y+\frac{1}{2},z} - \u_{x,y-\frac{1}{2},z}}{\triangle x} +
+        \frac{\u_{x,y,z+\frac{1}{2}} - \u_{x,y,z-\frac{1}{2}}}{\triangle x}
     \end{aligned}
+    \label{eqn discrete div u}
 \end{equation}
 
-In the MAC grid, only the velocity field is stored in this pattern. Other scaler quantities, such as pressure, are all sampled at the center of each grid cell. This arrangement offers a convenient discretization of the equation $\dfrac{\partial \textbf{u}}{\partial t}   = -\dfrac{\nabla p}{\rho}$, used in step 3 of the simulation.
+During the incompressibility step of the simulation, the velocity field will be updated according the gradient of the pressure field. Thus, it's also important to compute the approximation of $\nabla p$ at the velocity field sample points, i.e the centers of faces of the cells. This is made easy by the fact that, the pressure field is sampled at the centers of the cells:
+\begin{equation}
+    \label{eqn discrete grad p}
+    \begin{aligned}
+        (\nabla p)_{x-\frac{1}{2},y,z} = \frac{p_{x,y,z}-p_{x-1,y,z}}{\triangle x}
+    \end{aligned}
+\end{equation}
+The numerical approximations to $\nabla \cdot \nabla p$, $\nabla \cdot \u$, and $\nabla p$ will all be used when enforcing the incompressibility of the fluid, as will be explained in section \ref{section enforce incompressibility}.
+
+\section{Advection}
+
+As previously explained, the first step in each time step of the simulation is to solve the advection equation $\dfrac{D\u}{Dt} = 0$. Intuitively, this equation demands that the velocity of each infinitesimal particle in the fluid remains unchanged (but the velocity field itself will change because the positions of the particles will change).
+
+A once widely used advection algorithm is called \textbf{PIC}(Particle in Cell), which is closely based on the intuition behind the material derivative. Instead of infinitely many infinitely small particles, the fluid is approximately represented using a finite but large cloud of particles, each storing its own velocity. Specifically, using the velocity field $\u_{[n]}$ in $n$th time step, the PIC advection at the $n+1$ th time step work in these following steps: 
+
+\begin{enumerate}
+    \item For each particle $p$ with position $\textbf{x}_p$, sample and interpolate the MAC grid to obtain the value of $\u_{[n]}$ at $\textbf{x}_p$. Assign this as the particle's velocity,  $\u_p$
+    
+    \item Move the particle according to the velocity field. Either by computing $\textbf{x}_p^{new} = \triangle t \u_p$ to $\textbf{x}_p$, or, for better precision, using a higher-order Runge-Kutta integration.
+    
+    \item For each MAC grid cell, and for each of its 3 sample points where a component of $\u$ is stored, find all particles within a certain small radius (usually $\triangle x$), and interpolate their value of $\u_p$. Save these values as a temporary velocity field, $\u_{[n+1]}^{advected}$.
+\end{enumerate}
+In short, the PIC algorithm first transfers the velocity field from the MAC grid to the particles, then move the particles, and then transfers the velocity from the particles back to the MAC grid.
+
+The PIC algorithm is largely superseded by another algorithm known as \textbf{FLIP}(Fluid Implicit Particle), which is implemented in this project. FLIP is very similar to PIC, with only a slightly different 1st step:
+\begin{enumerate}
+    \item [$1'.$]
+    For each particle $p$ with position $\textbf{x}_p$, sample and interpolate the MAC grid to obtain the value of $\u_{[n]} - \u_{[n-1]}$ at $\textbf{x}_p$. Add this to the particle's velocity,  $\u_p$.
+\end{enumerate}
+That is, instead of interpolating the value of $\u$ on to the particles, FLIP interpolates the change of $\u$ in the last time step, and add that to the particles' velocities. Zhu and Bridson \cite{zhu2005animating} showed that this method reduces the undesirable effect called \textit{numerical dissipation}, where visually interesting details in the fluid are smoothed away due to excessive interpolation.
 
 
 
+\section{External Forces}
+
+After obtaining the temporary velocity field $\u_{[n+1]}^{advected}$, the next step is to apply external forces. Two types of external forces will be considered: the forces arising from an external force field such as gravity, and the forces exerted by a solid boundary.
+
+Let $\textbf{g}$ denote the acceleration caused by the external force field, (for gravity, $\textbf{g}\approx(0,-0.98,0)$), applying the forces is then achieved by adding $\triangle t \textbf{g}$. In a MAC grid, this needs to be done by updating the components of $\u$ sampled at different faces using the different components of $\triangle t \textbf{g}$. 
+
+
+To apply the solid boundary condition $\u \cdot \textbf{n} = 0$, the components of $\u$ sampled at faces that represents solid-fluid boundaries need to be set to 0. For example, if the solid region is considered to be exactly the region of space outside the MAC grid, then the leftmost faces of the leftmost cells (and rightmost faces of rightmost cells...etc) will be considered as a solid-fluid boundary. For all such boundary faces, the velocity component there will be set to 0. 
+
+Starting from an incompressible velocity field $\u_{[n]}$, performing advection to obtain $\u_{[n+1]}^{advected}$, and then applying external forces, the resulting velocity will likely not be incompressible anymore. Let this field be called $\u_{[n+1]}^{compressible}$, the next step is to apply pressure within the fluid, so that this field becomes incompressible.
+
+
+\section{Enforcing Incompressibility}
+\label{section enforce incompressibility}
+To enforce the incompressibility condition $\nabla \cdot \u_{[n+1]} = 0$, the algorithm needs to find a pressure field $p$ such that,
+\begin{equation*}
+    \begin{aligned}
+        \nabla \cdot \u_{[n+1]} = \nabla \cdot
+        ( \u_{[n+1]}^{compressible} - \triangle t \frac{\nabla p}{\rho} ) = 0
+    \end{aligned}
+\end{equation*}
+Rearranging the equation on the right gives
+$$
+-\frac{\triangle t}{\rho} \nabla \cdot \nabla p = -\nabla \cdot \u_{[n+1]}^{compressible}
+$$
+Using the discretization equations \ref{eqn discrete laplacian pressure} and \ref{eqn discrete div u}, the discrete version of this equation can be written: 
+\begin{equation*}
+    \begin{aligned}
+        \frac{\triangle t}{\rho \triangle x}(6p_{x,y,z}-p_{x+1,y,z}-p_{x-1,y,z}-p_{x,y+1,z}-p_{x,y-1,z}-p_{x,y,z+1}-p_{x,y,z-1}) \\
+        = 
+        -( \u_{x+\frac{1}{2},y,z} - \u_{x-\frac{1}{2},y,z}  +  
+         \u_{x,y+\frac{1}{2},z} - \u_{x,y-\frac{1}{2},z} +
+         \u_{x,y,z+\frac{1}{2}} - \u_{x,y,z-\frac{1}{2}})
+    \end{aligned}
+\end{equation*}
+Such an equation exists for all cells that containing some fluid (i.e contain some FLIP particles), and together, they form a system of linear equations, called the \textit{Poisson pressure equation}. The unknowns in the equations, $p_{i,j,k}$, correspond to the pressure values sampled at the center of the cells.
+
+Since each equation involves not only the pressure of the fluid cell itself, but also the pressure of its 6 adjacent cells, extra care needs to be taken for cells that are at the boundaries of the fluid. Specifically, if a variable $p_{i,j,k}$ in the equations corresponds to the pressure within a air cell, it should automatically be assigned 0, which satisfies the fluid-air boundary conditions. If the variable $p_{i,j,k}$ corresponds to the pressure within solid, then it suffices to replace it with the pressure of the fluid cell next to the boundary, because the solid-fluid boundary conditions were already satisfied in the external forces step.
+
+With the boundary conditions satisfied, the equation become a system of $N$ linear equations with $N$ variables, with $N$ being the amount of fluid cells. Solving this equations hence results in a discrete representation of the pressure field $p$, which satisfies 
+$$
+\nabla \cdot
+ ( \u_{[n+1]}^{compressible} - \triangle t \frac{\nabla p}{\rho} ) = 0
+$$
+Then, to retrieve the incompressible velocity field, it only remains to compute
+$$ \u_{[n+1]} = \u_{[n+1]}^{compressible} - \triangle t \frac{\nabla p}{\rho}$$
+using equation \ref{eqn discrete div u}. This completes the simulation of this time step.
+
+\gapM
+
+To summarize, using a grid and FLIP advection, the simulation of each time step uses the following algorithm:
+
+\begin{algorithm}[H]
+    \label{algo singlephase flip}
+
+    \SetAlgoLined
+    \tcp{At time step [n+1]}
+    \ForEach{particle $p$}{
+        $\u_p := \u_p + \u_{[n]}(\textbf{x}_p) - \u_{[n-1]}(\textbf{x}_p)$ \;
+        $\textbf{x}_p := \textbf{x}_p + \u_p \triangle t$ (or using a higher order Runge-Kutta)\;
+    }
+    \ForEach{grid cell at location $(x,y,z)$}{
+        Find all particles within a radius of $\triangle x$\;
+        Compute $\u_{[n+1]}^{advected}$, as an average of the $\u_p$ carried by nearby particles\;
+    }
+    Apply external forces, $\u_{[n+1]}^{compressible} =  FixSolidBoundary(u_{[n+1]}^{advected} + \triangle t \textbf{g})$\;
+    Construct and solve the Poisson pressure equation, obtain pressure $p$\;
+    Compute $\u_{[n+1]} = \u_{[n+1]}^{compressible} - \triangle t \dfrac{\nabla p}{\rho}$
+
+    \caption{Single phase fluid FLIP simulation step}
+\end{algorithm}
+
+
+\section{Simulating Diffusion}
+While algorithm \ref{algo singlephase flip} is only for single phase fluid simulation, it is not complicated to extend it to support multiple fluid phases. As explained in section \ref{section multiple fluids}, the changes in the concentration $\alpha^i$ of a fluid phase $i$ is governed by the Advection-Diffusion equation:
+$$
+\frac{D \alpha^i}{D t} = C\nabla \cdot \nabla \alpha^i
+$$
+To incorporate this equation to the simulation algorithm, the first step is again to apply splitting. The equation is split into two parts:
+\begin{equation*}
+    \begin{aligned}
+        \frac{D \alpha^i}{D t} &= 0\\
+        \frac{\partial \alpha^i}{\partial t} &= C\nabla \cdot \nabla \alpha^i
+    \end{aligned}
+\end{equation*}
+Just like the Euler momentum equation, this first equation that splitting produces is an advection equation. Thus, fortunately, the exact same FLIP advection that was applied for the velocity field can be used to advect the concentration quantities: first transfer the quantities from the grid to the particles by interpolating and adding $\alpha^{i}_{[n]} - \alpha^{i}_{[n-1]}$, then move the particles in the velocity field, then transfer the $\alpha^i$ back to the grid. 
+
+The second equation is the "diffusion" part of the advection-diffusion equation, and is sometimes referred as the diffusion equation by itself. It was shown that using forward Euler scheme for this equation is unstable for large time steps \cite{kang2010hybrid}, so a discretized implicit equation is used:
+\begin{equation*}
+    \begin{aligned}
+        - \lambda\alpha^i_{[n+1]~x-1,y,z}
+        - \lambda\alpha^i_{[n+1]~x+1,y,z}\\
+        - \lambda\alpha^i_{[n+1]~x,y-1,z}
+        - \lambda\alpha^i_{[n+1]~x,y+1,z}\\
+        - \lambda\alpha^i_{[n+1]~x,y,z-1}
+        - \lambda\alpha^i_{[n+1]~x,y,z+1}\\
+        +(1+6\lambda)\alpha^i_{[n+1] x,y,z} 
+    \end{aligned}
+    ~~=~~ \alpha^{i,advected}_{[n] x,y,z} 
+\end{equation*}
+where $\lambda = \dfrac{C\triangle t}{(\triangle x)^2}$. With the value of $\alpha^i_{n+1}$ at each fluid cell as unknown, this is again a linear equation. Solving the equation produces the new concentration field, $\alpha^i_{[n+1]}$.
+
+Incorporating the FLIP concentration advection and solving the diffusion equation into the previous algorithm gives an algorithm for multiphase simulation:
+
+\begin{algorithm}[H]
+    \label{algo multiphase flip}
+
+    \SetAlgoLined
+    \tcp{At time step [n+1]}
+    \ForEach{particle $p$}{
+        $\u_p := \u_p + \u_{[n]}(\textbf{x}_p) - \u_{[n-1]}(\textbf{x}_p)$ \;
+        $\alpha_p^i := \alpha_p^i + \alpha^i_{[n]}(\textbf{x}_p) - \alpha^i_{[n-1]}(\textbf{x}_p)$, for all fluid phases $i$ \;
+        $\textbf{x}_p := \textbf{x}_p + \u_p \triangle t$ (or using a higher order Runge-Kutta)\;
+    }
+    \ForEach{grid cell at location $(x,y,z)$}{
+        Find all particles within a radius of $\triangle x$\;
+        Compute $\u_{[n+1]}^{advected}$, as an average of the $\u_p$ carried by nearby particles\;
+        Compute $\alpha_{[n+1]}^{advected}$, as an average of the $\alpha _p$ carried by nearby particles\;
+    }
+    Apply external forces, $\u_{[n+1]}^{compressible} =  FixSolidBoundary(u_{[n+1]}^{advected} + \triangle t \textbf{g})$\;
+    Construct and solve the Poisson pressure equation, obtain pressure $p$\;
+    Compute $\u_{[n+1]} = \u_{[n+1]}^{compressible} - \triangle t \dfrac{\nabla p}{\rho}$\;
+    Construct and solve the discretized diffusion equation to obtain $\alpha^i_{n+1}$ for all fluid phases $i$.
+
+    \caption{Multiphase phase fluid FLIP simulation step}
+\end{algorithm}
+
+
+
+Despite being a straightforward idea, using FLIP particles to advect the fluid concentrations is a novel invention by this project, because the related works only used other advection algorithms for concentration. The paper by Kang\cite{kang2010hybrid}, for example, used BFECC. To achieve real time simulation, the grid used in this project is considerably more coarse then the grid used in Kang's offline simulation algorithm, but with the merits of FLIP, considerable visual results were achieved. This verifies Zhu and Bridson's comments that FLIP is able to preserve a lot of details even when the grid is coarse\cite{zhu2005animating}.
+
+
+\section{Implementation}
+
+The pseudocode presentation of algorithm \ref{algo multiphase flip} takes a sequential form, and the challenge remains to parallelize this algorithm on GPU. 
+
+For certain parts of the algorithm, parallelization is straightforward. This includes line 2-4, line 8-9, which are all operations performed within a loop body. In different loop iterations, the data being operated on are completely different, and does not depend on previous iterations, which means it is safe to use parallel threads instead of loops to perform these operations. Similarly, the velocity field updates in line 11 and 13 are also easy to parallelize, with each thread operating on one grid cell of the discretized velocity field. 
+
+The rest of the algorithm, line 7, 12 and 14, requires much more attention. Line 7 performs a task called \textit{spatial indexing}: associating each grid cell with all the particles that are within radius $\triangle x$ at each time step. A naive implementation would require a linear search on all particles, and this has to be performed for all grid cells, which is intolerable because the simulation could involve up to around 1,000,000 particles and 100,000 grid cells. In line 12 and 14, a linear equation needs to be solved, where there's an unknown for each fluid cell. As a result, the total amount of unknowns is in the order of 100,000. A naive linear solver have a $O(N^3)$ complexity, which is also too costly. In order to achieve real-time simulation and rendering, each of these operations, indexing 1,000,000 million particles and solving linear equations with 100,000 unknowns, needs to be performed at least around 20 times per second. This section will focus on how this is made possible in this project.
+
+\subsection{Spatial Indexing}
+
+With $\triangle x$ being the edge length of each cubic grid cell, finding all particles within a radius $\triangle x$ of each cell can be reduced to finding the particles that are \textit{inside} each cell. Then, for a certain cell, it suffices to check all the 27 cells in the neighborhood, because all particles within a radius $\triangle x$ must be contained inside these 27 cells. 
+
+To create an index from each cell to the particles inside the cell, this project uses the parallel algorithm proposed by Green \cite{harlow1965numerical}. The algorithm proceeds in the following steps:
+\begin{enumerate}
+    \item Decide on a hash function for 3D grid coordinates. For example, in an $N*N*N$ grid, the hash of the coordinate $(x,y,z)$ can be $xN^2+yN+z$, which fully avoids hash collision.
+    
+    \item Create an array of hashes for particles. For each particle, use its physical position to compute the cell that it is in, and compute the hash of that cell as the hash of the particle. Store the hashes of all particles in this array. Since these steps is independent for each particle, it can be efficiently parallelized.
+    
+    \item Sort this array of particle hashes, and sort the array of particles into the same order. 
+    
+    \item Create two arrays $cellStart$ and $cellEnd$, which denote, for each cell, the first and the last particle inside the cell. To compute elements of these arrays, for the $i$th particle, use the hash array to check if the $i-1$th particle is in the same cell, if not, the $cellStart$ of this cell should be $i$. Similarly, if the $i+1$th particle is not in the same cell, the $cellEnd$ of this cell should be $i$. This can also be done for all particles in parallel.
+    
+\end{enumerate}
+Having created the $cellStart$ and $cellEnd$ arrays, for each cell, the particles inside it is them simply the particles with index $\geq cellStart$ and $\leq cellEnd$.
+
+With all other steps being completely parallelizable, the only time-consuming step is sorting the array of particle hashes. However, this only needs to be done once per time step, so the cost is manageable. In fact, in the implementation of this project, by using the extremely optimized sorting library provided with the CUDA API, the cost of the sorting is almost negligible compared to other tasks, such as solving systems of linear equations.
+
+\subsection{Jacobi Linear Solver}
+The two linear systems to be solved in each simulation step, the Poisson pressure equation and the diffusion equation, both of the special property of being \textit{symmetric positive-definite}. Many advanced approaches have been proposed on how to solve these types of matrices, such as ICPCG \cite{bridson2015fluid} and \textit{Geometric Multigrid}\cite{chentanez2011real}. This project chooses to implement a simpler algorithm, called the Jacobi solver. Though not as fast as the most advanced methods, its efficiency and accuracy is found to be sufficient for the real time simulations in this project.
+
+In the Jacobi Solver, given a system of linear equations written in matrix form:
+$$
+A\textbf{x}=\textbf{b}
+$$
+the matrix $A$ is decomposed into $D+C$, where $D$ is a diagonal matrix, and $C$ has only $0$s on the diagonal:
+$$
+(D+C)\textbf{x}=\textbf{b}
+$$
+The system is then rewritten as 
+$$
+D\textbf{x}=\textbf{b} - C\textbf{x}
+$$
+Thus,
+$$
+\textbf{x}=D^{-1}(\textbf{b} - C\textbf{x})
+$$
+which motives an iterative scheme: begin with an initial guess $\textbf{x}_0$, and then iteratively compute
+$$
+\textbf{x}_{i+1} = D^{-1}(\textbf{b} - C\textbf{x}_{i})
+$$
+For a certain amount of iterations. Each iterations is simple to do, because $D$ is only a diagonal matrix. 
+
+For the testing simulation configurations in this project, where the number of cells is in the order of $50^3$, $100$ to $200$ Jacobi iterations suffices to simulate the fluid accurate enough to give plausible visual results. 

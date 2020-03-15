@@ -315,6 +315,12 @@ namespace Fluid_3D_FLIP {
 
 	void Fluid::simulationStep() {
 
+		transferToParticles();
+
+		moveParticles(timestep);
+
+		//----------- transferToParticles and moveParticles can be moved to the bottom of this function.
+
 		transferToGrid();
 		//grid->updateFluidCount();
 
@@ -338,9 +344,7 @@ namespace Fluid_3D_FLIP {
 		solveDiffusionJacobi(timestep, *grid, config.FLIP.diffusionIterations, config.diffusionCoeff,cellPhysicalSize);
 
 
-		transferToParticles();
-
-		moveParticles(timestep);
+		
 
 		//transferToInkParticles();
 		//moveInkParticles(timestep);
@@ -374,7 +378,7 @@ namespace Fluid_3D_FLIP {
 	}
 
 	void Fluid::transferToParticles() {
-		transferToParticlesImpl << <numBlocksParticle, numThreadsParticle >> > ( grid->volumes, particles, particleCount, sizeX, sizeY, sizeZ, cellPhysicalSize,0.95);
+		transferToParticlesImpl << <numBlocksParticle, numThreadsParticle >> > ( grid->volumes, particles, particleCount, sizeX, sizeY, sizeZ, cellPhysicalSize,config.FLIP.FLIPcoeff);
 		cudaDeviceSynchronize();
 		CHECK_CUDA_ERROR("transfer to particles");
 	}

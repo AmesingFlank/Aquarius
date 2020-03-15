@@ -9,7 +9,7 @@ The fluid equations are commonly written in the language of vector calculus. A b
 
 \gapM
 
-\textbf{Scaler Field}
+\textbf{Scalar Field}
 
 \gapS
 
@@ -21,7 +21,7 @@ A \textit{scalar field} on $ \mathbb{R} ^3 $ is a mapping $\phi : \mathbb{R} ^3 
 
 \gapS
 
-A \textit{vector field} on $ \mathbb{R} ^3 $ is a mapping $\phi : \mathbb{R} ^3 \rightarrow \mathbb{R} ^3 $ from 3D cartesian coordinates to 3D vectors. A very commonly used vector field is the velocity field $\textbf{u}$, which describes the direction and speed of the fluid's movement at each point in the 3D space
+A \textit{vector field} on $ \mathbb{R} ^3 $ is a mapping $\phi : \mathbb{R} ^3 \rightarrow \mathbb{R} ^3 $ from 3D cartesian coordinates to 3D vectors. A very commonly used vector field is the velocity field $\u$, which describes the direction and speed of the fluid's movement at each point in the 3D space
 
 
 \gapM
@@ -48,21 +48,21 @@ The grad of a scalar quantity $\phi$ represents the rate of change of $\phi$ acr
 
 \gapS
 
-Given a vector field $\textbf{u} : \mathbb{R} ^3 \rightarrow \mathbb{R} ^3$, the \textit{divergence} or \textit{div} of the field is a scalar field written as $\nabla \cdot \textbf{u}$, and it is defined by:
+Given a vector field $\u : \mathbb{R} ^3 \rightarrow \mathbb{R} ^3$, the \textit{divergence} or \textit{div} of the field is a scalar field written as $\nabla \cdot \u$, and it is defined by:
 $$
-    \nabla \cdot \textbf{u} 
+    \nabla \cdot \u 
     = \nabla \cdot 
     \begin{pmatrix}
-        \textbf{u}_x \\
-        \textbf{u}_y \\
-        \textbf{u}_z
+        \u_x \\
+        \u_y \\
+        \u_z
     \end{pmatrix}
     =
-    \frac{\partial \textbf{u}_x}{\partial x} +  
-    \frac{\partial \textbf{u}_y}{\partial y} +
-    \frac{\partial \textbf{u}_z}{\partial z}
+    \frac{\partial \u_x}{\partial x} +  
+    \frac{\partial \u_y}{\partial y} +
+    \frac{\partial \u_z}{\partial z}
 $$
-If $\textbf{u}$ is the velocity field, then the scalar field $\nabla \cdot \textbf{u}$ represents the speed at which the fluid is expanding or shrinking at each 3D location. Thus, a velocity field that satisfies $\nabla \cdot \textbf{u} = 0$ would keep the fluid in constant volume, which is how most fluids behave in the real world.
+If $\u$ is the velocity field, then the scalar field $\nabla \cdot \u$ represents the speed at which the fluid is expanding or shrinking at each 3D location. Thus, a velocity field that satisfies $\nabla \cdot \u = 0$ would keep the fluid in constant volume, which is how most fluids behave in the real world.
 
 
 \gapM
@@ -71,23 +71,23 @@ If $\textbf{u}$ is the velocity field, then the scalar field $\nabla \cdot \text
 
 \gapS
 
-Given a vector field $\textbf{u} : \mathbb{R} ^3 \rightarrow \mathbb{R} ^3$, the \textit{curl} of the field is a scalar field written as $\nabla \cross \textbf{u}$, and it is defined by:
+Given a vector field $\u : \mathbb{R} ^3 \rightarrow \mathbb{R} ^3$, the \textit{curl} of the field is a scalar field written as $\nabla \cross \u$, and it is defined by:
 $$
-    \nabla \cross \textbf{u} = 
+    \nabla \cross \u = 
     \nabla \cross \begin{pmatrix}
-        \textbf{u}_x \\
-        \textbf{u}_y \\
-        \textbf{u}_z
+        \u_x \\
+        \u_y \\
+        \u_z
     \end{pmatrix}
     =
     \left(
     \begin{aligned}
-        \frac{\partial \textbf{u}_z}{\partial y} - 
-            \frac{\partial \textbf{u}_y}{\partial z} \\
-        \frac{\partial \textbf{u}_x}{\partial z} - 
-            \frac{\partial \textbf{u}_z}{\partial x} \\
-        \frac{\partial \textbf{u}_y}{\partial x} - 
-            \frac{\partial \textbf{u}_x}{\partial y} \\
+        \frac{\partial \u_z}{\partial y} - 
+            \frac{\partial \u_y}{\partial z} \\
+        \frac{\partial \u_x}{\partial z} - 
+            \frac{\partial \u_z}{\partial x} \\
+        \frac{\partial \u_y}{\partial x} - 
+            \frac{\partial \u_x}{\partial y} \\
     \end{aligned} \right)
 $$
 Informally, the curl of the velocity field is a measure of the local rotation of the fluid. Though not directly used in the equations and algorithms presented in this project, it is at the heart of a different class of algorithms, called the vortex methods\cite{angelidis2005simulation}.
@@ -108,11 +108,11 @@ $$
 $$
 The Laplacian describes the difference between the average value of $\phi$ in the neighborhood of a certain point and the value of $\phi$ at that point. As defined, this operator takes a scalar field and returns a scalar field. However, The Laplacian is also often extended to be applied to vector fields, where 
 $$
-\nabla \cdot \nabla \textbf{u} =
+\nabla \cdot \nabla \u =
     \begin{pmatrix}
-        \nabla \cdot \nabla \textbf{u}_x \\
-        \nabla \cdot \nabla \textbf{u}_y \\
-        \nabla \cdot \nabla \textbf{u}_z
+        \nabla \cdot \nabla \u_x \\
+        \nabla \cdot \nabla \u_y \\
+        \nabla \cdot \nabla \u_z
     \end{pmatrix}
 $$
 
@@ -123,9 +123,9 @@ For any physical quantity that represents some property of a fluid, the field of
 
 The Eulerian viewpoint considers the time derivative of quantities at fixed locations in the 3D space. For a scalar field $\phi$ which varies through time, its \textit{Eulerian derivative} is simply $\dfrac{\partial \phi}{\partial t}$. To be more precise, the Eulerian derivative $\dfrac{\partial \phi}{\partial t}$, evaluated at point $\textbf{x}$, is the rate of change of $\phi$ of the fluid at the fixed position $\textbf{x}$, despite the fact that the fluid could be in motion. This has the immediate consequence that the concept of Eulerian derivative fails to capture the fact that physical quantities are carried around (i.e advected) by the fluid. 
 
-The Lagrangian viewpoint, on the other hand, tracks the rates of changes of quantities as it moves along the velocity field $\textbf{u}$. In this approach, for a scalar field $\phi$, its derivative with respect to time is written as $\dfrac{D\phi}{Dt}$, and defined to be
+The Lagrangian viewpoint, on the other hand, tracks the rates of changes of quantities as it moves along the velocity field $\u$. In this approach, for a scalar field $\phi$, its derivative with respect to time is written as $\dfrac{D\phi}{Dt}$, and defined to be
 $$
-\frac{D\phi}{Dt} = \frac{\partial\phi}{\partial t} + \nabla \phi \cdot \textbf{u}
+\frac{D\phi}{Dt} = \frac{\partial\phi}{\partial t} + \nabla \phi \cdot \u
 $$ 
 This derivative, known as the \textit{Lagrangian derivative} or \textit{material derivative}, can be justified by treating the fluid as a collection of infinitesimal particles, each carrying some quantities and moving along the velocity field. At time $t$, for each particle $p$ with position $\textbf{x}$, the quantity of $\phi$ it carries is $\phi_p = \phi(t,\textbf{x}(p))$. The derivative with respect to $t$ of this term computes the rate of change of $\phi _p$:
 $$
@@ -133,20 +133,20 @@ $$
     \frac{d}{dt} \phi_p
         &= \frac{d}{dt} \phi(t,\textbf{x}(t)) \\
         &= \frac{\partial \phi}{\partial t} + \nabla \phi \cdot \frac{d\textbf{x}}{dt} \\ 
-        &= \frac{\partial \phi}{\partial t} + \nabla \phi \cdot \textbf{u} \\
+        &= \frac{\partial \phi}{\partial t} + \nabla \phi \cdot \u \\
         &=\frac{D\phi}{Dt}
 \end{aligned}
 $$
 Which is precisely the Lagrangian derivative.
 
-When formalizing the Euler and Navier-Stokes equations, the Lagrangian derivative $\dfrac{D}{Dt}$ will be automatically extended to be applied to vector fields, where each component of the vector field is differentiated separately. This allows the term $\dfrac{D\textbf{u}}{Dt}$ to be written, representing the acceleration of the infinitesimal fluid particles:
+When formalizing the Euler and Navier-Stokes equations, the Lagrangian derivative $\dfrac{D}{Dt}$ will be automatically extended to be applied to vector fields, where each component of the vector field is differentiated separately. This allows the term $\dfrac{D\u}{Dt}$ to be written, representing the acceleration of the infinitesimal fluid particles:
 \begin{equation}
     \label{Du/Dt}
-    \frac{D\textbf{u}}{Dt} = \frac{\partial\textbf{u}}{\partial t}
+    \frac{D\u}{Dt} = \frac{\partial\u}{\partial t}
     + \begin{pmatrix}
-       \nabla \textbf{u}_x  \cdot \textbf{u}\\
-        \nabla \textbf{u}_y \cdot \textbf{u}\\
-        \nabla \textbf{u}_z \cdot \textbf{u}
+       \nabla \u_x  \cdot \u\\
+        \nabla \u_y \cdot \u\\
+        \nabla \u_z \cdot \u
      \end{pmatrix}
 \end{equation}
 
@@ -173,64 +173,64 @@ Using the previously defined notations, the Euler equations, which governs the m
     \tag{Euler Equations}
     \left \{
     \begin{aligned}
-         \frac{D\textbf{u}}{Dt}   &=   -\frac{\nabla p}{\rho} + \textbf{g} \\
-         \nabla \cdot \textbf{u}   &=   0
+         \frac{D\u}{Dt}   &=   -\frac{\nabla p}{\rho} + \textbf{g} \\
+         \nabla \cdot \u   &=   0
     \end{aligned} \right.
     \label{eqn:Euler Equations}
 \end{equation} 
-where $\textbf{u}$ is the velocity field, $p$ is pressure, $\rho$ is the fluid's density, and $\textbf{g}$ the acceleration caused by an external force field (e.g gravity).
+where $\u$ is the velocity field, $p$ is pressure, $\rho$ is the fluid's density, and $\textbf{g}$ the acceleration caused by an external force field (e.g gravity).
 
 A generalized version of these equations is the famous incompressible Navier-Stokes equations, in which a term that describes viscosity is added:
 \begin{equation}
     \tag{Navier-Stokes Equations}
     \left \{
     \begin{aligned}
-         \frac{D\textbf{u}}{Dt}   &=   -\frac{\nabla p}{\rho} + \textbf{g} + \nu \nabla \cdot \nabla \textbf{u} \\
-         \nabla \cdot \textbf{u}  &=   0
+         \frac{D\u}{Dt}   &=   -\frac{\nabla p}{\rho} + \textbf{g} + \nu \nabla \cdot \nabla \u \\
+         \nabla \cdot \u  &=   0
     \end{aligned} \right.
     \label{eqn:Navier-Stokes Equations}
 \end{equation} 
 where $\nu$ is the kinematic viscosity coefficient.
 
 
-As described in the last section, the quantity $(\nabla \cdot \textbf{u})$ represents the rate at which the fluid is expanding or shrinking. Fluids in the real world usually remains in constant volume, unless in extreme conditions. This motivates the equation $\nabla \cdot \textbf{u} = 0$, included in both Euler and Navier-Stokes.
+As described in the last section, the quantity $(\nabla \cdot \u)$ represents the rate at which the fluid is expanding or shrinking. Fluids in the real world usually remains in constant volume, unless in extreme conditions. This motivates the equation $\nabla \cdot \u = 0$, included in both Euler and Navier-Stokes.
 
 
 Besides the incompressibility condition, both Euler and Navier-Stokes include another equation known as the momentum equation (which is in fact a set of equations, because the quantities are vectors). The momentum equation essentially specifies Newton's 2nd law: $\textbf{a}$ = $\dfrac{\textbf{F}}{m}$ , i.e the acceleration is the force divided by the mass.
 
-As previously explained, the quantity $\dfrac{D\textbf{u}}{Dt}$ represents the acceleration of the infinitesimal fluid particles. Thus, to explain the momentum equations, it remains to demonstrate that the right hand side correctly computes the force divided by the mass. Let the mass of the infinitesimal particle be $m$, and let the force be separated into the internal forces within the fluid $F_{in}$ and the external forces $F_{ext}$:
+As previously explained, the quantity $\dfrac{D\u}{Dt}$ represents the acceleration of the infinitesimal fluid particles. Thus, to explain the momentum equations, it remains to demonstrate that the right hand side correctly computes the force divided by the mass. Let the mass of the infinitesimal particle be $m$, and let the force be separated into the internal forces within the fluid $F_{in}$ and the external forces $F_{ext}$:
 $$
-\dfrac{D\textbf{u}}{Dt} = \frac{F_{in} + F_{ext}}{m}
+\dfrac{D\u}{Dt} = \frac{F_{in} + F_{ext}}{m}
 $$
 With $\textbf{g}$ representing the acceleration caused by an external force field (e.g gravity), this can be rewritten as
 $$
-\dfrac{D\textbf{u}}{Dt} = \frac{F_{in}}{m} + \textbf{g}
+\dfrac{D\u}{Dt} = \frac{F_{in}}{m} + \textbf{g}
 $$
 The internal forces within a fluid is caused by an imbalance in pressure. Specifically, if one side of a infinitesimal particle has a greater pressure than the opposite side, then the particle will be pushed towards the low pressure region. This justifies why the pressure forces are in the direction of $-\nabla p$, which computes the direction of fastest decrease of pressure. From a dimensional analysis point of view, the unit of $p$ is $\dfrac{force}{length^2}$, thus the unit of $\nabla p$ is $\dfrac{force}{length^3}$. This indicates that to obtain the pressure force, it's necessary to multiply by the volume $V$ of the infinitesimal particle, which produces
 $$
-\dfrac{D\textbf{u}}{Dt} = -\frac{V \nabla p}{m} + \textbf{g}
+\dfrac{D\u}{Dt} = -\frac{V \nabla p}{m} + \textbf{g}
 $$
 Using $\rho = \dfrac{m}{V}$, this becomes:
 $$
-\dfrac{D\textbf{u}}{Dt} =  -\frac{\nabla p}{\rho} + \textbf{g}
+\dfrac{D\u}{Dt} =  -\frac{\nabla p}{\rho} + \textbf{g}
 $$
 Which is Euler's momentum equation. It is important to note that the justifications of the fluid equations given in this section is far from a rigorous mathematical derivation, which would not fit into this report due to its complexity. 
 
 
-The Navier-Stokes momentum equation extends the Euler momentum equation by considering viscosity. In a viscous fluid, the velocity of a particle tends to diffuse into its surrounding particles, causing the velocity in the neighborhood to converge into its average. The difference between the average of $\textbf{u}$ in the neighborhood and the value of $\textbf{u}$ of the particle is captured by the Laplacian of the velocity: $\nabla \cdot \nabla \textbf{u}$, thus adding a positive multiple of this quantity creates a viscous effect:
+The Navier-Stokes momentum equation extends the Euler momentum equation by considering viscosity. In a viscous fluid, the velocity of a particle tends to diffuse into its surrounding particles, causing the velocity in the neighborhood to converge into its average. The difference between the average of $\u$ in the neighborhood and the value of $\u$ of the particle is captured by the Laplacian of the velocity: $\nabla \cdot \nabla \u$, thus adding a positive multiple of this quantity creates a viscous effect:
 $$
-\frac{D\textbf{u}}{Dt}   =   -\frac{\nabla p}{\rho} + \textbf{g} + \nu \nabla \cdot \nabla \textbf{u} 
+\frac{D\u}{Dt}   =   -\frac{\nabla p}{\rho} + \textbf{g} + \nu \nabla \cdot \nabla \u 
 $$
 where $\nu$ is a constant property, known as the kinematic viscosity of the fluid. For water, which is a rather inviscid fluid, this quantity is almost negligible. When simulating water, considering the effects of viscosity requires considerable extra computation, while bringing little improvements to the visual fidelity. As a result, this project chooses to only solve the Euler equations during simulation. 
 
 
 \section{Boundary Conditions}
-
+\label{section boundary conditions}
 For a fluid region that is not the entirety of $\mathbb{R}^3$, boundary conditions must be specified, which defines the behavior of the fluid in the physical boundary of the fluid region.
 
 When simulating liquids, there are two types of boundary conditions: the solid boundaries and the free surface boundaries. At a solid boundary, the condition is 
 $$
-    \textbf{u} \cdot \textbf{n} = 0
+    \u \cdot \textbf{n} = 0
 $$
 where $\textbf{n}$ is the normal of the solid surface. This condition ensures that the fluid cannot flow into a solid. 
 
@@ -242,11 +242,16 @@ This free surface condition can be also applied to the boundary between liquid a
 
 The liquid simulated in this project is contained within a cubic box. Moreover,it doesn't fill the box entirely and thus has a free surface. Consequently, both boundary condition will be applied during the numerical simulation. 
 
-\section{The Diffusion Equation}
-Finally, this section introduces an equation that governs the concentration changes in a mixture of more than one miscible fluids.
-Let $\alpha$ be the scalar field representing the concentration of a certain fluid, the diffusion equation specifies:
+\section{Multiple Fluids}
+\label{section multiple fluids}
+Finally, this section introduces an equation that governs the concentration changes in a mixture of more than one miscible fluids phases. 
+
+Concentration of different fluid phases will be represented using ratios.Specifically, let $N$ be the total number of different fluid phases, the concentration of the $i$th fluid is represented by a scalar field $\alpha^i$, where $\sum_{i=0}^{N}\alpha^i = 1$ at any point within the fluid.
+
+The diffusion among multiple fluid phases is a result of the random Brownian motion of the fluid particles. However, it's possible to model this process from a macroscopic viewpoint, where an equation can be written that governs the expectation of how the concentrations change:
 \begin{equation}
-    \tag{Diffusion Equation}
-    \frac{\partial \alpha}{\partial t} = D\nabla \cdot \nabla \alpha
+    \tag{Advection-Diffusion Equation}
+    \frac{D \alpha^i}{D t} = C\nabla \cdot \nabla \alpha^i
 \end{equation}
-Where $D$ is the diffusion coefficient. This is again justified by that fact that the Laplacian $D\nabla \cdot \nabla \alpha$ captures the difference between the average value of $\alpha$ in the neighborhood of a 3D location and the value of $\alpha$ at that location.
+where $C$ is the diffusion coefficient. Informally, if the concentration of a fluid region has a different concentration then its surrounding, this difference will tend to "diffuse" into the surrounding, so that the concentrations tends to become more similar. This explains why the rate of change of the concentration is proportional to the Laplacian of the concentration.
+
