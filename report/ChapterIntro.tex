@@ -28,9 +28,15 @@ A significantly important step during a grid-based simulation is to move all the
 
 As an addition to the traditional single phase fluid simulation, Kang et el.\cite{kang2010hybrid} showed how to extend the grid-based algorithms to capture the diffusion between multiple fluid phases (e.g red ink diffusing in transparent water). This project implements a modified version of the proposed algorithm, where FLIP, rather than BFECC, is used to advect the concentration of different fluid phases.
 
-Parallel to the grid-based approach is the family of particle-based algorithms. For computer graphics, the most commonly used class of particle-based algorithms is known as \textbf{SPH} (Smoothed Particle Hydrodynamics). Introduced to computer graphics in 2003 by Müller \cite{muller2003particle}, the SPH method represent the fluid by a moving cloud of particles, which carry the physical quantities with them. This project chooses to implement two extensions to SPH:  \textbf{PCISPH}(Predicative-Corrective Incompressible SPH) by Solenthalar\cite{solenthaler2009predictive} and \textbf{PBF}(Position Based Fluids) by Macklin and Müller\cite{macklin2013position}. These extended algorithms improve upon the plain SPH in that they enforce the incompressibility constraint of fluids, which are important for visual fidelity. 
 
-Given a well performing simulation, either grid-based or particle-based, it remains a nontrivial task to visualize the fluid. This project follows the proposal by Zhu and Bridson \cite{zhu2005animating}, who showed how a particle representation of a fluid can be used to compute a signed distance field, which represents the distance to the fluid surface of each point in the 3D space. An algorithm known as Marching Cubes \cite{lorensen1987marching}, proposed by Lorensen, can then use this field to reconstruct the surface of the fluid into a triangle mesh representation, which is suitable for rendering. 
+
+
+Parallel to the grid-based approach is the family of particle-based algorithms. For computer graphics, the most commonly used class of particle-based algorithms is known as \textbf{SPH} (Smoothed Particle Hydrodynamics). Originally developed for astronomical simulations by Lucy\cite{lucy1977numerical} and Monaghan \cite{monaghan1992smoothed} in 1977, SPH was introduced to computer graphics in 2003 by Müller\cite{muller2003particle}. The SPH method represent the fluid by a moving cloud of particles, which carry the physical quantities of the fluid with them. This project chooses to study and implement an extension of SPH, called \textbf{PBF}(Position Based Fluids), developed by Macklin and Müller\cite{macklin2013position} in 2014. This extended algorithm improve upon the plain SPH in that it enforces the incompressibility constraint of fluids, which are important for visual fidelity. 
+
+
+
+
+Given a well performing simulation, either grid-based or particle-based, it remains a nontrivial task to visualize the fluid. This project follows the proposal by Zhu and Bridson\cite{zhu2005animating}, who showed how a particle representation of a fluid can be used to compute a signed distance field, which represents the distance to the fluid surface of each point in the 3D space. An algorithm known as Marching Cubes, proposed by Lorensen\cite{lorensen1987marching}, can then use this field to reconstruct the surface of the fluid into a triangle mesh representation, which is suitable for rendering. 
 
 
 

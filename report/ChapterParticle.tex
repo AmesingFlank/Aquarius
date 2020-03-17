@@ -1,2 +1,37 @@
 \chapter{Particle-Based Simulations}
 \label{chapter particle}
+
+
+
+Besides the grid-based fluid simulations algorithms, this project also studied and implemented a fundamentally different algorithm, known as \textit{PBF} (Position-Based Fluids), which only uses particles to represent the fluid and its relevant scalar and vector fields. This chapter explains the principles of this algorithm, its CUDA implementation, and how it compares to the FLIP algorithm presented in the last chapter.
+
+\section{Smoothed Particle Hydrodynamics}
+PBF belongs to a family of algorithms called \textit{Smoothed Particle Hydrodynamics}, or SPH. Similar to FLIP, SPH algorithms represent the fluid using a cloud of particles. All quantities that are involved in the simulations are carried by the particles. For some quantity $q$, either scalar or vector, and some location $\textbf{x}$, SPH approximates $q$ at $q(\textbf{x})$ as a weighted average of $Q$ carried by the nearby particles.
+$$
+Q(\textbf{x}) = \sum_{p\in particles} m_p \frac{Q_p}{\rho_p} W_h(\textbf{x}-\textbf{x}_p)
+$$
+where $m_p$ is the mass of the particle, $\textbf{x}_p$ its position, $\rho_p$ its density, and $Q_p$ the value of $Q$ it carries. Most importantly, $W_h$ is a \textit{smoothing kernel function}, which has the properties:
+\begin{equation}
+    \label{eqn SPH basic}
+    \begin{aligned}
+        \forall\textbf{x}~~s.t~~||\textbf{x}||>h, W_h(\textbf{x}) &= 0\\
+        \int W_h(\textbf{x}) d\textbf{x} &= 1
+    \end{aligned}
+\end{equation}
+Thus, $W_h$ is used to decide the contribution weight of each particle, which is guaranteed to be $0$ if the particles is farther away than $h$. The parameter $h$ is called the \textit{smoothing length}, and is usually chosen so that there are around 20 to 30 particles within $h$ from every point inside the fluid.
+
+A convenient and important property of the SPH framework is that, computing the gradient/Laplacian of a quantity can be done by only applying the gradient/Laplacian operator on the smoothing kernel:
+\begin{equation}
+    \label{eqn SPH derivative}
+    \begin{aligned}
+        \nabla Q(\textbf{x}) &= \sum_{p\in particles} m_p \frac{Q_p}{\rho_p} \nabla W_h(\textbf{x}-\textbf{x}_p) \\
+        \nabla \cdot \nabla Q(\textbf{x}) &= \sum_{p\in particles} m_p \frac{Q_p}{\rho_p} \nabla \cdot \nabla W_h(\textbf{x}-\textbf{x}_p)
+    \end{aligned}
+\end{equation}
+
+
+Though originally developed for astronomical simulations by Lucy\cite{lucy1977numerical} and Monaghan \cite{monaghan1992smoothed} in 1977, Matthias Müller was the first to the introduce SPH to computer graphics\cite{muller2003particle}. In his 2003 paper, each quantity involved in the Navier-Stokes momentum equation is explicitly written in the forms of equation \ref{eqn SPH basic} or \ref{eqn SPH derivative}. An explicit time stepping integration is then used to update the velocity field and particle positions. However, the incompressibility condition was ignored in that paper. Since then, many extensions and modifications to the original SPH scheme was proposed, which enforces incompressibility. The newest and currently most popular one of these extensions is proposed in 2014, again developed by Müller and his colleague Macklin in NVIDIA\cite{macklin2013position}. This extension is the Position Based Fluids algorithm.
+
+
+\section{Position Based Fluids}
+In Position Based Fluids, or PBF, the incompressibility condition is enforced by putting an explicit constraint on the density of the fluid. Specifically, let $\rho_{rest}$ be the rest density of the fluid, and 

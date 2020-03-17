@@ -431,11 +431,25 @@ A once widely used advection algorithm is called \textbf{PIC}(Particle in Cell),
 \begin{enumerate}
     \item For each particle $p$ with position $\textbf{x}_p$, sample and interpolate the MAC grid to obtain the value of $\u_{[n]}$ at $\textbf{x}_p$. Assign this as the particle's velocity,  $\u_p$
     
-    \item Move the particle according to the velocity field. Either by computing $\textbf{x}_p^{new} = \triangle t \u_p$ to $\textbf{x}_p$, or, for better precision, using a higher-order Runge-Kutta integration.
+    \item Move the particle in the velocity field $\u_{[n]}$. This can be as simple as computing $\textbf{x}_p^{new} = \textbf{x}_p + \triangle t \u_{[n]}(\textbf{x}_p)$. For higher accuracy, this project performs this using a 3rd-order Runge-Kutta integration:
+    \begin{equation*}
+        \begin{aligned}
+            \u_{temp1} &= \u_{[n]}(\textbf{x}_p) \\
+            \u_{temp2} &= \u_{[n]}(\textbf{x}_p + \frac{1}{2}\triangle t \u_{temp1}) \\
+            \u_{temp3} &= \u_{[n]}(\textbf{x}_p + \frac{3}{4}\triangle t \u_{temp2})\\
+            \textbf{x}_p^{new} &=  \textbf{x}_p + \triangle t(
+                \frac{2}{9}\u_{temp1} + \frac{3}{9}\u_{temp2} + \frac{4}{9}\u_{temp3}
+                )
+        \end{aligned}
+    \end{equation*}
+    For particles near the boundaries of the fluid, some of the $\u_{temp}$ values might be sampled outside the fluid region, which is slightly problematic because the velocity isn't defined outside the fluids. This is fixed by a simple \textit{extrapolation} step, which extends the velocity to a few grid cells outside its original region.
+    
     
     \item For each MAC grid cell, and for each of its 3 sample points where a component of $\u$ is stored, find all particles within a certain small radius (usually $\triangle x$), and interpolate their value of $\u_p$. Save these values as a temporary velocity field, $\u_{[n+1]}^{advected}$.
 \end{enumerate}
 In short, the PIC algorithm first transfers the velocity field from the MAC grid to the particles, then move the particles, and then transfers the velocity from the particles back to the MAC grid.
+
+
 
 The PIC algorithm is largely superseded by another algorithm known as \textbf{FLIP}(Fluid Implicit Particle), which is implemented in this project. FLIP is very similar to PIC, with only a slightly different 1st step:
 \begin{enumerate}
@@ -505,11 +519,11 @@ To summarize, using a grid and FLIP advection, the simulation of each time step 
     \tcp{At time step [n+1]}
     \ForEach{particle $p$}{
         $\u_p := \u_p + \u_{[n]}(\textbf{x}_p) - \u_{[n-1]}(\textbf{x}_p)$ \;
-        $\textbf{x}_p := \textbf{x}_p + \u_p \triangle t$ (or using a higher order Runge-Kutta)\;
+        Move $p$ inside the velocity field using Runge-Kutta\;
     }
     \ForEach{grid cell at location $(x,y,z)$}{
         Find all particles within a radius of $\triangle x$\;
-        Compute $\u_{[n+1]}^{advected}$, as an average of the $\u_p$ carried by nearby particles\;
+        Compute $\u_{[n+1]}^{advected}$, as a weighted average of the $\u_p$ of nearby particles\;
     }
     Apply external forces, $\u_{[n+1]}^{compressible} =  FixSolidBoundary(u_{[n+1]}^{advected} + \triangle t \textbf{g})$\;
     Construct and solve the Poisson pressure equation, obtain pressure $p$\;
@@ -558,12 +572,12 @@ Incorporating the FLIP concentration advection and solving the diffusion equatio
     \ForEach{particle $p$}{
         $\u_p := \u_p + \u_{[n]}(\textbf{x}_p) - \u_{[n-1]}(\textbf{x}_p)$ \;
         $\alpha_p^i := \alpha_p^i + \alpha^i_{[n]}(\textbf{x}_p) - \alpha^i_{[n-1]}(\textbf{x}_p)$, for all fluid phases $i$ \;
-        $\textbf{x}_p := \textbf{x}_p + \u_p \triangle t$ (or using a higher order Runge-Kutta)\;
+        Move $p$ inside the velocity field using Runge-Kutta\;
     }
     \ForEach{grid cell at location $(x,y,z)$}{
         Find all particles within a radius of $\triangle x$\;
-        Compute $\u_{[n+1]}^{advected}$, as an average of the $\u_p$ carried by nearby particles\;
-        Compute $\alpha_{[n+1]}^{advected}$, as an average of the $\alpha _p$ carried by nearby particles\;
+        Compute $\u_{[n+1]}^{advected}$, as a weighted average of the $\u_p$ of nearby particles\;
+        Compute $\alpha_{[n+1]}^{advected}$, as a weighted average of the $\alpha _p$ of nearby particles\;
     }
     Apply external forces, $\u_{[n+1]}^{compressible} =  FixSolidBoundary(u_{[n+1]}^{advected} + \triangle t \textbf{g})$\;
     Construct and solve the Poisson pressure equation, obtain pressure $p$\;
