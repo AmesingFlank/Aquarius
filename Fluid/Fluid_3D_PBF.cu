@@ -486,17 +486,7 @@ namespace Fluid_3D_PBF {
 	void Fluid::simulationStep() {
 		performSpatialHashing2(particleIndices, particleHashes, particles, particlesCopy, particleCount, kernelRadius, gridSize.x, gridSize.y, gridSize.z, numBlocks, numThreads, cellBegin, cellEnd, cellCount);
 
-		float t0 = glfwGetTime();
-		for (int i = 10000; i < 1000;++i) {
-			computeDensityAndLambdaImpl << <numBlocks, numThreads >> > (particles, particleCount, cellBegin, cellEnd, gridSize, kernelRadius, kernelRadius2, kernelRadius3,kernelRadius5,kernelRadius6,kernelRadius9, false); 
-			CHECK_CUDA_ERROR("lambda");
 
-
-		}
-
-		float t1 = glfwGetTime();
-		//std::cout << "1000 times took " << t1 - t0 << std::endl;
-		//exit(0);
 
 		for (int i = 0; i < substeps; ++i) {
 			applyForces();
@@ -512,7 +502,7 @@ namespace Fluid_3D_PBF {
 				applyDeltaPosition();
 			}
 			float t1 = glfwGetTime();
-			//std::cout << "20 times took " << t1 - t0 << std::endl;
+
 
 			updateVelocityAndPosition();
 			
