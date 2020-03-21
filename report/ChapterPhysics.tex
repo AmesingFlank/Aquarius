@@ -42,6 +42,24 @@ Given a scalar field $\phi : \mathbb{R} ^3 \rightarrow \mathbb{R} $, the \textit
 \end{equation*} 
 The grad of a scalar quantity $\phi$ represents the rate of change of $\phi$ across each dimension. Moreover, $\nabla \phi$ computes the direction of movement which causes the greatest increase of $\phi$. 
 
+The $\nabla$ operator can also be extended to scaler fields of higher dimensions: let $\phi : \mathbb{R} ^N \rightarrow \mathbb{R} $ be an N-dimensional scalar field, $\nabla \phi$ is then defined as:
+\begin{equation*}
+    \nabla \phi \begin{pmatrix}
+        x_1 \\
+        x_2 \\
+        \vdots \\
+        x_N
+    \end{pmatrix}
+    =
+    \left(
+    \begin{aligned}
+        \frac{\partial \phi}{\partial x_1} \\
+        \frac{\partial \phi}{\partial x_2} \\
+        \vdots~~ \\
+        \frac{\partial \phi}{\partial x_N}
+    \end{aligned} \right)
+\end{equation*} 
+
 \gapM
 
 \textbf{The div}

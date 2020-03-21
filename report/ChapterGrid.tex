@@ -601,7 +601,7 @@ For certain parts of the algorithm, parallelization is straightforward. This inc
 The rest of the algorithm, line 7, 12 and 14, requires much more attention. Line 7 performs a task called \textit{spatial indexing}: associating each grid cell with all the particles that are within radius $\triangle x$ at each time step. A naive implementation would require a linear search on all particles, and this has to be performed for all grid cells, which is intolerable because the simulation could involve up to around 1,000,000 particles and 100,000 grid cells. In line 12 and 14, a linear equation needs to be solved, where there's an unknown for each fluid cell. As a result, the total amount of unknowns is in the order of 100,000. A naive linear solver have a $O(N^3)$ complexity, which is also too costly. In order to achieve real-time simulation and rendering, each of these operations, indexing 1,000,000 million particles and solving linear equations with 100,000 unknowns, needs to be performed at least around 20 times per second. This section will focus on how this is made possible in this project.
 
 \subsection{Spatial Indexing}
-
+\label{subsection spatial indexing}
 With $\triangle x$ being the edge length of each cubic grid cell, finding all particles within a radius $\triangle x$ of each cell can be reduced to finding the particles that are \textit{inside} each cell. Then, for a certain cell, it suffices to check all the 27 cells in the neighborhood, because all particles within a radius $\triangle x$ must be contained inside these 27 cells. 
 
 To create an index from each cell to the particles inside the cell, this project uses the parallel algorithm proposed by Green \cite{harlow1965numerical}. The algorithm proceeds in the following steps:

@@ -3,11 +3,23 @@
 %\documentclass[12pt,shieldcrest]{ociamthesis} % use older shield crest logo
 
 %load any additional packages
+
+\usepackage{graphicx}
+\graphicspath{ {./images/} }
+
+\usepackage[font=small]{caption}
+
 \usepackage{amssymb}
 \usepackage{amsmath}
 \usepackage{physics}
 \usepackage{titlesec}
 \usepackage{lipsum}
+
+%\usepackage{newtxtext,newtxmath}
+
+% \usepackage{lmodern}     % set math font to Latin modern math
+% \usepackage[T1]{fontenc}
+% \renewcommand\rmdefault{ptm}
 
 \usepackage[svgnames]{xcolor}
 
@@ -99,7 +111,7 @@
 
 \include{ChapterParticle}
 \include{ChapterRender}
-
+\include{ChapterConclusions}
 
 %now enable appendix numbering format and include any appendices
 \appendix
