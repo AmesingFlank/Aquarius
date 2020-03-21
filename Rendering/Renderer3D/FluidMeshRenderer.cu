@@ -42,10 +42,14 @@ FluidMeshRenderer::FluidMeshRenderer(int count_) :count(count_) {
 	glBindVertexArray(0);
 	
 	delete[] coordsHost;
+
+	//screenSpaceNormal = std::make_shared<ScreenSpaceNormal>();
 }
 
 void FluidMeshRenderer::drawWithInk(const DrawCommand& drawCommand, GLuint skybox, PointSprites& points, float radius, std::vector<float4> phaseColors) {
 	
+
+	//GLuint screenSpaceNormalTexture = screenSpaceNormal->generateNormalTexture([&]() { drawDepth(drawCommand); }, 6, 5, 6, 0.1, drawCommand);
 
 	points.drawPhaseThickness(drawCommand, radius);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -77,6 +81,8 @@ void FluidMeshRenderer::drawWithInk(const DrawCommand& drawCommand, GLuint skybo
 }
 
 void FluidMeshRenderer::draw(const DrawCommand& drawCommand, GLuint skybox) {
+
+
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
 	glm::mat4  model = glm::mat4(1.0);
@@ -95,11 +101,11 @@ void FluidMeshRenderer::draw(const DrawCommand& drawCommand, GLuint skybox) {
 	shader->setUniformMat4("view", drawCommand.view);
 	shader->setUniformMat4("projection", drawCommand.projection);
 
-	/*
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, screenSpaceNormalTexture);
-	shader->setUniform1i("normalTexture", 0);
-	*/
+	
+	//glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D, screenSpaceNormalTexture);
+	//shader->setUniform1i("normalTexture", 0);
+	
 
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);

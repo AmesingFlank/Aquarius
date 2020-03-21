@@ -64,6 +64,8 @@ vec3 traceRay(vec3 origin,vec3 direction) {
 	return texture(skybox, direction).rgb;
 }
 
+
+
 void main() {
 	
 	float depth = texture (depthTexture,TexCoord).r;

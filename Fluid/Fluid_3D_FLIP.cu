@@ -396,7 +396,8 @@ namespace Fluid_3D_FLIP {
 	void Fluid::draw(const DrawCommand& drawCommand){
 		skybox.draw(drawCommand);
 
-		container->draw(drawCommand);
+		container->drawBottom(drawCommand);
+		
 
 		if (drawCommand.renderMode == RenderMode::Mesh) {
 
@@ -424,6 +425,7 @@ namespace Fluid_3D_FLIP {
 			pointSprites->draw(drawCommand, renderRadius, skybox.texSkyBox);
 		}
 		
+		container->drawEdges(drawCommand);
 
 		printGLError();
 
@@ -515,7 +517,7 @@ namespace Fluid_3D_FLIP {
 					float xJitter = (random0to1() - 0.5f) ;
 					float yJitter = (random0to1() - 0.5f) ;
 					float zJitter = (random0to1() - 0.5f) ;
-					float3 jitter = make_float3(xJitter, yJitter, zJitter) * particleSpacing * 0.5;
+					float3 jitter = make_float3(xJitter, yJitter, zJitter) * particleSpacing * 0.25;
 
 					float3 particlePos = subcellCenter;
 					particlePos += jitter;

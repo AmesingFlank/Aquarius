@@ -33,6 +33,25 @@ vec4 traceRay(vec3 origin, vec3 direction) {
 	return vec4(texture(skybox, direction).rgb, 1);
 }
 
+float schlick(vec3 normal, vec3 incident) {
+	float waterIOR = 1.333;
+	float airIOR = 1;
+	float F0 = (waterIOR - airIOR) / (waterIOR + airIOR);
+	F0 = F0 * F0;
+	float F = F0 + (1 - F0) * pow((1 - dot(normal, -incident)), 1);
+	return F;
+}
+
+
+vec3 getRefractedRay(vec3 normal, vec3 incident) {
+	float waterIOR = 1.333;
+	float n = 1 / waterIOR;
+	float w = n * dot(normal, -incident);
+	float k = sqrt(1 + (w - n) * (w + n));
+	vec3 t = (w - k) * normal + n * incident;
+	return normalize(t);
+}
+
 
 void main()
 {
@@ -40,9 +59,8 @@ void main()
 
 	vec2 texCoords = (fragPosNDC.xy + vec2(1, 1)) / 2;
 
-	vec3 normal = fragNormal;
+	vec3 normal = normalize(fragNormal);
 
-	color.rgb = normal;
 
 	vec3 incident = normalize(fragPos - cameraPosition);
 
@@ -50,7 +68,7 @@ void main()
 
 	vec4 reflectColor = traceRay(fragPos, reflectedRay);
 
-	vec3 refractedRay = normalize(incident - 0.2 * normal);
+	vec3 refractedRay = getRefractedRay(normal,incident);
 
 	
 	vec4 refractColor = vec4(0);
@@ -102,11 +120,15 @@ void main()
 	}
 
 
-	float mixFactor = 0.5;
+	float mixFactor = schlick(normal, incident);
+	mixFactor = min(0.5, max(mixFactor,0.1));
 
 	color =  mix(refractColor, reflectColor, mixFactor);
 
 	color.a = 1;
+
+	//color.rgb = normalize(normal);
+
 
 
 	return;
