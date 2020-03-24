@@ -24,7 +24,7 @@ Multiphase Diffusion       |  A red ball of fluid droppping into a blue box of f
 :-------------------------:|:-------------------------:
 ![](demo/multiphase_ball_0_0.png)  |  ![](demo/multiphase_ball_0_1.png)
 ![](demo/multiphase_ball_0_2.png)  |  ![](demo/multiphase_ball_0_3.png)
----       |  ---
+
 
 
 
@@ -39,3 +39,28 @@ Multiphase Diffusion       |  A red ball of fluid droppping into a blue box of f
 * Nukclear
 
 The cmake file should be able to handle these automatically.
+
+## Credits
+The project uses some of the cubemaps from http://www.humus.name as background.
+
+## More Images
+
+![](report/images/FrontSinglephase_cropped.png)
+![](report/images/FrontMultiphase_cropped.png)
+
+
+Ball Drop       |  Single Phase FLIP
+:-------------------------:|:-------------------------:
+![](report/images/balldrop_cropped2/single0.png)  |  ![](report/images/balldrop_cropped2/single1.png)
+![](report/images/balldrop_cropped2/single2.png)  |  ![](report/images/balldrop_cropped2/single3.png)
+
+Ball Drop       |  Multi Phase FLIP
+:-------------------------:|:-------------------------:
+![](report/images/balldrop_cropped2/multi0.png)  |  ![](report/images/balldrop_cropped2/multi1.png)
+![](report/images/balldrop_cropped2/multi2.png)  |  ![](report/images/balldrop_cropped2/multi3.png)
+
+
+Ball Drop       |  Single Phase PBF
+:-------------------------:|:-------------------------:
+![](report/images/balldrop_cropped2/pbf0.png)  |  ![](report/images/balldrop_cropped2/pbf1.png)
+![](report/images/balldrop_cropped2/pbf2.png)  |  ![](report/images/balldrop_cropped2/pbf3.png)
