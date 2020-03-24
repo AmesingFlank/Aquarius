@@ -863,34 +863,34 @@ $$
 $$
 For a certain amount of iterations. Each iterations is simple to do, because $D$ is only a diagonal matrix. 
 
-For the testing simulation configurations in this project, where the number of cells is in the order of $50^3$, $100$ to $200$ Jacobi iterations suffices to simulate the fluid accurate enough to give plausible visual results. 
 
 \subsection{Results}
-The exact performance of the FLIP implementation in this project highly depends on the simulation parameters used. With a $50^3$ grid, where around 30\% is occupied with fluid, and each grid cell containing around 8 particles, the simulation alone (without rendering) runs at over 50 FPS(frames per second), which comfortably meets the requirements of real time applications. With rendering added, the frame rate drops to around 20FPS, which is caused by the rather expensive volume rendering(section \ref{subsection multiphase render}) and surface reconstruction(section \ref{section surface reconstruction}). The screenshots of some example simulations follow on the next page.
-\newpage
-
+Performances of the FLIP algorithm implemented in this project highly depend on the simulation parameters used. For a grid of size $50^3$, approximately 100 Jacobi iterations are required at each time step to ensure incompressibility. And with roughly 8 particles inside each grid cell, the simulation alone (without rendering) runs at over 50 FPS(frames per second), which comfortably meets the requirements of real time applications. With rendering added, the frame rate drops to around 20FPS, which is caused by the rather expensive volume rendering(section \ref{subsection multiphase render}) and surface reconstruction(section \ref{section surface reconstruction}). Screenshots of some example simulations follow below.
 \begin{figure}[H]
     \centering
     
-    \begin{minipage}[t]{.24\linewidth}
+    \begin{minipage}[t]{.42\linewidth}
         \centering
         \vspace{0pt}
-        \includegraphics[width=3.5cm]{balldrop_cropped2/single0.png}
+        \includegraphics[width=6cm]{balldrop_cropped2/single0.png}
     \end{minipage}
-    \begin{minipage}[t]{.24\linewidth}
+    \begin{minipage}[t]{.42\linewidth}
         \centering
         \vspace{0pt}
-        \includegraphics[width=3.5cm]{balldrop_cropped2/single1.png}
+        \includegraphics[width=6cm]{balldrop_cropped2/single1.png}
     \end{minipage}
-    \begin{minipage}[t]{.24\linewidth}
+
+    \vspace{0.5cm}
+
+    \begin{minipage}[t]{.42\linewidth}
         \centering
         \vspace{0pt}
-        \includegraphics[width=3.5cm]{balldrop_cropped2/single2.png}
+        \includegraphics[width=6cm]{balldrop_cropped2/single2.png}
     \end{minipage}
-    \begin{minipage}[t]{.24\linewidth}
+    \begin{minipage}[t]{.42\linewidth}
         \centering
         \vspace{0pt}
-        \includegraphics[width=3.5cm]{balldrop_cropped2/single3.png}
+        \includegraphics[width=6cm]{balldrop_cropped2/single3.png}
     \end{minipage}
 
     \caption{Ball drop. $50^3$ grid, $208k$ FLIP particles}
@@ -901,25 +901,28 @@ The exact performance of the FLIP implementation in this project highly depends 
 \begin{figure}[H]
     \centering
     
-    \begin{minipage}[t]{.24\linewidth}
+    \begin{minipage}[t]{.42\linewidth}
         \centering
         \vspace{0pt}
-        \includegraphics[width=3.5cm]{balldrop_cropped2/multi0.png}
+        \includegraphics[width=6cm]{balldrop_cropped2/multi0.png}
     \end{minipage}
-    \begin{minipage}[t]{.24\linewidth}
+    \begin{minipage}[t]{.42\linewidth}
         \centering
         \vspace{0pt}
-        \includegraphics[width=3.5cm]{balldrop_cropped2/multi1.png}
+        \includegraphics[width=6cm]{balldrop_cropped2/multi1.png}
     \end{minipage}
-    \begin{minipage}[t]{.24\linewidth}
+
+    \vspace{0.5cm}
+
+    \begin{minipage}[t]{.42\linewidth}
         \centering
         \vspace{0pt}
-        \includegraphics[width=3.5cm]{balldrop_cropped2/multi2.png}
+        \includegraphics[width=6cm]{balldrop_cropped2/multi2.png}
     \end{minipage}
-    \begin{minipage}[t]{.24\linewidth}
+    \begin{minipage}[t]{.42\linewidth}
         \centering
         \vspace{0pt}
-        \includegraphics[width=3.5cm]{balldrop_cropped2/multi3.png}
+        \includegraphics[width=6cm]{balldrop_cropped2/multi3.png}
     \end{minipage}
 
     \caption{Same simulation as figure \ref{figure ball drop single}, except with 2 phases}
