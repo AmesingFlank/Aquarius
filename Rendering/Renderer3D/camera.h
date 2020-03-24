@@ -65,7 +65,7 @@ public:
 
 	double globalYaw;
 	double globalPitch;
-	float globalRadius = 20;
+	float globalRadius = 18;
 
 	float globalRotationSpeed = 1;
 	float globalMovementSpeed = 0.3;

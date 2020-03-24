@@ -1,10 +1,10 @@
 \chapter{Rendering}
 \label{chapter render}
-In computer graphics applications, the ultimate goal for fluid simulation is usually so that the fluid can be rendered and displayed to the human user. Thus, in addition to the FLIP and PBF algorithm, this project also implements a rendering pipeline, so that the simulation and rendering and be conducted together in real time. This chapter introduces the key rendering facilities that were implemented and the algorithms used.
+In computer graphics applications, the ultimate goal for fluid simulation is usually so that the fluid can be rendered and displayed to the human user. Thus, in addition to the FLIP and PBF algorithm, this project also implements a rendering pipeline, so that the simulation and rendering and be conducted together in real time. This chapter introduces the key rendering facilities that are implemented and the algorithms used.
 
 \section{Surface Reconstruction}
 \label{section surface reconstruction}
-To render liquids, the first step is to represent the surface of the liquid as a mesh of triangles, which can be fed into the GPU rendering pipeline, as described in section \ref{section opengl}. Since the fluid simulation does not maintain or even involve such a triangle mesh, it needs to be generated in each frame. Fortunately, in both FLIP and PBF, a cloud of particles which occupy the entire fluid region is maintained by the simulation, so if an algorithm can reconstruct the triangle mesh from particles, it can be used to render the results of both simulations.
+To render liquids, the first step is to represent the surface of the liquid as a mesh of triangles, which can then be fed into the GPU rendering pipeline. Since this triangle mesh is not maintained by the simulation algorithms, it needs to be generated in each frame. Fortunately, both FLIP and PBF maintains a cloud of particles that occupy the entire fluid region, so if an algorithm can reconstruct a triangle mesh from particles, it can be used to render the results of both simulation algorithms.
 
 In the paper where they also described FLIP\cite{zhu2005animating}, Zhu and Bridson utilized a concept called \textit{Signed Distance Field} to perform surface reconstruction. The signed distance field $\phi : \mathbb{R} ^3 \rightarrow \mathbb{R}$  is a scalar field, with the property that, given a 3D cartesian coordinate $\textbf{x}$:
 \begin{itemize}
@@ -14,7 +14,7 @@ In the paper where they also described FLIP\cite{zhu2005animating}, Zhu and Brid
     
     \item $\phi(\textbf{x}) = -d$ if $\textbf{x}$ is inside the fluid region, and the shortest distance between $\textbf{x}$ and any point on the surface is $d$.
 \end{itemize}
-Thus, the magnitude of $\phi(\textbf{x})$ indicates the distance between $\textbf{x}$ and the surface, and the sign of $\phi(\textbf{x})$ indicates whether $\textbf{x}$ is in the inside or outside. The fluid surface is then precisely the set of points where $\phi$ evaluates to 0, in literature, this is often called the \textit{zero isocontour} or zero \textit{isosurface}.
+Thus, the magnitude of $\phi(\textbf{x})$ indicates the distance between $\textbf{x}$ and the surface, and the sign of $\phi(\textbf{x})$ indicates whether $\textbf{x}$ is in the inside or outside. The fluid surface is then precisely the set of points where $\phi$ evaluates to 0. In literature, this is often called the \textit{zero isocontour} or \textit{zero isosurface}.
 
 Zhu and Bridson's method\cite{zhu2005animating} begins by considering the special case where there is only a single particle in the fluid. Assume the particle is centered at $\textbf{x}_0$ and has radius $r_0$, the signed distanced field of this spherical fluid region must then be:
 $$
@@ -34,6 +34,7 @@ W(\textbf{r},h) = max(0,(1-\frac{||\textbf{r}||^2}{h^2})^3)
 $$
 Using formula \ref{eqn SDF}, a discretized signed distance field can be computed and stored on a 3D grid. Notice that since the summation in $\overline{\textbf{x}}$ again sums over neighbor particles, the spatial indexing technique described in section \ref{subsection spatial indexing} will again be needed when implementing the formula. The 3D grid of discrete $\phi$ values is often called a \textit{level set} in literature\cite{bridson2015fluid}.
 
+
 Having computed the discrete signed distance field $\phi$, it remains to extract its zero isosurface as a triangle mesh. This is done using a famous algorithm called \textit{Marching Cubes}, invented by Wyvill\cite{wyvill1986soft} and Lorensen\cite{lorensen1987marching}. The algorithm considers each cubic grid cell in the level set grid, and puts a triangle vertex at each edge of the cube if one end of the edge is outside the fluid($\phi>0$) and the other end is inside the fluid ($\phi\leq 0$). Since for each cube has 8 vertices, and each vertex can be either inside or outside the fluid, there're a total of $2^8=256$ different cases for each cube. A selection of them is shown in this figure:
 
 \begin{figure}[H]
@@ -43,15 +44,39 @@ Having computed the discrete signed distance field $\phi$, it remains to extract
     \label{figure marching cubes}
 \end{figure}
 
-The triangles generated for all the cells connect together into a watertight mesh, which can be fed into the OpenGL pipeline for rendering. This project implements the Marching Cubes algorithm by using a precomputed loop-up table, which maps each of the 256 cases into an array of corresponding triangle vertices.
+The triangles generated for all the cells connect together into a watertight mesh, which can be fed into the OpenGL pipeline for rendering. This project implements the Marching Cubes algorithm by using a precomputed look-up table, which maps each of the 256 cases into an array of corresponding triangle vertices.
 
-When the triangle mesh of the fluid surface is being rendered, the normal vectors of the surface is needed. This project chooses to approximate the normal vector using the discrete gradient of the signed distance field, $\nabla \phi$. This vector represents the normal because, intuitively, $\nabla \phi$ points in the direction where $\phi$ increases the most, i.e, the direction that perpendicularly points away from the liquid surface.
+When the triangle mesh of the fluid surface is being rendered, the normal vectors of the surface is needed. This project chooses to approximate the normal vector using the discrete gradient of the signed distance field, $\nabla \phi$. This vector represents the normal because, intuitively, $\nabla \phi$ points in the direction where $\phi$ increases the most, which is also the direction that perpendicularly points away from the liquid surface.
+
+
+
+\begin{figure}[H]
+    \centering
+    
+    \begin{minipage}[t]{.49\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=7.4cm]{meshing_cropped/particles}
+        \subcaption{PBF Particles}
+    \end{minipage}
+    \begin{minipage}[t]{.49\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=7.4cm]{meshing_cropped/normal}
+        \subcaption{Constructed mesh and its normal.\\Direction represented by colors: 
+        \\ Red:$+x$ ~~ Green:$+y$ ~~ Blue:$+z$}
+    \end{minipage}
+    
+    \caption{Surface reconstruction from particles}
+    \label{figure surface reconstruction}
+\end{figure}
+
 
 
 
 \section{Surface Shading}
 
-Having the constructed the fluid surface as a triangle mesh, it is put through the OpenGL pipeline for shading. The most important task falls upon the fragment shader, where the color of each pixel on the mesh is computed. In order to generate realistic images, it is necessary to model how rays of light interact with the liquid.
+After the triangle mesh representing the liquid surface is constructed, it is put through the OpenGL pipeline for shading. The most important task falls upon the fragment shader, where the color of each pixel on the mesh is computed. In order to generate realistic coloring, it is necessary to model how rays of light interact with the liquid.
 
 \subsection{Reflection And Refraction}
 As a ray of light hits the boundary between air and liquid, part of its energy is bounced away from the surface, while the rest of enters the liquid and continues to travel inside. The two resulting rays are respectively called the \textit{reflection} and the \textit{refraction}. 
@@ -126,10 +151,10 @@ Besides the direction of the reflected and refracted ray, it's also necessary to
 \end{equation}
 
 
-In the OpenGL fragment shader, the final out put color will be $F$ multiplied by the color of the reflection, and $1-F$ multiplied by the color of the refraction. The reflected color is straightforward to compute, by tracing the ray in the direction of $\textbf{v}_{refl}$. However, for the refracted ray, because its path lies within the liquid, it's necessary to consider the behavior of the light ray within a colored medium. To make things more complicated, since the FLIP algorithm implemented in this project supports simulating multiple phases of fluids, different fluids of different color could be mixed together in the same water region. This is explored in the next subsection.
+In the OpenGL fragment shader, the final out put color will be $F$ multiplied by the color of the reflection, and $1-F$ multiplied by the color of the refraction. The reflected color is straightforward to compute, by tracing the ray in the direction of $\textbf{v}_{refl}$. However, for the refracted ray, because its path lies within the liquid, it's necessary to consider the behavior of the light ray within a colored medium. To make things more complicated, since this project supports simulating multiple phases of fluids, different fluids of different color could be mixed together in the same region. This is explored in the next subsection.
 
 \subsection{Multiple Fluids Rendering}
-
+\label{subsection multiphase render}
 As a ray of light travels past a region of colored liquid, the energy of the light ray diminishes as a result of scattering and absorption by the liquid particles. This process is quantified by the \textit{Beer-Lambert Law}, which defines the ratio $T_r$ of the light that remains after it travels through the fluid region:
 \begin{equation*}
     \begin{aligned}
@@ -137,22 +162,87 @@ As a ray of light travels past a region of colored liquid, the energy of the lig
         \tau &= \int_0^{d} \sigma_t(\textbf{o}+x\textbf{v}) dx
     \end{aligned}
 \end{equation*}
-In this formula, $\textbf{o}$ is the point where the ray enters the liquid, $\textbf{v}$ its direction of travel, and $d$ the length of the path of the ray inside the water. The function $\sigma_t(\textbf{x})$ indicates how much of the light becomes extinct at location $\textbf{x}$, and the integral of the extinction across the entire path is $\tau$, also called the \textit{optical depth}.
+In this formula, $\textbf{o}$ is the point where the ray enters the liquid, $\textbf{v}$ its direction of travel, and $d$ the length of the path of the ray inside the water. The function $\sigma_t(\textbf{x})$ indicates how much of the light becomes extinct at location $\textbf{x}$, and the integral of the extinction across the entire path is $\tau$, the \textit{optical thickness}.
 
-For a homogeneous fluid volume, i.e where there is only one type of fluid, the parameter $\sigma_t$ stays constant, so $\tau$ can be computed simply as $d\sigma_t$. However, in a region where multiple fluids are mixed together, the integral must be explicitly evaluated, usually numerically.
+For a fluid consisting of only one type of fluid, the parameter $\sigma_t$ stays constant, so $\tau$ can be computed simply as $d\sigma_t$. However, in a region where multiple fluids are mixed together, the integral must be explicitly evaluated, usually numerically.
 
-Moreover, the extinction parameter $\sigma_t$ is highly dependent on the wavelength of the light, which is exactly the cause for different fluids to have different color. For a red liquid, the $\sigma_t$ corresponding to the wavelength of red is low, thereby only allowing red light to pass through. As a result, the numerical integration of $\tau$ needs to be performed for each of the RGB channels.
+Moreover, the extinction parameter $\sigma_t$ is highly dependent on the wavelength of the light, which is exactly the cause for different fluids to have different color. For example, a red liquid has the lowest $\sigma_t$ for the wavelength of red, thereby allowing more red light to pass through. As a result, the numerical integration of $\tau$ needs to be performed for each of the RGB channels.
 
-A frequently used method for computing $\tau$ is \textit{ray marching}, where the ray in question is progressed a small step at a time, accumulating the distinction parameter along the way. This method usually requires constructing a 3D grid data structure to store the value of $\sigma_t$. Alternatively, this project invented a novel algorithm for accumulating $\sigma_t$, which makes use of the FLIP particles that carry the fluid phase information:
+A frequently used method for computing $\tau$ is \textit{ray marching}, where the ray in question is progressed a small step at a time, accumulating the extinction along the way. Alternatively, this project invented a novel algorithm for accumulating $\sigma_t$, which is more efficient and directly makes use of the FLIP particles, which carry the concentration information:
 \begin{enumerate}
     \item 
-    Create a texture image, where each color channel in the texture will correspond to the concentration of a specific fluid phase. Note that this limits the maximum number of different fluids to 4.
+    Create a texture image, where each color channel in the texture will correspond to the thickness of a specific fluid phase. Note that this limits the maximum number of different fluids to 4.
+
     \item 
-    Turn on OpenGL's alpha blending, and configure OpenGL to perform simple addition for each pixel instead of addition weighted by alpha value.
+    Configure OpenGL's compositing step (see section \ref{section opengl}) to perform simple addition for overlapping pixels. This means that, if a pixel is covered by more than one particles, the results from rendering those particles will be added together to form the final result. On the GPU, compositing is not computed by ALUs, but hardware accelerated by a dedicated unit called the ROP(Render Output Unit).
+
     \item 
-    Render the FLIP particles in OpenGL and direct the output to the texture instead of the screen. For each fluid particle $p$, and for each fluid phase $f$, render the concentration of $f$ that $p$ carries into the channel designated for $f$. The blending configuration from step 2 will ensure that the concentrations are accumulated in each pixel.
+    Render the FLIP particles and direct the output to the texture created in step 1. For each fluid particle $p$, and for each fluid phase $f$, render the concentration of $f$ that $p$ carries into the channel designated for $f$. The configuration from step 2 will ensure that the concentrations for all particles are accumulated.
+
     \item 
-    While rendering the mesh, at each pixel, sample the concentration texture, and use the accumulated concentration to determine $\tau$, and thus perform the correct attenuation for each color.
+    While rendering the mesh, at each pixel, sample the concentration texture, and use the accumulated concentration to determine $\tau$. The correct coloring can then be computed.
     
 \end{enumerate}
+Example results of the intermediary render stages is shown in this figure:
+\newpage
 
+%\begin{changemargin}
+    
+\addtolength{\topmargin}{-.875in}
+
+\begin{figure}[H]
+    \centering
+    \begin{minipage}[t]{.65\linewidth}
+            \vspace{0pt}
+            \centering
+            \includegraphics[width=10cm]{volume_cropped/reflection.png}
+            \subcaption{The reflection}
+    \end{minipage}
+    
+    \hspace{2pt}
+
+    \begin{minipage}[t]{.65\linewidth}
+            \vspace{0pt}
+            \centering
+            \includegraphics[width=10cm]{volume_cropped/blue.png}
+            \subcaption{The thickness texture of the blue liquid. \\Brighter color indicates greater thickness.}
+    \end{minipage}
+
+    \hspace{2pt}
+    
+    \begin{minipage}[t]{.65\linewidth}
+            \vspace{0pt}
+            \centering
+            \includegraphics[width=10cm]{volume_cropped/red.png}
+            \subcaption{The thickness texture of the red liquid}
+    \end{minipage}
+
+    \hspace{2pt}
+            
+    
+    \begin{minipage}[t]{.65\linewidth}
+            \vspace{0pt}
+            \centering
+            \includegraphics[width=10cm]{volume_cropped/refraction.png}
+            \subcaption{The refraction color.}
+    \end{minipage}
+
+    \hspace{2pt}
+
+    \begin{minipage}[t]{.65\linewidth}
+            \vspace{0pt}
+            \centering
+            \includegraphics[width=10cm]{volume_cropped/final.png}
+            \subcaption{Final result}
+    \end{minipage}
+
+    \hspace{2pt}
+            
+
+    \caption{Intermediary and final outputs of the renderer. The images show the moment after a large ball of red liquid falls into a box of blue liquid}
+    \label{figure volume render}
+\end{figure}
+
+
+%\end{changemargin}
+\addtolength{\topmargin}{.875in}

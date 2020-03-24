@@ -126,3 +126,27 @@ void Shader::setUniform4f(std::string name, glm::vec4 val, bool debug) {
 	if (debug) checkUniformLocationError(loc, name);
 	glUniform4f(loc, val.x, val.y, val.z,val.w);
 }
+
+void Shader::setUniformDrawCommand(const DrawCommand& drawCommand, bool debug) {
+	setUniformMat4("view", drawCommand.view);
+	setUniformMat4("projection", drawCommand.projection);
+
+	
+
+	setUniform3f("cameraPosition", drawCommand.cameraPosition);
+
+	setUniform1f("windowWidth", drawCommand.windowWidth);
+
+	setUniform1f("windowHeight", drawCommand.windowHeight);
+
+	float tanHalfFOV = tan(glm::radians(drawCommand.FOV) / 2);
+	setUniform1f("tanHalfFOV", tanHalfFOV);
+
+	setUniform3f("lightPosition", drawCommand.lightPosition);
+
+	setUniform1f("containerSize", drawCommand.containerSize);
+	setUniform1f("cornellBoxSize", drawCommand.cornellBoxSize);
+	setUniform1i("environmentMode", (int)drawCommand.environmentMode);
+
+	setUniform1i("renderMode", (int)drawCommand.renderMode);
+}

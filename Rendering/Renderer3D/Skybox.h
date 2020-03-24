@@ -67,7 +67,7 @@ struct Skybox{
 
     std::shared_ptr<Shader> shader;
 
-	Skybox(const std::string& path, const std::string& extension);
+	Skybox(const std::string& path = "resources/Skyboxes/Active/", const std::string& extension=".jpg");
 
 	void draw(const DrawCommand& drawCommand);
 

@@ -44,14 +44,12 @@ struct PointSprites {
 
 	GLuint depthTextureNDC;
 
-	GLuint thicknessTexture;
 	
 	GLuint phaseThicknessTexture;
 
 	std::shared_ptr<Shader> simpleShader;
 	std::shared_ptr<Shader> depthShader;
 	std::shared_ptr<Shader> screenShader;
-	std::shared_ptr<Shader> thicknessShader;
 	std::shared_ptr<Shader> phaseThicknessShader;
 
 
@@ -65,7 +63,6 @@ struct PointSprites {
 
 	void drawDepth(const DrawCommand& drawCommand, float radius);
 
-	void drawThickness(const DrawCommand& drawCommand, float radius);
 	void drawScreen(const DrawCommand& drawCommand, int skybox,GLuint normalTexture,GLuint depthTexture,float radius);
 
 	PointSprites(int count_);

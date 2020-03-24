@@ -159,8 +159,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="README.md" />
-    <None Include="resources\Shaders\Container_bottom_fs.glsl" />
-    <None Include="resources\Shaders\Container_bottom_vs.glsl" />
+    <None Include="resources\Shaders\Container_face_fs.glsl" />
+    <None Include="resources\Shaders\Container_face_vs.glsl" />
     <None Include="resources\Shaders\Container_edges_fs.glsl" />
     <None Include="resources\Shaders\Container_edges_vs.glsl" />
     <None Include="resources\Shaders\FluidMeshRenderer_depth_fs.glsl" />
@@ -175,7 +175,6 @@
     <None Include="resources\Shaders\PointSprites_screen_vs.glsl" />
     <None Include="resources\Shaders\ScreenSpaceNormal_smooth_fs.glsl" />
     <None Include="resources\Shaders\ScreenSpaceNormal_smooth_vs.glsl" />
-    <None Include="resources\Shaders\PointSprites_thickness_fs.glsl" />
     <None Include="resources\Shaders\PointSprites_points_vs.glsl" />
     <None Include="resources\Shaders\Quad_fs.glsl" />
     <None Include="resources\Shaders\Quad_vs.glsl" />

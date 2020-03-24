@@ -392,7 +392,6 @@ namespace Fluid_3D_PBF {
 		mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
 		cudaDeviceSynchronize();
 
-		container = std::make_shared<Container>(gridPhysicalSize.x);
 
 	}
 
@@ -551,21 +550,19 @@ namespace Fluid_3D_PBF {
 
 
 	void Fluid::draw(const DrawCommand& drawCommand) {
-		skybox.draw(drawCommand);
-		container->draw(drawCommand);
 
-		if (drawCommand.renderMode == RenderMode::Mesh) {
+		if (isMeshMode(drawCommand.renderMode)) {
 			if (!drawCommand.simulationPaused) {
 				mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
 			}
 			cudaDeviceSynchronize();
-			meshRenderer->draw(drawCommand, skybox.texSkyBox);
+			meshRenderer->draw(drawCommand);
 		}
 		else {
 			updatePositionsVBO << <numBlocks, numThreads >> > (particles, pointSprites->positionsDevice, particleCount,pointSprites->stride);
 			CHECK_CUDA_ERROR("update positions and colors");
 			cudaDeviceSynchronize();
-			pointSprites->draw(drawCommand, particleSpacing / 2, skybox.texSkyBox);
+			pointSprites->draw(drawCommand, particleSpacing , drawCommand.texSkybox);
 		}
 		
 	}
@@ -573,7 +570,9 @@ namespace Fluid_3D_PBF {
 	glm::vec3 Fluid::getCenter() {
 		return glm::vec3(gridPhysicalSize.x / 2, gridPhysicalSize.y / 2, gridPhysicalSize.z / 2);
 	}
-
+	float Fluid::getContainerSize() {
+		return gridPhysicalSize.x;
+	}
 	Fluid::~Fluid() {
 		HANDLE_ERROR(cudaFree(particles));
 

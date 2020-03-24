@@ -33,6 +33,8 @@ void inline performSpatialHashing2(int* particleIndices, int* particleHashes, Pa
 	CHECK_CUDA_ERROR("calc hash");
 
 	thrust::sort_by_key(thrust::device, particleHashes, particleHashes + particleCount, particleIndices);
+	
+	
 	cudaDeviceSynchronize();
 
 

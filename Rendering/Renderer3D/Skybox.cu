@@ -40,6 +40,7 @@ Skybox::Skybox(const std::string& path, const std::string& extension) {
 			std::cerr << "read image failed: " << file << std::endl;
 		}
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+		STBI_FREE((void*)image);
 	}
 
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

@@ -217,21 +217,21 @@ namespace Fluid_3D_PCISPH {
 	}
 
 	void Fluid::draw(const DrawCommand& drawCommand){
-		skybox.draw(drawCommand);
-		container->draw(drawCommand);
 
+		
 
-		if (drawCommand.renderMode == RenderMode::Mesh) {
+		if (isMeshMode(drawCommand.renderMode)) {
 			cudaDeviceSynchronize();
 			mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
 			cudaDeviceSynchronize();
-			meshRenderer->draw(drawCommand, skybox.texSkyBox);
+			meshRenderer->draw(drawCommand);
 		}
 		else {
 			updatePositionsVBO << <numBlocks, numThreads >> > (particles, pointSprites->positionsDevice, particleCount, pointSprites->stride);
 			cudaDeviceSynchronize();
-			pointSprites->draw(drawCommand, particleSpacing/2, skybox.texSkyBox);
+			pointSprites->draw(drawCommand, particleSpacing/2, drawCommand.texSkybox);
 		}
+
 
 	}
 
@@ -417,7 +417,6 @@ namespace Fluid_3D_PCISPH {
 		mesher->mesh(particles, particlesCopy, particleHashes, particleIndices, meshRenderer->coordsDevice);
 		cudaDeviceSynchronize();
 
-		container = std::make_shared<Container>(gridPhysicalSize.x);
 	}
 
 	void Fluid::computeRestDensity() {
@@ -488,6 +487,9 @@ namespace Fluid_3D_PCISPH {
 
 	glm::vec3 Fluid::getCenter() {
 		return glm::vec3(gridPhysicalSize.x / 2, gridPhysicalSize.y / 2,gridPhysicalSize.z / 2);
+	}
+	float Fluid::getContainerSize() {
+		return gridPhysicalSize.x;
 	}
 	Fluid::~Fluid() {
 		HANDLE_ERROR(cudaFree(particles));

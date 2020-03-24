@@ -66,9 +66,13 @@ int main( void ) {
 	FluidConfig config;
 	std::shared_ptr<Fluid_3D> fluid;
 
+
+	EnvironmentMode environmentMode = EnvironmentMode::Skybox;
+	Skybox skybox;
+	std::shared_ptr<Container> container;
 	
 
-	RenderMode renderMode = RenderMode::Mesh;
+	RenderMode renderMode = RenderMode::MultiphaseMesh;
 
 	bool paused = true;
 
@@ -83,9 +87,14 @@ int main( void ) {
 	inputHandler.onSpace = [&]() {
 		paused = !paused;
 	};
+	inputHandler.onKeyGeneral = [&](int key) {
+		if (key == GLFW_KEY_E) {
+			environmentMode = (EnvironmentMode)(((int)environmentMode + 1) % (int)EnvironmentMode::MAX);
+		}
+	};
+
 
 	
-
     while(!glfwWindowShouldClose(window)){
 
 
@@ -112,17 +121,21 @@ int main( void ) {
 
 			glm::vec3 fluidCenter = fluid->getCenter();
 
-			glm::vec3 lightPos(fluidCenter.x, 30, fluidCenter.y);
+			glm::vec3 lightPosition(fluidCenter.x, 15, fluidCenter.y);
 
 			DrawCommand drawCommand = {
 			view,projection,camera->getActualPosition(),windowInfo.windowWidth,windowInfo.windowHeight,camera->FOV,near,far,
-			renderMode,paused,lightPos
+			renderMode,paused,lightPosition,environmentMode,skybox.texSkyBox,container->size,container->cornellBoxSize
 			};
 
 			if (!paused) {
 				fluid->simulationStep();
 			}
 
+			if (environmentMode == EnvironmentMode::Skybox) {
+				skybox.draw(drawCommand);
+			}
+			container->drawFace(drawCommand);
 			fluid->draw(drawCommand);
 		}
 
@@ -154,6 +167,7 @@ int main( void ) {
 				hasCreatedFluid = true;
 
 				camera = std::make_shared<Camera>(fluid->getCenter());
+				container = std::make_shared<Container>(fluid->getContainerSize());
 				inputHandler.camera = camera;
 				paused = true;
 			}

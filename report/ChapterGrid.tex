@@ -5,9 +5,9 @@ This chapter introduces a grid-based multiphase fluid simulation scheme and its 
 
 \section{Operator Splitting}
 \label{section splitting}
-A common way for numerically solving differential equations is the \textit{splitting} approach. As a simple example, consider the simple differential equation:
+A common way for numerically solving differential equations is the \textit{operator splitting} approach. As a simple example, consider the simple differential equation:
 $$
-\frac{dx}{dt} = f(x)+g(x) ~~~~\mbox{With boundary condition $x(0)=x_0$}
+\frac{dx}{dt} = f(x)+g(x) ~~~~\mbox{With initial condition $x(0)=x_0$}
 $$
 To numerically solve this, decide on some small time step $\triangle t$, and let $x_{[n]}$ be the value of $x$ at the $n$th time step. The goal is to find $x_{[n]}$ for increasing larger $n$. To do this, start with $x_{[0]}=x_0$ and consider the two differential equations:
 \begin{equation*}
@@ -16,7 +16,7 @@ To numerically solve this, decide on some small time step $\triangle t$, and let
         \frac{dx}{dt} = g(x)
     \end{aligned}
 \end{equation*}
-Suppose there exists some good solutions (either analytical or numerical) for these two equations, then these solutions can be used to find a good solution for the original equation. Specifically, suppose $F_{f_0}(t)$ is a solution of $\dfrac{dx}{dt} = f(x)$ with boundary condition $x(0)=f_0$, and $G_{g_0}(t)$ is a solution of $\dfrac{dx}{dt} = g(x)$ with boundary condition $x(0)=g_0$, then, the original equation can be solved as 
+Suppose there exists some good solutions (either analytical or numerical) for these two equations, then these solutions can be used to find a good solution for the original equation. Specifically, suppose $F_{f_0}(t)$ is a solution of $\dfrac{dx}{dt} = f(x)$ with initial condition $x(0)=f_0$, and $G_{g_0}(t)$ is a solution of $\dfrac{dx}{dt} = g(x)$ with initial condition $x(0)=g_0$, then, the original equation can be solved as 
 \begin{equation*}
     \begin{aligned}
         \widetilde{x} = F_{x_{[n]}}(\triangle t) \\
@@ -54,7 +54,7 @@ This then allows the equation, and therefore the simulation algorithm, to be spl
     $$
     \frac{\partial \u}{\partial t}   = \textbf{g}
     $$
-    Solving this equation is the process of exerting external forces (e.g gravity) on the fluid. The solid boundary conditions, as mentioned in section \ref{section boundary conditions}, can also be enforced in this step.
+    Solving this equation is the process of exerting external forces (e.g gravity) on the fluid. The solid boundary conditions can also be enforced in this step.
 
     \item
     $$
@@ -245,10 +245,10 @@ Other than being simple to understand and implement, this discretization scheme 
     \end{aligned}
     \label{eqn discrete laplacian pressure}
 \end{equation}
-Where $\triangle x$ is the edge length of the cubic cell. 
+where $\triangle x$ is the edge length of the cubic cell. 
 
 
-For the velocity field $\u$, a slightly more sophisticated method known as the \textbf{MAC}(Marker and Cell) grid is used. Instead of storing the value of $\u = (\u_x,\u_y,\u_z)$ sampled at the cell center, an MAC grid stores different components of $\u$ sampled at different locations. Specifically, the grid cell at position $(x,y,z)$ stores the value of $\u_x$ sampled at the center of its left face, it stores the value of $\u_y$ sampled at its lower face, and it stores the value of $\u_z$ sampled at its back face, as illustrated in this figure:
+For the velocity field $\u$, a slightly more sophisticated method known as the \textbf{MAC}(Marker and Cell) grid is used. Instead of storing the value of $\u = (\u_x,\u_y,\u_z)$ sampled at the cell center, an MAC grid stores different components of $\u$ sampled at different locations. Specifically, the grid cell at position $(x,y,z)$ stores the value of $\u_x$ sampled at the center of its left face, the value of $\u_y$ sampled at its lower face, and the value of $\u_z$ sampled at its back face, as illustrated in this figure:
 
 \begin{figure}[!h]
     \centering
@@ -323,7 +323,7 @@ For the velocity field $\u$, a slightly more sophisticated method known as the \
 \end{figure}
 
 
-The quantities $\u_{x,y,z-\frac{1}{2}}$, $\u_{x,y-\frac{1}{2},z}$, $\u_{x-\frac{1}{2},y,z}$ are all scalars, representing the velocity pointing at the $x$, $y$, and $z$ direction, respectively. Furthermore, notice that the values of $\u_{x+\frac{1}{2},y,z}$, $\u_{x,y+\frac{1}{2},z}$, and $\u_{x,y,z+\frac{1}{2}}$, which are respectively sampled at the right, upper, and front faces, will also be available. This is because $\u_{x+\frac{1}{2},y,z} = \u_{x+1-\frac{1}{2},y,z}$, that is, the value of $\u_x$ sampled at the right face of the cell is exactly the value of $\u_x$ sampled at the left face of the neighboring cell to the right. The same can be applied for the upper and front faces. As a result, there are 6 velocity values associated with each grid cell:
+The quantities $\u_{x,y,z-\frac{1}{2}}$, $\u_{x,y-\frac{1}{2},z}$, $\u_{x-\frac{1}{2},y,z}$ are all scalars, representing the velocity pointing at the $x$, $y$, and $z$ direction, respectively. Furthermore, notice that the values of $\u_{x+\frac{1}{2},y,z}$, $\u_{x,y+\frac{1}{2},z}$, and $\u_{x,y,z+\frac{1}{2}}$, which are respectively sampled at the centers of the right, upper, and front faces, will also be available. This is because $\u_{x+\frac{1}{2},y,z} = \u_{x+1-\frac{1}{2},y,z}$, that is, the value of $\u_x$ sampled at the right face of the cell is exactly the value of $\u_x$ sampled at the left face of the neighboring cell on the right. The same can be applied for the upper and front faces. As a result, there are 6 velocity values associated with each grid cell:
 
 \begin{figure}[!h]
     \centering
@@ -420,16 +420,16 @@ During the incompressibility step of the simulation, the velocity field will be 
         (\nabla p)_{x-\frac{1}{2},y,z} = \frac{p_{x,y,z}-p_{x-1,y,z}}{\triangle x}
     \end{aligned}
 \end{equation}
-The numerical approximations to $\nabla \cdot \nabla p$, $\nabla \cdot \u$, and $\nabla p$ will all be used when enforcing the incompressibility of the fluid, as will be explained in section \ref{section enforce incompressibility}.
+The numerical approximations to $\nabla \cdot \nabla p$, $\nabla \cdot \u$, and $\nabla p$ will all be used during the incompressibility step, as will be explained in section \ref{section enforce incompressibility}.
 
 \section{Advection}
 
 As previously explained, the first step in each time step of the simulation is to solve the advection equation $\dfrac{D\u}{Dt} = 0$. Intuitively, this equation demands that the velocity of each infinitesimal particle in the fluid remains unchanged (but the velocity field itself will change because the positions of the particles will change).
 
-A once widely used advection algorithm is called \textbf{PIC}(Particle in Cell), which is closely based on the intuition behind the material derivative. Instead of infinitely many infinitely small particles, the fluid is approximately represented using a finite but large cloud of particles, each storing its own velocity. Specifically, using the velocity field $\u_{[n]}$ in $n$th time step, the PIC advection at the $n+1$ th time step work in these following steps: 
+A once widely used advection algorithm is called \textbf{PIC}(Particle in Cell), which is closely based on the intuition behind the material derivative. Instead of infinitely many infinitely small particles, the fluid is approximately represented using a finite but large cloud of particles, each storing its own velocity. Using the velocity field $\u_{[n]}$ in $n$th time step, the PIC advection at the $n+1$ th time step work in these following steps: 
 
 \begin{enumerate}
-    \item For each particle $p$ with position $\textbf{x}_p$, sample and interpolate the MAC grid to obtain the value of $\u_{[n]}$ at $\textbf{x}_p$. Assign this as the particle's velocity,  $\u_p$
+    \item For each particle $p$ with position $\textbf{x}_p$, sample and interpolate the MAC grid to obtain the value of $\u_{[n]}$ at $\textbf{x}_p$. Assign this as the particle's velocity,  $\u_p$.
     
     \item Move the particle in the velocity field $\u_{[n]}$. This can be as simple as computing $\textbf{x}_p^{new} = \textbf{x}_p + \triangle t \u_{[n]}(\textbf{x}_p)$. For higher accuracy, this project performs this using a 3rd-order Runge-Kutta integration:
     \begin{equation*}
@@ -464,12 +464,12 @@ That is, instead of interpolating the value of $\u$ on to the particles, FLIP in
 
 After obtaining the temporary velocity field $\u_{[n+1]}^{advected}$, the next step is to apply external forces. Two types of external forces will be considered: the forces arising from an external force field such as gravity, and the forces exerted by a solid boundary.
 
-Let $\textbf{g}$ denote the acceleration caused by the external force field, (for gravity, $\textbf{g}\approx(0,-0.98,0)$), applying the forces is then achieved by adding $\triangle t \textbf{g}$. In a MAC grid, this needs to be done by updating the components of $\u$ sampled at different faces using the different components of $\triangle t \textbf{g}$. 
+Let $\textbf{g}$ denote the acceleration caused by the external force field, (for gravity, $\textbf{g}\approx[0,-0.98,0]^T$), applying the forces is then achieved by adding $\triangle t \textbf{g}$. In a MAC grid, this is done by updating the components of $\u$ sampled at different faces using the different components of $\triangle t \textbf{g}$. 
 
 
-To apply the solid boundary condition $\u \cdot \textbf{n} = 0$, the components of $\u$ sampled at faces that represents solid-fluid boundaries need to be set to 0. For example, if the solid region is considered to be exactly the region of space outside the MAC grid, then the leftmost faces of the leftmost cells (and rightmost faces of rightmost cells...etc) will be considered as a solid-fluid boundary. For all such boundary faces, the velocity component there will be set to 0. 
+To apply the solid boundary condition $\u \cdot \textbf{n} = 0$, as mentioned in section \ref{section boundary conditions}, components of $\u$ sampled at faces that represent solid-fluid boundaries need to be set to 0. For example, if the solid region is considered to be exactly the region of space outside the MAC grid, then the leftmost faces of the leftmost cells (and rightmost faces of rightmost cells...etc) will be considered as a solid-fluid boundary. For all such boundary faces, the velocity component there will be set to 0. 
 
-Starting from an incompressible velocity field $\u_{[n]}$, performing advection to obtain $\u_{[n+1]}^{advected}$, and then applying external forces, the resulting velocity will likely not be incompressible anymore. Let this field be called $\u_{[n+1]}^{compressible}$, the next step is to apply pressure within the fluid, so that this field becomes incompressible.
+Starting from an incompressible velocity field $\u_{[n]}$, performing advection to obtain $\u_{[n+1]}^{advected}$, and then applying external forces, the resulting velocity will likely not be incompressible anymore. Let this field be called $\u_{[n+1]}^{compressible}$, and the next step will be to apply pressure within the fluid, so that the incompressibility is restored.
 
 
 \section{Enforcing Incompressibility}
@@ -485,7 +485,7 @@ Rearranging the equation on the right gives
 $$
 -\frac{\triangle t}{\rho} \nabla \cdot \nabla p = -\nabla \cdot \u_{[n+1]}^{compressible}
 $$
-Using the discretization equations \ref{eqn discrete laplacian pressure} and \ref{eqn discrete div u}, the discrete version of this equation can be written: 
+Using the discretization formulas \ref{eqn discrete laplacian pressure} and \ref{eqn discrete div u}, the discrete version of this equation can be written: 
 \begin{equation*}
     \begin{aligned}
         \frac{\triangle t}{\rho \triangle x}(6p_{x,y,z}-p_{x+1,y,z}-p_{x-1,y,z}-p_{x,y+1,z}-p_{x,y-1,z}-p_{x,y,z+1}-p_{x,y,z-1}) \\
@@ -495,22 +495,22 @@ Using the discretization equations \ref{eqn discrete laplacian pressure} and \re
          \u_{x,y,z+\frac{1}{2}} - \u_{x,y,z-\frac{1}{2}})
     \end{aligned}
 \end{equation*}
-Such an equation exists for all cells that containing some fluid (i.e contain some FLIP particles), and together, they form a system of linear equations, called the \textit{Poisson pressure equation}. The unknowns in the equations, $p_{i,j,k}$, correspond to the pressure values sampled at the center of the cells.
+One such equation exists for every cell that contains fluid (i.e contains FLIP particles), and together, they form a system of linear equations, called the \textit{Poisson pressure equation}. The unknowns, $p_{i,j,k}$, correspond to the pressure at the centers of cells.
 
-Since each equation involves not only the pressure of the fluid cell itself, but also the pressure of its 6 adjacent cells, extra care needs to be taken for cells that are at the boundaries of the fluid. Specifically, if a variable $p_{i,j,k}$ in the equations corresponds to the pressure within a air cell, it should automatically be assigned 0, which satisfies the fluid-air boundary conditions. If the variable $p_{i,j,k}$ corresponds to the pressure within solid, then it suffices to replace it with the pressure of the fluid cell next to the boundary, because the solid-fluid boundary conditions were already satisfied in the external forces step.
+Since each equation involves not only the pressure of the fluid cell itself, but also the pressure of its 6 adjacent cells, extra care needs to be taken for cells that are at the boundaries of the fluid. Specifically, if a variable $p_{i,j,k}$ in the equations corresponds to the pressure within a air cell, it should automatically be assigned 0, which satisfies the free surface boundary conditions. If the variable $p_{i,j,k}$ corresponds to the pressure within solid, then it suffices to replace it with the pressure of the fluid cell next to the boundary, because the velocities at solid-fluid boundaries were already fixed in the external forces step.
 
-With the boundary conditions satisfied, the equation become a system of $N$ linear equations with $N$ variables, with $N$ being the amount of fluid cells. Solving this equations hence results in a discrete representation of the pressure field $p$, which satisfies 
+With the boundary conditions satisfied, the equation become a system of $N$ linear equations with $N$ variables, where $N$ is the total amount of fluid cells. Solving this system hence results in a discrete representation of the pressure field $p$ that satisfies 
 $$
 \nabla \cdot
  ( \u_{[n+1]}^{compressible} - \triangle t \frac{\nabla p}{\rho} ) = 0
 $$
 Then, to retrieve the incompressible velocity field, it only remains to compute
 $$ \u_{[n+1]} = \u_{[n+1]}^{compressible} - \triangle t \frac{\nabla p}{\rho}$$
-using equation \ref{eqn discrete div u}. This completes the simulation of this time step.
+using discretization formula \ref{eqn discrete div u}. This completes the simulation of one time step.
 
 \gapM
 
-To summarize, using a grid and FLIP advection, the simulation of each time step uses the following algorithm:
+To summarize, using a grid and FLIP advection, the simulation of each time step follows the following procedure:
 
 \begin{algorithm}[H]
     \label{algo singlephase flip}
@@ -523,7 +523,7 @@ To summarize, using a grid and FLIP advection, the simulation of each time step 
     }
     \ForEach{grid cell at location $(x,y,z)$}{
         Find all particles within a radius of $\triangle x$\;
-        Compute $\u_{[n+1]}^{advected}$, as a weighted average of the $\u_p$ of nearby particles\;
+        Compute $\u_{[n+1]}^{advected}$, as an interpolation of the $\u_p$ of nearby particles\;
     }
     Apply external forces, $\u_{[n+1]}^{compressible} =  FixSolidBoundary(u_{[n+1]}^{advected} + \triangle t \textbf{g})$\;
     Construct and solve the Poisson pressure equation, obtain pressure $p$\;
@@ -534,7 +534,7 @@ To summarize, using a grid and FLIP advection, the simulation of each time step 
 
 
 \section{Simulating Diffusion}
-While algorithm \ref{algo singlephase flip} is only for single phase fluid simulation, it is not complicated to extend it to support multiple fluid phases. As explained in section \ref{section multiple fluids}, the changes in the concentration $\alpha^i$ of a fluid phase $i$ is governed by the Advection-Diffusion equation:
+While algorithm \ref{algo singlephase flip} is only for single phase fluid simulation, it is possible to extend it to support multiple fluid phases. As explained in section \ref{section multiple fluids}, the changes in the concentration $\alpha^i$ of a fluid phase $i$ is governed by the Advection-Diffusion equation:
 $$
 \frac{D \alpha^i}{D t} = C\nabla \cdot \nabla \alpha^i
 $$
@@ -545,9 +545,9 @@ To incorporate this equation to the simulation algorithm, the first step is agai
         \frac{\partial \alpha^i}{\partial t} &= C\nabla \cdot \nabla \alpha^i
     \end{aligned}
 \end{equation*}
-Just like the Euler momentum equation, this first equation that splitting produces is an advection equation. Thus, fortunately, the exact same FLIP advection that was applied for the velocity field can be used to advect the concentration quantities: first transfer the quantities from the grid to the particles by interpolating and adding $\alpha^{i}_{[n]} - \alpha^{i}_{[n-1]}$, then move the particles in the velocity field, then transfer the $\alpha^i$ back to the grid. 
+Just like the Euler momentum equation, this first equation that splitting produces is an advection equation. Thus, the same FLIP advection that was applied for the velocity field can be used to advect the concentration quantities: first transfer the quantities from the grid to the particles by interpolating and adding $\alpha^{i}_{[n]} - \alpha^{i}_{[n-1]}$, then move the particles in the velocity field, then transfer the $\alpha^i$ back to the grid. 
 
-The second equation is the "diffusion" part of the advection-diffusion equation, and is sometimes referred as the diffusion equation by itself. It was shown that using forward Euler scheme for this equation is unstable for large time steps \cite{kang2010hybrid}, so a discretized implicit equation is used:
+The second equation is the "diffusion" part of the advection-diffusion equation, and is sometimes referred as the diffusion equation by itself. It was shown that using forward Euler scheme for this equation is unstable for large time steps\cite{kang2010hybrid}, so a discretized implicit equation is used:
 \begin{equation*}
     \begin{aligned}
         - \lambda\alpha^i_{[n+1]~x-1,y,z}
@@ -576,8 +576,8 @@ Incorporating the FLIP concentration advection and solving the diffusion equatio
     }
     \ForEach{grid cell at location $(x,y,z)$}{
         Find all particles within a radius of $\triangle x$\;
-        Compute $\u_{[n+1]}^{advected}$, as a weighted average of the $\u_p$ of nearby particles\;
-        Compute $\alpha_{[n+1]}^{advected}$, as a weighted average of the $\alpha _p$ of nearby particles\;
+        Compute $\u_{[n+1]}^{advected}$, as an interpolation of the $\u_p$ of nearby particles\;
+        Compute $\alpha_{[n+1]}^{advected}$, as an interpolation of the $\alpha _p$ of nearby particles\;
     }
     Apply external forces, $\u_{[n+1]}^{compressible} =  FixSolidBoundary(u_{[n+1]}^{advected} + \triangle t \textbf{g})$\;
     Construct and solve the Poisson pressure equation, obtain pressure $p$\;
@@ -587,9 +587,6 @@ Incorporating the FLIP concentration advection and solving the diffusion equatio
     \caption{Multiphase phase fluid FLIP simulation step}
 \end{algorithm}
 
-
-
-Despite being a straightforward idea, using FLIP particles to advect the fluid concentrations is a novel invention by this project, because the related works only used other advection algorithms for concentration. The paper by Kang\cite{kang2010hybrid}, for example, used BFECC. To achieve real time simulation, the grid used in this project is considerably more coarse then the grid used in Kang's offline simulation algorithm, but with the merits of FLIP, considerable visual results were achieved. This verifies Zhu and Bridson's comments that FLIP is able to preserve a lot of details even when the grid is coarse\cite{zhu2005animating}.
 
 
 \section{Implementation}
@@ -604,7 +601,227 @@ The rest of the algorithm, line 7, 12 and 14, requires much more attention. Line
 \label{subsection spatial indexing}
 With $\triangle x$ being the edge length of each cubic grid cell, finding all particles within a radius $\triangle x$ of each cell can be reduced to finding the particles that are \textit{inside} each cell. Then, for a certain cell, it suffices to check all the 27 cells in the neighborhood, because all particles within a radius $\triangle x$ must be contained inside these 27 cells. 
 
+
 To create an index from each cell to the particles inside the cell, this project uses the parallel algorithm proposed by Green \cite{harlow1965numerical}. The algorithm proceeds in the following steps:
+
+\begin{figure}[p]
+    \begin{minipage}[t]{.65\linewidth}
+        \vspace{0pt}
+        \centering
+        \begin{tikzpicture} 
+            \pgfmathsetmacro\dx{2};
+            \pgfmathsetmacro\radius{\dx / 2.7};
+            \pgfmathsetmacro\centerRadius{\dx / 15};
+
+            \pgfmathsetmacro\x{0.6*\dx};
+            \pgfmathsetmacro\y{1.2*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius) node[right]{~7};
+
+            \pgfmathsetmacro\x{1.75*\dx};
+            \pgfmathsetmacro\y{2.8*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~5};
+
+            \pgfmathsetmacro\x{1.6*\dx};
+            \pgfmathsetmacro\y{2.2*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~2};
+
+            \pgfmathsetmacro\x{2.9*\dx};
+            \pgfmathsetmacro\y{0.8*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~4};
+
+            \pgfmathsetmacro\x{2.6*\dx};
+            \pgfmathsetmacro\y{0.38*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~0};
+
+            \pgfmathsetmacro\x{2.1*\dx};
+            \pgfmathsetmacro\y{0.65*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~6};
+
+            \pgfmathsetmacro\x{3.6*\dx};
+            \pgfmathsetmacro\y{2.9*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~3};
+
+            \pgfmathsetmacro\x{3.1*\dx};
+            \pgfmathsetmacro\y{2.6*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~1};
+
+            
+
+            \foreach \x in {0,1,2,3}{
+                \foreach \y in {0,1,2,3}{  
+                    \draw (\x*\dx,\y*\dx) -- (\x*\dx+\dx,\y*\dx);
+                    \draw (\x*\dx,\y*\dx) -- (\x*\dx,\y*\dx+\dx);
+                    \draw (\x*\dx+\dx,\y*\dx) -- (\x*\dx+\dx,\y*\dx+\dx);
+                    \draw (\x*\dx,\y*\dx+\dx) -- (\x*\dx+\dx,\y*\dx+\dx);
+                    \pgfmathtruncatemacro\result{\x*4 + \y};
+                    \node at (\x*\dx+0.3,\y*\dx+0.3) {\result};
+                }
+            }
+
+            
+            
+        \end{tikzpicture}
+        \subcaption{The indices and positions of the particles in the grid before spatial indexing.}
+        
+
+    \end{minipage}%
+    \begin{minipage}[t]{.33\linewidth}
+        \vspace{0pt}
+        \centering
+        \begin{tabular}{|c | c |} 
+            \hline
+            particle & hash \\ [0.5ex] 
+            \hline\hline
+            0 & 8  \\ 
+            \hline
+            1 & 14  \\ 
+            \hline
+            2 & 6  \\ 
+            \hline
+            3 & 14  \\ 
+            \hline
+            4 & 8  \\ 
+            \hline
+            5 & 6  \\ 
+            \hline
+            6 & 8  \\ 
+            \hline
+            7 & 1  \\ 
+            \hline
+            
+
+            
+        \end{tabular}
+        \subcaption{The array of hashes of particles, computed in step 2.}
+    \end{minipage}%
+
+    \hspace{20pt}
+
+    \begin{minipage}[t]{.65\linewidth}
+        \vspace{0pt}
+        \centering
+        \begin{tikzpicture} 
+            \pgfmathsetmacro\dx{2};
+            \pgfmathsetmacro\radius{\dx / 2.7};
+            \pgfmathsetmacro\centerRadius{\dx / 15};
+
+            \pgfmathsetmacro\x{0.6*\dx};
+            \pgfmathsetmacro\y{1.2*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius) node[right]{~0};
+
+            \pgfmathsetmacro\x{1.75*\dx};
+            \pgfmathsetmacro\y{2.8*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~1};
+
+            \pgfmathsetmacro\x{1.6*\dx};
+            \pgfmathsetmacro\y{2.2*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~2};
+
+            \pgfmathsetmacro\x{2.9*\dx};
+            \pgfmathsetmacro\y{0.8*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~3};
+
+            \pgfmathsetmacro\x{2.6*\dx};
+            \pgfmathsetmacro\y{0.38*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~4};
+
+            \pgfmathsetmacro\x{2.1*\dx};
+            \pgfmathsetmacro\y{0.65*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~5};
+
+            \pgfmathsetmacro\x{3.6*\dx};
+            \pgfmathsetmacro\y{2.9*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~6};
+
+            \pgfmathsetmacro\x{3.1*\dx};
+            \pgfmathsetmacro\y{2.6*\dx};
+            \filldraw[draw=Green,fill=LightGreen] (\x,\y) circle (\radius);
+            \filldraw[draw=Green,fill=Green] (\x,\y) circle (\centerRadius)node[right]{~7};
+
+            
+
+            \foreach \x in {0,1,2,3}{
+                \foreach \y in {0,1,2,3}{  
+                    \draw (\x*\dx,\y*\dx) -- (\x*\dx+\dx,\y*\dx);
+                    \draw (\x*\dx,\y*\dx) -- (\x*\dx,\y*\dx+\dx);
+                    \draw (\x*\dx+\dx,\y*\dx) -- (\x*\dx+\dx,\y*\dx+\dx);
+                    \draw (\x*\dx,\y*\dx+\dx) -- (\x*\dx+\dx,\y*\dx+\dx);
+                    \pgfmathtruncatemacro\result{\x*4 + \y};
+                    \node at (\x*\dx+0.3,\y*\dx+0.3) {\result};
+                }
+            }
+
+            
+
+            
+        \end{tikzpicture}
+        \subcaption{The indices and positions of the particles, after they are sorted according to their hashes, in step 3.}
+    \end{minipage}%
+    \begin{minipage}[t]{.43\linewidth}
+        \vspace{0pt}
+        \centering
+        \begin{tabular}{|c | c | c|} 
+            \hline
+            cell & $cellStart$ & $cellEnd$ \\ [0.5ex] 
+            \hline\hline
+            0 & ~ & ~ \\ 
+            \hline
+            1 & 0 & 0 \\ 
+            \hline
+            2 & ~ & ~ \\ 
+            \hline
+            3 & ~ & ~ \\ 
+            \hline
+            4 & ~ & ~ \\ 
+            \hline
+            5 & ~ & ~ \\ 
+            \hline
+            6 & 1 & 2 \\ 
+            \hline
+            7 & ~ & ~ \\ 
+            \hline
+            8 & 3 & 5 \\ 
+            \hline
+            9 & ~ & ~ \\ 
+            \hline
+            10 & ~ & ~ \\ 
+            \hline
+            11 & ~ & ~ \\ 
+            \hline
+            12 & ~ & ~ \\ 
+            \hline
+            13 & ~ & ~ \\ 
+            \hline
+            14 & 6 & 7 \\ 
+            \hline
+            15 & ~ & ~ \\ 
+            \hline
+
+            
+        \end{tabular}
+        \subcaption{The final result of spatial indexing, represented as the $cellStart$ and $cellEnd$ array.}
+    \end{minipage}%
+
+    \caption{Example of spatial indexing in 2D}
+    \label{figure spatial indexing}
+\end{figure}
+
+
 \begin{enumerate}
     \item Decide on a hash function for 3D grid coordinates. For example, in an $N*N*N$ grid, the hash of the coordinate $(x,y,z)$ can be $xN^2+yN+z$, which fully avoids hash collision.
     
@@ -615,12 +832,14 @@ To create an index from each cell to the particles inside the cell, this project
     \item Create two arrays $cellStart$ and $cellEnd$, which denote, for each cell, the first and the last particle inside the cell. To compute elements of these arrays, for the $i$th particle, use the hash array to check if the $i-1$th particle is in the same cell, if not, the $cellStart$ of this cell should be $i$. Similarly, if the $i+1$th particle is not in the same cell, the $cellEnd$ of this cell should be $i$. This can also be done for all particles in parallel.
     
 \end{enumerate}
-Having created the $cellStart$ and $cellEnd$ arrays, for each cell, the particles inside it is them simply the particles with index $\geq cellStart$ and $\leq cellEnd$.
+Having created the $cellStart$ and $cellEnd$ arrays, for each cell, the particles inside it is them simply the particles with index $\geq cellStart$ and $\leq cellEnd$. A 2D example of this procedure is illustrated in figure \ref{figure spatial indexing}.
 
-With all other steps being completely parallelizable, the only time-consuming step is sorting the array of particle hashes. However, this only needs to be done once per time step, so the cost is manageable. In fact, in the implementation of this project, by using the extremely optimized sorting library provided with the CUDA API, the cost of the sorting is almost negligible compared to other tasks, such as solving systems of linear equations.
+With all other steps being completely parallelizable, the only complicated step is sorting the array of particle hashes. The implementation of this project uses the thoroughly optimized sorting library provided with the CUDA API. The resulting cost of the spatial indexing is almost negligible compared to other tasks, such as solving systems of linear equations.
+
+
 
 \subsection{Jacobi Linear Solver}
-The two linear systems to be solved in each simulation step, the Poisson pressure equation and the diffusion equation, both of the special property of being \textit{symmetric positive-definite}. Many advanced approaches have been proposed on how to solve these types of matrices, such as ICPCG \cite{bridson2015fluid} and \textit{Geometric Multigrid}\cite{chentanez2011real}. This project chooses to implement a simpler algorithm, called the Jacobi solver. Though not as fast as the most advanced methods, its efficiency and accuracy is found to be sufficient for the real time simulations in this project.
+The two linear systems to be solved in each simulation step, the Poisson pressure equation and the diffusion equation, both have the special property of being \textit{symmetric positive-definite}. Many advanced approaches have been proposed on how to solve these types of matrices, such as ICPCG \cite{bridson2015fluid} and \textit{Geometric Multigrid}\cite{chentanez2011real}. This project chooses to implement a simpler algorithm, called the Jacobi solver. Though not as fast as the most advanced methods, its efficiency and accuracy is found to be sufficient for the real time simulations in this project.
 
 In the Jacobi Solver, given a system of linear equations written in matrix form:
 $$
@@ -645,3 +864,124 @@ $$
 For a certain amount of iterations. Each iterations is simple to do, because $D$ is only a diagonal matrix. 
 
 For the testing simulation configurations in this project, where the number of cells is in the order of $50^3$, $100$ to $200$ Jacobi iterations suffices to simulate the fluid accurate enough to give plausible visual results. 
+
+\subsection{Results}
+The exact performance of the FLIP implementation in this project highly depends on the simulation parameters used. With a $50^3$ grid, where around 30\% is occupied with fluid, and each grid cell containing around 8 particles, the simulation alone (without rendering) runs at over 50 FPS(frames per second), which comfortably meets the requirements of real time applications. With rendering added, the frame rate drops to around 20FPS, which is caused by the rather expensive volume rendering(section \ref{subsection multiphase render}) and surface reconstruction(section \ref{section surface reconstruction}). The screenshots of some example simulations follow on the next page.
+\newpage
+
+\begin{figure}[H]
+    \centering
+    
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{balldrop_cropped2/single0.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{balldrop_cropped2/single1.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{balldrop_cropped2/single2.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{balldrop_cropped2/single3.png}
+    \end{minipage}
+
+    \caption{Ball drop. $50^3$ grid, $208k$ FLIP particles}
+    \label{figure ball drop single}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{balldrop_cropped2/multi0.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{balldrop_cropped2/multi1.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{balldrop_cropped2/multi2.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{balldrop_cropped2/multi3.png}
+    \end{minipage}
+
+    \caption{Same simulation as figure \ref{figure ball drop single}, except with 2 phases}
+    \label{figure ball drop multi}
+\end{figure}
+
+
+\begin{figure}[H]
+    \centering
+    
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{diffusion_cropped/small0.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{diffusion_cropped/small1.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{diffusion_cropped/small2.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{diffusion_cropped/small3.png}
+    \end{minipage}
+
+    \caption{Diffusion with coefficient $10^{-3}$}
+    \label{diffusion 1e-3}
+\end{figure}
+
+
+
+\begin{figure}[H]
+    \centering
+    
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{diffusion_cropped/big0.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{diffusion_cropped/big1.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{diffusion_cropped/big2.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{diffusion_cropped/big3.png}
+    \end{minipage}
+
+    \caption{Diffusion with coefficient $10^{-2}$}
+    \label{diffusion 1e-2}
+\end{figure}
+

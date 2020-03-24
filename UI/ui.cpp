@@ -136,7 +136,7 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 		nk_layout_row_dynamic(ctx, rowHeight, 3);
 		if (nk_option_label(ctx, "FLIP", fluidConfig.method=="FLIP" ))fluidConfig.method = "FLIP";
 		if (nk_option_label(ctx, "PBF", fluidConfig.method == "PBF"))fluidConfig.method = "PBF";
-		if (nk_option_label(ctx, "PCISPH", fluidConfig.method == "PCISPH"))fluidConfig.method = "PCISPH";
+		//if (nk_option_label(ctx, "PCISPH", fluidConfig.method == "PCISPH"))fluidConfig.method = "PCISPH";
 
 		GAP;
 
@@ -500,6 +500,11 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 
 		nk_layout_row_dynamic(ctx, 25, 1);
 		nk_label(ctx, "Left mouse + drag to look around", NK_TEXT_LEFT);
+
+		GAP;
+
+		nk_layout_row_dynamic(ctx, 25, 1);
+		nk_label(ctx, "\"E\" to change environment", NK_TEXT_LEFT);
 
 
 	}

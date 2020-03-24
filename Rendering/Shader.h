@@ -8,6 +8,7 @@
 #include <sstream>
 #include "../Common/GpuCommons.h"
 #include <vector>
+#include "DrawCommand.h"
 class Shader
 {
 public:
@@ -63,7 +64,7 @@ public:
 	void setUniform3f(std::string name, glm::vec3 val, bool debug = false);
 	void setUniform4f(std::string name, float4 val, bool debug = false);
 	void setUniform4f(std::string name, glm::vec4 val, bool debug = false);
-
+	void setUniformDrawCommand(const DrawCommand& drawCommand, bool debug = false);
 	
 
 private:

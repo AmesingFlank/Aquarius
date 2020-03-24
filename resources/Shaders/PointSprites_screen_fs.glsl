@@ -1,4 +1,8 @@
 
+
+// Shader for Screen Space Fluids.
+// Deprecated. The project is using a mesh based renderer now.
+
 in vec2 TexCoord;
 out vec4 FragColor;
 
@@ -12,8 +16,17 @@ uniform mat4 projection;
 uniform float windowWidth;
 uniform float windowHeight;
 uniform float FOV;
+
+
+
+
 uniform vec3 cameraPosition;
+uniform vec3 lightPosition;
+uniform float containerSize;
+uniform float cornellBoxSize;
+uniform int environmentMode;
 uniform samplerCube skybox;
+uniform int renderMode;
 
 #define M_PI 3.1415926535897932384626433832795
 
@@ -48,22 +61,9 @@ vec3 getWorldNormal() {
 	return normalize(worldNormal);
 }
 
-vec3 traceRay(vec3 origin,vec3 direction) {
-	float tHitGround = origin.y / - direction.y;
-	if (tHitGround > 0) {
-		vec3 hitPos = origin + tHitGround * direction;
-		if (hitPos.x >= 0 && hitPos.x <= 10 && hitPos.z >= 0 && hitPos.z <= 10) {
-			int xi = int(hitPos.x);
-			int zi = int(hitPos.z);
-			if( (xi+zi)%2==0)
-				return vec3(0.5, 0.5, 0.5);
-			else
-				return vec3(0.8, 0.8, 0.8);
-		}
-	}
-	return texture(skybox, direction).rgb;
+vec4 traceRay(vec3 origin, vec3 direction) {
+	return rayTraceEnvironment(origin, direction, environmentMode, cornellBoxSize, containerSize, lightPosition, skybox);
 }
-
 
 
 void main() {
@@ -80,7 +80,8 @@ void main() {
 
 
 
-	float thickness = texture (thicknessTexture, TexCoord).r;
+	vec4 thicknessAllPhases = texture (thicknessTexture, TexCoord);
+	float thickness = thicknessAllPhases.r + thicknessAllPhases.g + thicknessAllPhases.b + thicknessAllPhases.a;
 	float thicknessHat = 50;
 	//thickness = min(thicknessHat, thickness) / thicknessHat;
 	//thickness = 0.5 + thickness / 2;
@@ -95,7 +96,7 @@ void main() {
 
 	vec3 reflectedRay = reflect(incident, normal);
 
-	vec3 reflectColor = traceRay(fragPos,reflectedRay);
+	vec3 reflectColor = traceRay(fragPos,reflectedRay).rgb;
 
 	vec3 refractedRay = normalize(incident - 0.2 * normal);
 
@@ -103,7 +104,7 @@ void main() {
 
 	vec3 tint_color = vec3(6, 105, 217) / 256;
 
-	vec3 refractColor = mix(tint_color, traceRay(fragPos, refractedRay), attenuate);
+	vec3 refractColor = mix(tint_color, traceRay(fragPos, refractedRay).rgb, attenuate);
 
 	float mixFactor = 0.5;
 

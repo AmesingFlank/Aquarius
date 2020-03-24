@@ -394,12 +394,10 @@ namespace Fluid_3D_FLIP {
 	}
 
 	void Fluid::draw(const DrawCommand& drawCommand){
-		skybox.draw(drawCommand);
 
-		container->drawBottom(drawCommand);
 		
 
-		if (drawCommand.renderMode == RenderMode::Mesh) {
+		if (isMeshMode(drawCommand.renderMode)) {
 
 			cudaDeviceSynchronize();
 			if (!drawCommand.simulationPaused) {
@@ -412,7 +410,12 @@ namespace Fluid_3D_FLIP {
 			//updatePositionsAndPhasesVBO <<<numBlocksInkParticle, numThreadsInkParticle >>> (inkParticles, pointSpritesInk->positionsDevice, inkParticleCount, pointSprites->stride);
 			cudaDeviceSynchronize();
 
-			meshRenderer->drawWithInk(drawCommand,skybox.texSkyBox,*pointSprites,cellPhysicalSize,config.phaseColors);
+			if (drawCommand.renderMode == RenderMode::MultiphaseMesh || isMultiphase(drawCommand.renderMode)) {
+				meshRenderer->draw(drawCommand,  true,pointSprites, cellPhysicalSize, config.phaseColors);
+			}
+			else  {
+				meshRenderer->draw(drawCommand);
+			}
 
 			//meshRenderer->draw(drawCommand, skybox.texSkyBox);
 
@@ -422,10 +425,9 @@ namespace Fluid_3D_FLIP {
 
 			updatePositionsVBO << <numBlocksParticle, numThreadsParticle >> > (particles, pointSprites->positionsDevice, particleCount,pointSprites->stride);
 			cudaDeviceSynchronize();
-			pointSprites->draw(drawCommand, renderRadius, skybox.texSkyBox);
+			pointSprites->draw(drawCommand, renderRadius, drawCommand.texSkybox);
 		}
 		
-		container->drawEdges(drawCommand);
 
 		printGLError();
 
@@ -441,7 +443,6 @@ namespace Fluid_3D_FLIP {
 		cellCount = (sizeX + 1) * (sizeY + 1) * (sizeZ + 1);
 		cellPhysicalSize = gridPhysicalSize / (float)sizeY;
 
-		container = std::make_shared<Container>(gridPhysicalSize);
 
 		grid = std::make_shared<MAC_Grid_3D>(sizeX, sizeY, sizeZ, cellPhysicalSize);
 
@@ -732,6 +733,9 @@ namespace Fluid_3D_FLIP {
 
 	glm::vec3 Fluid::getCenter() {
 		return glm::vec3(gridPhysicalSize / 2, gridPhysicalSize / 2, gridPhysicalSize / 2);
+	}
+	float Fluid::getContainerSize() {
+		return gridPhysicalSize;
 	}
 
 	Fluid::~Fluid() {

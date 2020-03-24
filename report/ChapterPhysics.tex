@@ -252,7 +252,7 @@ $$
 $$
 where $\textbf{n}$ is the normal of the solid surface. This condition ensures that the fluid cannot flow into a solid. 
 
-The second type of boundary is the free surface boundary, which is the boundary between the liquids and some region of space that is not occupied by anything. In this case, that region of space will not exert any force. and therefore pressure, to the fluid, which motivates the condition
+The second type of boundary is the free surface boundary, which is the boundary between the liquids and some region of space that is not occupied by anything. In this case, that region of space will not exert any force, and therefore pressure, to the fluid, which motivates the condition
 $$
 p = 0
 $$
@@ -262,14 +262,14 @@ The liquid simulated in this project is contained within a cubic box. Moreover,i
 
 \section{Multiple Fluids}
 \label{section multiple fluids}
-Finally, this section introduces an equation that governs the concentration changes in a mixture of more than one miscible fluids phases. 
+Finally, this section introduces an equation that governs the concentration changes in a mixture of more than one type of miscible fluids, for example, ink and water. In physics, the different types of fluids are sometimes referred to as \textit{phases}.
 
-Concentration of different fluid phases will be represented using ratios.Specifically, let $N$ be the total number of different fluid phases, the concentration of the $i$th fluid is represented by a scalar field $\alpha^i$, where $\sum_{i=0}^{N}\alpha^i = 1$ at any point within the fluid.
+Concentration of different fluid phases will be represented using \textit{volume fractions}. Specifically, for an infinitesimal fluid element at location $\textbf{x}$ with volume $\textbf{V}(\textbf{x})$, and let the portion of this volume occupied by the $i$th fluids phase be $\textbf{V}^i(\textbf{x})$, then the concentration of the $i$th phase at $\textbf{x}$ will be $\alpha^i(\textbf{x}) = \dfrac{\textbf{V}^i(\textbf{x})}{\textbf{V}(\textbf{x})}$.
 
 The diffusion among multiple fluid phases is a result of the random Brownian motion of the fluid particles. However, it's possible to model this process from a macroscopic viewpoint, where an equation can be written that governs the expectation of how the concentrations change:
 \begin{equation}
     \tag{Advection-Diffusion Equation}
     \frac{D \alpha^i}{D t} = C\nabla \cdot \nabla \alpha^i
 \end{equation}
-where $C$ is the diffusion coefficient. Informally, if the concentration of a fluid region has a different concentration then its surrounding, this difference will tend to "diffuse" into the surrounding, so that the concentrations tends to become more similar. This explains why the rate of change of the concentration is proportional to the Laplacian of the concentration.
+where $C$ is the diffusion coefficient. Informally, if the concentration of a fluid region has a different concentration than its surroundings, this difference will tend to "diffuse" into the neighborhood, so that the concentrations tends to become more similar. This explains why the rate of change of the concentration is proportional to the Laplacian of the concentration.
 

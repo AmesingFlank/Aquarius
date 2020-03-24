@@ -77,7 +77,7 @@ struct Container {
 
 	GLuint bottomVBO, bottomVAO;
 
-	std::shared_ptr<Shader> bottomShader;
+	std::shared_ptr<Shader> faceShader;
 
 	glm::mat4 model = glm::mat4(1.0);
 
@@ -87,13 +87,17 @@ struct Container {
 
 	void initBottom();
 
-	void drawBottom(const DrawCommand& drawCommand);
+	void drawFace(const DrawCommand& drawCommand);
 
 	void draw(const DrawCommand& drawCommand);
 
 	Container(float size);
 
 	float size;
+
+	float cornellBoxSize;
+
+	float bigChessBoardSize;
 
 	~Container();
 };

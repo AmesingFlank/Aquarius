@@ -61,7 +61,7 @@ namespace Fluid_3D_FLIP{
 
 		float gridPhysicalSize = 10.f;
 
-		std::shared_ptr<Container> container;
+		
 
 
 		int cellCount;
@@ -87,7 +87,7 @@ namespace Fluid_3D_FLIP{
 		int* cellEnd;
 
 
-		Skybox skybox = Skybox("resources/Skyboxes/GamlaStan2/", ".jpg");
+		
 
 		std::shared_ptr<PointSprites> pointSprites;
 
@@ -130,6 +130,7 @@ namespace Fluid_3D_FLIP{
 		virtual void init(FluidConfig config) override;
 
 		virtual glm::vec3 getCenter() override;
+		virtual float getContainerSize() override;
 
 
 

@@ -14,7 +14,6 @@ void PointSprites::draw(const DrawCommand& drawCommand, float radius, int skybox
 		6, 5, 6, 0.1, drawCommand);
 	GLuint depthTexture = screenSpaceNormal.lastDepthTexture;
 
-	drawThickness(drawCommand, radius);
 
 	drawScreen(drawCommand, skybox,normalTexture,depthTexture,radius);
 	printGLError();
@@ -40,14 +39,10 @@ void PointSprites::initRenderer() {
 	);
 	screenShader = std::make_shared<Shader>(
 		Shader::SHADERS_PATH("PointSprites_screen_vs.glsl"),
-		Shader::SHADERS_PATH("PointSprites_screen_fs.glsl")
+		Shader::SHADERS_PATH("PointSprites_screen_fs.glsl"),
+		std::vector<std::string>({ Shader::SHADERS_PATH("RayTraceEnvironment.glsl") })
 	);
 
-
-	thicknessShader = std::make_shared<Shader>(
-		Shader::SHADERS_PATH("PointSprites_points_vs.glsl"),
-		Shader::SHADERS_PATH("PointSprites_thickness_fs.glsl")
-	);
 
 	// used by multiple shaders. location specified as common value in all shader code
 	GLint pointsPositionLocation = glGetAttribLocation(simpleShader->program, "position");
@@ -85,11 +80,7 @@ void PointSprites::initRenderer() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-	glGenTextures(1, &thicknessTexture);
-	glBindTexture(GL_TEXTURE_2D, thicknessTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, WindowInfo::instance().windowWidth, WindowInfo::instance().windowHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
 
 	glGenTextures(1, &phaseThicknessTexture);
 	glBindTexture(GL_TEXTURE_2D, phaseThicknessTexture);
@@ -100,7 +91,7 @@ void PointSprites::initRenderer() {
 	glGenFramebuffers(1, &FBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTextureNDC, 0);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, thicknessTexture, 0);
+
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT4, GL_TEXTURE_2D, phaseThicknessTexture,0);
 
 
@@ -147,41 +138,6 @@ void PointSprites::drawDepth(const DrawCommand& drawCommand, float radius) {
 }
 
 
-void PointSprites::drawThickness(const DrawCommand& drawCommand, float radius) {
-	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-	glEnable(GL_BLEND);
-	glDisable(GL_DEPTH_TEST);
-
-	glBlendFuncSeparate(GL_ONE, GL_ONE, GL_ONE, GL_ONE);
-
-	glClear(GL_DEPTH_BUFFER_BIT);
-
-
-
-	thicknessShader->use();
-
-	prepareShader(thicknessShader,drawCommand,radius);
-
-	GLenum bufs[] = { GL_COLOR_ATTACHMENT3 };
-	glDrawBuffers(1, bufs);
-
-	static const float zero[] = { 0, 0, 0, 0 };
-	glClearBufferfv(GL_COLOR, 0, zero);
-
-	glBindVertexArray(pointsVAO);
-	glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-	glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
-
-	glDrawArrays(GL_POINTS, 0, count);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glEnable(GL_DEPTH_TEST);
-
-	glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glBlendFuncSeparate(GL_ONE, GL_ZERO, GL_ONE, GL_ZERO);
-
-}
 
 void PointSprites::drawScreen(const DrawCommand& drawCommand, int skybox,GLuint normalTexture,GLuint depthTexture,float radius) {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -200,7 +156,7 @@ void PointSprites::drawScreen(const DrawCommand& drawCommand, int skybox,GLuint 
 	screenShader->setUniform1i("normalTexture", 1);
 
 	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, thicknessTexture);
+	glBindTexture(GL_TEXTURE_2D, phaseThicknessTexture);
 	screenShader->setUniform1i("thicknessTexture", 2);
 
 	glActiveTexture(GL_TEXTURE3);
@@ -297,13 +253,9 @@ void PointSprites::drawPhaseThickness(const DrawCommand& drawCommand, float radi
 void PointSprites::prepareShader(std::shared_ptr<Shader> shader, const DrawCommand& drawCommand, float radius) {
 	shader->use();
 
-	shader->setUniform1f("windowWidth", drawCommand.windowWidth);
-
-	shader->setUniform1f("windowHeight", drawCommand.windowHeight);
 
 	shader->setUniform1f("radius", radius);
 
-	shader->setUniform3f("cameraPosition", drawCommand.cameraPosition);
 
 
 	shader->setUniformMat4("model", model);
@@ -311,8 +263,7 @@ void PointSprites::prepareShader(std::shared_ptr<Shader> shader, const DrawComma
 	shader->setUniformMat4("projection", drawCommand.projection);
 
 
-	float tanHalfFOV = tan(glm::radians(drawCommand.FOV) / 2);
-	shader->setUniform1f("tanHalfFOV", tanHalfFOV);
+	shader->setUniformDrawCommand(drawCommand);
 
 }
 
@@ -326,7 +277,6 @@ PointSprites::~PointSprites() {
 	glDeleteVertexArrays(1, &quadVAO);
 
 	glDeleteTextures(1, &depthTextureNDC);
-	glDeleteTextures(1, &thicknessTexture);
 	glDeleteTextures(1, &phaseThicknessTexture);
 
 	glDeleteFramebuffers(1, &FBO);

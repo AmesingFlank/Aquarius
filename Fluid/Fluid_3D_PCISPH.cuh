@@ -88,9 +88,7 @@ namespace Fluid_3D_PCISPH {
 
 		int numThreads, numBlocks;
 
-		std::shared_ptr<Container> container;
 
-		Skybox skybox = Skybox("resources/Skyboxes/GamlaStan2/",".jpg");
 
 		std::shared_ptr<Mesher> mesher;
 		std::shared_ptr<FluidMeshRenderer> meshRenderer;
@@ -106,24 +104,20 @@ namespace Fluid_3D_PCISPH {
 		virtual void init(FluidConfig config);
 
 		virtual glm::vec3 getCenter() override;
-
-		void computeRestDensity();
-
+		virtual float getContainerSize() override;
 		virtual void simulationStep() override;
 
+
+
+	private:
+
 		void computeExternalForces();
-
+		void computeRestDensity();
 		void initPressure();
-
 		void predictVelocityAndPosition();
 		void predictDensityAndPressure();
-
 		void computePressureForce();
-
-		void computeNewVelocityAndPosition();
-
-
-		void createSquareFluid(std::vector<Particle>& particlesVec, float3 minPos, float3 maxPos);
+		void computeNewVelocityAndPosition();void createSquareFluid(std::vector<Particle>& particlesVec, float3 minPos, float3 maxPos);
 		void createSphereFluid(std::vector<Particle>& particlesVec, float3 center, float radius);
 
 

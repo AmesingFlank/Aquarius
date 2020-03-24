@@ -28,6 +28,7 @@ namespace InputHandler{
 		std::function<void()> onShift = []() {};
 		std::function<void()> onSpace = []() {};
 		std::function<void()> onEscape = []() {};
+		std::function<void(int key)> onKeyGeneral = [](int key) {};
 
 		void doMovement()
 		{
@@ -72,10 +73,13 @@ namespace InputHandler{
 				if (key == GLFW_KEY_SPACE) {
 					onSpace();
 				}
+				onKeyGeneral(key);
 			}
 
-			if (action == GLFW_PRESS)
+			if (action == GLFW_PRESS) {
 				keys[key] = true;
+
+			}
 			else if (action == GLFW_RELEASE) {
 				keys[key] = false;
 			}

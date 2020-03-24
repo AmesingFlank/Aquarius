@@ -3,10 +3,11 @@
 
 
 
-Besides the grid-based fluid simulations algorithms, this project also studied and implemented a fundamentally different algorithm, known as \textbf{PBF} (Position-Based Fluids), which only uses particles to represent the fluid and its relevant scalar and vector fields. This chapter explains the principles of this algorithm, its CUDA implementation, and how it compares to the FLIP algorithm presented in the last chapter.
+Besides the grid-based fluid simulations algorithms, this project also studied and implemented a fundamentally different algorithm, known as \textbf{PBF} (Position-Based Fluids), which only uses particles to represent the fluid and its relevant scalar and vector fields. The principles of this algorithm is given in this chapter.
+
 
 \section{Smoothed Particle Hydrodynamics}
-PBF belongs to a family of algorithms called \textit{Smoothed Particle Hydrodynamics}, or SPH. Similar to FLIP, SPH algorithms represent the fluid using a cloud of particles. All quantities that are involved in the simulations are carried by the particles. For some quantity $q$, either scalar or vector, and some location $\textbf{x}$, SPH approximates $q$ at $q(\textbf{x})$ as a weighted average of $Q$ carried by the nearby particles.
+PBF belongs to a family of algorithms called SPH(Smoothed Particle Hydrodynamics). SPH does not utilize a grid to discretize scalar and vector fields, and instead only uses a large cloud of particles to represent to the fluid. All quantities that are involved in the simulation are carried by these particles. For some quantity $Q$, either scalar or vector, and some location $\textbf{x}$, SPH approximates $Q$ at $Q(\textbf{x})$ as a weighted average of $Q$ carried by the nearby particles.
 \begin{equation}
     \label{eqn SPH basic}
     \begin{aligned}
@@ -47,9 +48,9 @@ $$
             \textbf{0} &\mbox{otherwise} 
         \end{cases}
 $$
-Figure \ref{figure kernels} illustrates the difference between the two kernels:
+The follwing figure illustrates the difference between the two kernels:
 
-\begin{figure}[!h]
+\begin{figure}[H]
     \label{figure kernels}
     \begin{tikzpicture}
         \draw[->] (-3,0) -- (4.2,0) node[right] {$x$};
@@ -238,6 +239,37 @@ With the density constraints at its core, the PBF simulation algorithm works as 
 
 
 \section{Implementation}
-In order to efficiently implement algorithm \ref{algo PBF} on GPU, some optimizations need to be made. Specifically, in line 7, 8, and 11, the computation for $\rho_i$, $\lambda_i$, and $\triangle\textbf{x}_i$ all involve summations over all particles. If these are done via iterating through all particles, the performance cost would be unacceptable. Fortunately, all of the terms being summed are weighted by $W$ or $\nabla W$, which means it suffices to only look at the particles within a radius of $h$. Thus, the same spatial indexing algorithm, which was used in FLIP and described in subsection \ref{subsection spatial indexing}, can be used to efficiently find the neighboring particles. 
+To efficiently implement algorithm \ref{algo PBF} on GPU, the spatial indexing algorithm, which was used in FLIP and described in subsection \ref{subsection spatial indexing}, must again be applied. Specifically, in line 7, 8, and 11, the computation for $\rho_i$, $\lambda_i$, and $\triangle\textbf{x}_i$ all involve summations over all particles, where the terms being summed are weighted by $W$ or $\nabla W$. This indicates that it suffices to only sum over the neighboring particles within a radius of $h$, which can be founded using spatial indexing.
 
-After incorporating spatial indexing, the rest of the PBF algorithm can be straightforwardly to parallelized in CUDA. Each of the "foreach" loops in algorithm \ref{algo PBF} can be designated to a CUDA thread, because each loop iteration operate on a different particle, and there are no data dependencies. 
+
+After incorporating spatial indexing, the rest of the PBF algorithm can be straightforwardly to parallelized in CUDA. Each iteration of the "foreach" loops can be designated to a CUDA thread, because different iterations operate on different particles, and there are no data dependencies. In the implementation of this project, with roughly $40000$ particles, the PBF simulation and rendering runs at approximately 20FPS.
+
+
+
+\begin{figure}[H]
+    \centering
+    
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{balldrop_cropped2/pbf0.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{balldrop_cropped2/pbf1.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{balldrop_cropped2/pbf2.png}
+    \end{minipage}
+    \begin{minipage}[t]{.24\linewidth}
+        \centering
+        \vspace{0pt}
+        \includegraphics[width=3.5cm]{balldrop_cropped2/pbf3.png}
+    \end{minipage}
+
+    \caption{Same simulation as figure \ref{figure ball drop single}, except in PBF}
+    \label{figure ball drop pbf}
+\end{figure}

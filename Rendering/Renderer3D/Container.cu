@@ -5,6 +5,8 @@ Container::Container(float size) {
 	initBottom();
 	model = glm::scale(model, glm::vec3(size, size, size));
 	this->size = size;
+	cornellBoxSize = size * 4;
+	bigChessBoardSize = size * 100;
 }
 
 void Container::drawEdges(const DrawCommand& drawCommand) {
@@ -42,41 +44,65 @@ void Container::initEdges() {
 }
 
 
-void Container::drawBottom(const DrawCommand& drawCommand) {
-	bottomShader->use();
-
-	float extension = 1;
-
-	glm::mat4 bottomScale = glm::scale(model, glm::vec3(2 + extension));
-
-	glm::mat4 bottomTranslate(1.0);
-	bottomTranslate = glm::translate(bottomTranslate, glm::vec3(-size, 0, -size));
-
-	glm::mat4 bottomModel = bottomTranslate * bottomScale;
+void Container::drawFace(const DrawCommand& drawCommand) {
+	faceShader->use();
 
 	
 
-	bottomShader->setUniformMat4("model", model);
-	bottomShader->setUniformMat4("view", drawCommand.view);
-	bottomShader->setUniformMat4("projection", drawCommand.projection);
+	if (drawCommand.environmentMode == EnvironmentMode::CornellBox) {
+		float cornellBoxPadding = (cornellBoxSize - size) / 2;
 
-	bottomShader->setUniform3f("cameraPos", drawCommand.cameraPosition);
-	bottomShader->setUniform3f("lightPos", drawCommand.lightPos);
 
-	bottomShader->setUniform1f("boxSize", size);
+		glm::mat4 cornellScale = glm::scale(model, glm::vec3(cornellBoxSize / size));
+
+		glm::mat4 cornellTranslate(1.0);
+		cornellTranslate = glm::translate(cornellTranslate, glm::vec3(-cornellBoxPadding, 0, -cornellBoxPadding));
+
+		glm::mat4 cornellModel = cornellTranslate * cornellScale;
+
+		faceShader->setUniformMat4("model",cornellModel);
+	}
+	else if (drawCommand.environmentMode == EnvironmentMode::ChessBoard) {
+		float padding = (bigChessBoardSize - size) / 2;
+
+		
+
+		glm::mat4 scale = glm::scale(model, glm::vec3(bigChessBoardSize / size));
+
+		glm::mat4 translate(1.0);
+		translate = glm::translate(translate, glm::vec3(-padding, 0, -padding));
+
+		glm::mat4 bigChessBoardModel = translate * scale;
+
+		faceShader->setUniformMat4("model", bigChessBoardModel);
+	}
+	else {
+		faceShader->setUniformMat4("model", model);
+	}
+
+	
+	faceShader->setUniformDrawCommand(drawCommand);
 
 
 	glBindVertexArray(bottomVAO);
 
-	glDrawArrays(GL_TRIANGLES, 0, 6);
+	int drawCount;
+	if (drawCommand.environmentMode == EnvironmentMode::CornellBox) {
+		drawCount = 36;
+	}
+	else {
+		drawCount = 6;
+	}
+
+	glDrawArrays(GL_TRIANGLES, 0, drawCount);
 }
 
 void Container::initBottom() {
 
 
-	bottomShader = std::make_shared<Shader>(
-		Shader::SHADERS_PATH("Container_bottom_vs.glsl"),
-		Shader::SHADERS_PATH("Container_bottom_fs.glsl"),
+	faceShader = std::make_shared<Shader>(
+		Shader::SHADERS_PATH("Container_face_vs.glsl"),
+		Shader::SHADERS_PATH("Container_face_fs.glsl"),
 		std::vector<std::string>({ Shader::SHADERS_PATH("RayTraceEnvironment.glsl")})
 		);
 
@@ -86,7 +112,7 @@ void Container::initBottom() {
 	glBindBuffer(GL_ARRAY_BUFFER, bottomVBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(bottomData), bottomData, GL_STATIC_DRAW);
 
-	GLuint bottomPositionLocation = glGetAttribLocation(bottomShader->program, "position");
+	GLuint bottomPositionLocation = glGetAttribLocation(faceShader->program, "position");
 
 	glEnableVertexAttribArray(bottomPositionLocation);
 	glVertexAttribPointer(bottomPositionLocation, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
@@ -96,7 +122,7 @@ void Container::initBottom() {
 }
 
 void Container::draw(const DrawCommand& drawCommand) {
-	drawBottom(drawCommand);
+	drawFace(drawCommand);
 	
 	glDisable(GL_DEPTH_TEST);
 	drawEdges(drawCommand);

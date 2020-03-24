@@ -8,5 +8,5 @@ public:
 	virtual void init(FluidConfig config) = 0;
 	virtual ~Fluid() {};
 
-	float physicalTime;  // Time elapsed in the simulation.
+	float physicalTime = 0;  // Time elapsed in the simulation.
 };

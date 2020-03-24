@@ -89,7 +89,6 @@ namespace Fluid_3D_PBF {
 		int numThreads, numBlocks;
 
 
-		Skybox skybox = Skybox("resources/Skyboxes/GamlaStan2/", ".jpg");
 
 		std::shared_ptr<Mesher> mesher;
 		std::shared_ptr<FluidMeshRenderer> meshRenderer;
@@ -97,7 +96,6 @@ namespace Fluid_3D_PBF {
 
 		FluidConfig fluidConfig;
 
-		std::shared_ptr<Container> container;
 
 
 
@@ -108,6 +106,7 @@ namespace Fluid_3D_PBF {
 		virtual void draw(const DrawCommand& drawCommand) override;
 
 		virtual glm::vec3 getCenter() override;
+		virtual float getContainerSize() override;
 
 		virtual void init(FluidConfig config) override;
 

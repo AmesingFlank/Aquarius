@@ -4,6 +4,8 @@
 
 %load any additional packages
 
+
+
 \usepackage{graphicx}
 \graphicspath{ {./images/} }
 
@@ -28,8 +30,21 @@
 \usepackage{tikz-3dplot}
 \usepackage{tkz-euclide}
 \usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage[margin=25pt]{subcaption}
 \usepackage{float}
 \usepackage{hyperref}
+
+
+\newenvironment{changemargin}{%
+\begin{list}{}{%
+\setlength{\topsep}{0pt}%
+\setlength{\topmargin}{1cm}%
+\setlength{\listparindent}{\parindent}%
+\setlength{\itemindent}{\parindent}%
+\setlength{\parsep}{\parskip}%
+}%
+\item[]}{\end{list}}
+
 
 
 \titleformat{\chapter}[block]
@@ -98,6 +113,29 @@
 % \include{acknowlegements}   % include an acknowledgements.tex file
 \include{abstract}          % include the abstract
 
+\begin{figure}[p]
+        \centering
+        \begin{minipage}[t]{.99\linewidth}
+                \vspace{0pt}
+                \centering
+                \includegraphics[width=14cm]{FrontSinglephase_cropped}
+                \subcaption{A PBF simulation}
+        \end{minipage}
+        
+        \hspace{5pt}
+
+        \begin{minipage}[t]{.99\linewidth}
+                \vspace{0pt}
+                \centering
+                \includegraphics[width=14cm]{FrontMultiphase_cropped}
+                \subcaption{A multi-fluid FLIP simulation}        
+        \end{minipage}
+                
+        \caption{Screenshots of the fluid simulated and rendered by the software created in this project. More images can be found at \url{https://github.com/AmesingFlank/Aquarius}}
+        \label{figure front demo figures}
+\end{figure}
+
+
 \begin{romanpages}          % start roman page numbering
 \tableofcontents            % generate and include a table of contents
 %\listoffigures              % generate and include a list of figures
@@ -114,9 +152,10 @@
 \include{ChapterConclusions}
 
 %now enable appendix numbering format and include any appendices
-\appendix
-\include{appendix1}
-\include{appendix2}
+%\appendix
+%\include{appendix1}
+%\include{appendix2}
+
 
 %next line adds the Bibliography to the contents page
 \addcontentsline{toc}{chapter}{Bibliography}

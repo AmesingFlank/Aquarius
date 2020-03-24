@@ -25,9 +25,9 @@ struct FluidMeshRenderer {
 	std::shared_ptr<ScreenSpaceNormal> screenSpaceNormal;
 
 	FluidMeshRenderer(int count_);
-	void draw(const DrawCommand& drawCommand, GLuint skybox);
-	void drawWithInk(const DrawCommand& drawCommand, GLuint skybox, PointSprites& points, float radius, std::vector<float4> phaseColors);
-	void drawDepth(const DrawCommand& drawCommand);
 
+	void draw(const DrawCommand& drawCommand, bool multiphase = false,
+		std::shared_ptr<PointSprites> points = nullptr, float radius = 0, std::vector<float4> phaseColors = {});
+	void drawDepth(const DrawCommand& drawCommand);
 	~FluidMeshRenderer();
 };
