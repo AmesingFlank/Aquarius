@@ -1,3 +1,5 @@
+
+/*
 #include "Fluid_2D_kernels.cuh"
 
 
@@ -369,18 +371,6 @@ __global__  void jacobiImpl(Cell2D* cells, int sizeX, int sizeY, float dt_div_rh
 	newPressure += RHS;
 	newPressure /= centerCoeff;
 
-
-	/*if (y==0 && x==100) {
-
-		printf("np: %f \n", newPressure);
-		printf("yup: %f \n", upCell.newVelocity.y);
-		printf("ythis: %f \n", thisCell.newVelocity.y);
-
-		printf("div: %f \n\n", thisCell.divergence);
-
-	}*/
-
-
-
 	thisCell.pressure = newPressure;
 }
+*/

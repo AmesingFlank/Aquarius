@@ -6,8 +6,7 @@
 #include <sstream>
 #include <vector>
 #include <string>
-#include <rapidjson/reader.h>
-#include <rapidjson/document.h>
+
 #include <memory>
 #include "../Common/GpuCommons.h"
 

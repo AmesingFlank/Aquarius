@@ -1,47 +1,71 @@
-cmake_minimum_required(VERSION 3.13)
-project(Aquarius)
-
-set(CMAKE_CXX_STANDARD 17)
-
-add_executable(Aquarius
-        main.cu GpuCommons.h MAC_Grid_2D.cuh Fluid_2D_SemiLagrange.cuh SPD_Solver.h Rendering/Shader.h Rendering/Quad.h Fluid_2D_PCISPH.cuh WeightKernels.h Fluid_2D.h Fluid_2D_PCISPH_CPU.h Fluid_2D_PoistionBased_CPU.h Fluid_2D_FLIP.cuh MAC_Grid_3D.cuh Rendering/Renderer3D/Renderer3D.h Rendering/Renderer3D/Skybox.h Rendering/Renderer3D/camera.h InputHandler.h )
-
-set(OPTM_LEVEL "-O0")
-
-set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} ${OPTM_LEVEL}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OPTM_LEVEL}")
+cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+project(Aquarius LANGUAGES CXX CUDA)
 
 
+add_subdirectory(Dependencies/glfw)
+include_directories(Dependencies/glfw/include)
 
-enable_language(CUDA)
+add_subdirectory(Dependencies/glew/build/cmake)
+include_directories(Dependencies/glew/include)
 
-set_property(TARGET Aquarius PROPERTY CUDA_STANDARD 11)
-
-set_property(TARGET Aquarius
-        PROPERTY CUDA_SEPARABLE_COMPILATION ON)
-
-set_property(TARGET Aquarius
-        PROPERTY
-        BUILD_RPATH /usr/local/cuda/lib)
-
-target_include_directories(Aquarius PRIVATE /usr/local/cuda/samples/common/inc/)
-
-target_link_libraries(Aquarius -lcublas -lcurand -lcusparse -lcusolver)
-
-target_link_libraries(Aquarius -lglfw3 -lglew)
-
-target_link_libraries(Aquarius "-framework OpenGL")
+include_directories(Dependencies/include)
 
 
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math")
 
 
-#AMGX stuff
-target_include_directories(Aquarius PRIVATE /Users/AmesingFlank/Downloads/AMGX-master/built/include_all_frank/include)
-target_link_libraries(Aquarius /Users/AmesingFlank/Downloads/AMGX-master/built/core/libamgx_core.a)
-target_link_libraries(Aquarius /Users/AmesingFlank/Downloads/AMGX-master/built/base/libamgx_base.a)
-target_link_libraries(Aquarius /Users/AmesingFlank/Downloads/AMGX-master/built/template_plugin/libamgx_template_plugin.a)
-target_link_libraries(Aquarius /Users/AmesingFlank/Downloads/AMGX-master/built/eigensolvers/libamgx_eigensolvers.a)
+add_executable(Aquarius 
+ Fluid/Fluid_3D_common.cu
+ Fluid/Fluid_3D_FLIP.cu
+ Fluid/Fluid_3D_kernels.cu
+ Fluid/Fluid_3D_PBF.cu
+ Fluid/Fluid_3D_PCISPH.cu
+ Fluid/MAC_Grid_3D.cu
+ main.cu
+ Rendering/Renderer3D/Container.cu
+ Rendering/Renderer3D/FluidMeshRenderer.cu
+ Rendering/Renderer3D/Mesher.cu
+ Rendering/Renderer3D/PointSprites.cu
+ Rendering/Renderer3D/ScreenSpaceNormal.cu
+ Rendering/Renderer3D/Skybox.cu
+ Rendering/Shader.cpp
+ UI/ui.cpp
+
+  Fluid/FluidConfig.cuh
+ Fluid/Fluid_3D.cuh
+ Fluid/Fluid_3D_common.cuh
+ Fluid/Fluid_3D_FLIP.cuh
+ Fluid/Fluid_3D_kernels.cuh
+ Fluid/Fluid_3D_PBF.cuh
+ Fluid/Fluid_3D_PCISPH.cuh
+ Fluid/Fluid_kernels.cuh
+ Fluid/MAC_Grid_3D.cuh
+ Fluid/VolumeData.cuh
+ Fluid/WeightKernels.cuh
+ Rendering/Renderer3D/FluidMeshRenderer.cuh
+ Rendering/Renderer3D/Mesher.cuh
+ Rendering/Renderer3D/ScreenSpaceNormal.cuh
+
+ Common/Commons.h
+ Common/GpuCommons.h
+ Common/InputHandler.h
+ Fluid/Fluid.h
+ Rendering/DrawCommand.h
+ Rendering/Quad.h
+ Rendering/Renderer3D/camera.h
+ Rendering/Renderer3D/Container.h
+ Rendering/Renderer3D/PointSprites.h
+ Rendering/Renderer3D/Skybox.h
+ Rendering/Shader.h
+ Rendering/WindowInfo.h
+ UI/ui.h
+
+)
+
+target_link_libraries(Aquarius glfw ${GLFW_LIBRARIES})
+target_link_libraries(Aquarius glew_s ${GLEW_LIBRARIES})
 
 add_custom_command(TARGET Aquarius PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/resources/ $<TARGET_FILE_DIR:Aquarius>/resources)
+

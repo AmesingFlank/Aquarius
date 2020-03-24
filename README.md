@@ -2,15 +2,13 @@
 
 A Fluid Simulator on GPU (CUDA)
 
-This is Dunfan Lu's (ongoing) 3rd year project at the CS department of Oxford.
+This is Dunfan Lu's 3rd year project at the CS department of Oxford.
 
 ## Algorithms implemented:
-* Semi-Lagrangian advection
 * FLIP (Fluid Implicit Particle) advection
 * PCISPH (Predicative-Corrective Incompressible Smoothed Particle Hydrodynamics)
 * Position Based Fluid
 * Jacobi Pressure Solver 
-* Screen Space Fluid Rendering
 * Surface reconstruction with Marching Cubes
 * Multiphase Fluid Diffusion
 
@@ -33,9 +31,11 @@ Multiphase Diffusion       |  A red ball of fluid droppping into a blue box of f
 ![](demo/recording_0.gif)
 *2D semi-Lagrangian. Implemented in the early phases of the project*
 
-## dependencies
+## Dependencies
 * GLFW
-* CUDA 
+* GLEW
+* glm
 * STB image
-* View the vcproj file for details. CMakeList doens't work now.
+* Nukclear
 
+The cmake file should be able to handle these automatically.

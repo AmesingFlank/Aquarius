@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Dunfan\Code\VSIDE\Aquarius\CMakeFiles\b4e511c46b54b63c83d77b90b4f95514\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{7A6BFF3C-F1CC-3BBF-9177-1D83D4E53E4E}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

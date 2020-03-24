@@ -1,3 +1,5 @@
+/*
+
 #include "SVD.cuh"
 __host__ __device__
 void computeSVD2(Mat3x3 mat, float3& eVals, float3& v0, float3& v1, float3& v2) {
@@ -46,3 +48,5 @@ void computeSVD2(Mat3x3 mat, float3& eVals, float3& v0, float3& v1, float3& v2) 
 	//v2 = cross(A1 - eVals.z * e1, A2 - eVals.z * e2);
 
 }
+
+*/
