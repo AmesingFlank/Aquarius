@@ -455,14 +455,11 @@ namespace Fluid_3D_FLIP {
 
 		for (const InitializationVolume& vol : config.initialVolumes) {
 			if (vol.shapeType == ShapeType::Square) {
-				float3 minPos = make_float3(vol.params[0], vol.params[1], vol.params[2]);
-				float3 maxPos = make_float3(vol.params[3], vol.params[4], vol.params[5]);
-				createSquareFluid(particlesHost, minPos, maxPos, vol.phase);
+				createSquareFluid(particlesHost, vol.boxMin, vol.boxMax, vol.phase);
 			}
 			else if (vol.shapeType == ShapeType::Sphere) {
-				float3 center = make_float3(vol.params[0], vol.params[1], vol.params[2]);
-				float radius = vol.params[3];
-				createSphereFluid(particlesHost, center, radius, vol.phase);
+
+				createSphereFluid(particlesHost, vol.ballCenter, vol.ballRadius, vol.phase);
 			}
 		}
 
@@ -684,14 +681,11 @@ namespace Fluid_3D_FLIP {
 
 		for (const InitializationVolume& vol : config.initialVolumes) {
 			if (vol.shapeType == ShapeType::Square) {
-				float3 minPos = make_float3(vol.params[0], vol.params[1], vol.params[2]);
-				float3 maxPos = make_float3(vol.params[3], vol.params[4], vol.params[5]);
-				createSquareInk(inkParticlesHost, minPos, maxPos, inkParticlesSpacing,vol.phase);
+				createSquareInk(inkParticlesHost, vol.boxMin, vol.boxMax, inkParticlesSpacing,vol.phase);
 			}
 			else if (vol.shapeType == ShapeType::Sphere) {
-				float3 center = make_float3(vol.params[0], vol.params[1], vol.params[2]);
-				float radius = vol.params[3];
-				createSphereInk(inkParticlesHost,  center, radius, inkParticlesSpacing, vol.phase);
+
+				createSphereInk(inkParticlesHost,  vol.ballCenter, vol.ballRadius, inkParticlesSpacing, vol.phase);
 			}
 		}
 

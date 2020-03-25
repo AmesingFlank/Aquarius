@@ -47,7 +47,7 @@ VolumeData createField3D(int sizeX, int sizeY, int sizeZ, dim3 cudaGridSize, dim
 	VolumeData result;
 
 	cudaChannelFormatDesc channelDesc = cudaCreateChannelDesc<T>();
-	cudaExtent extent = { sizeX ,sizeY ,sizeZ };
+	cudaExtent extent = { (size_t)sizeX ,(size_t)sizeY ,(size_t)sizeZ };
 	HANDLE_ERROR(cudaMalloc3DArray(&result.array, &channelDesc, extent, cudaArraySurfaceLoadStore));
 
 	cudaResourceDesc resDesc;

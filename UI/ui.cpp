@@ -180,16 +180,12 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 
 					if (nk_option_label(ctx, "Box", volume.shapeType == ShapeType::Square)) {
 						volume.shapeType = ShapeType::Square;
-						while (volume.params.size() < 6) {
-							volume.params.push_back(0);
-						}
+						
 					}
 						
 					if (nk_option_label(ctx, "Ball", volume.shapeType == ShapeType::Sphere)) {
 						volume.shapeType = ShapeType::Sphere;
-						while (volume.params.size() < 4) {
-							volume.params.push_back(0);
-						}
+						
 					}
 					GAP_SMALL;
 
@@ -198,18 +194,18 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 						nk_label(ctx, "Min Coordinate:", NK_TEXT_LEFT);
 						nk_layout_row_dynamic(ctx, rowHeight, 3);
 
-						nk_property_float(ctx, "x:", 0, &volume.params[0], 1, incStep, incPerPixel);
-						nk_property_float(ctx, "y:", 0, &volume.params[1], 1, incStep, incPerPixel);
-						nk_property_float(ctx, "z:", 0, &volume.params[2], 1, incStep, incPerPixel);
+						nk_property_float(ctx, "x:", 0, &volume.boxMin.x, 1, incStep, incPerPixel);
+						nk_property_float(ctx, "y:", 0, &volume.boxMin.y, 1, incStep, incPerPixel);
+						nk_property_float(ctx, "z:", 0, &volume.boxMin.z, 1, incStep, incPerPixel);
 						GAP_SMALL;
 
 						nk_layout_row_dynamic(ctx, rowHeight, 1);
 						nk_label(ctx, "Max Coordinate:", NK_TEXT_LEFT);
 						nk_layout_row_dynamic(ctx, rowHeight, 3);
 
-						nk_property_float(ctx, "x:", 0, &volume.params[3], 1, incStep, incPerPixel);
-						nk_property_float(ctx, "y:", 0, &volume.params[4], 1, incStep, incPerPixel);
-						nk_property_float(ctx, "z:", 0, &volume.params[5], 1, incStep, incPerPixel);
+						nk_property_float(ctx, "x:", 0, &volume.boxMax.x, 1, incStep, incPerPixel);
+						nk_property_float(ctx, "y:", 0, &volume.boxMax.y, 1, incStep, incPerPixel);
+						nk_property_float(ctx, "z:", 0, &volume.boxMax.z, 1, incStep, incPerPixel);
 						GAP_SMALL;
 
 						if (isFLIP) {
@@ -232,14 +228,14 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 						nk_label(ctx, "Center Coordinate:", NK_TEXT_LEFT);
 						nk_layout_row_dynamic(ctx, rowHeight, 3);
 
-						nk_property_float(ctx, "x:", 0, &volume.params[0], 1, incStep, incPerPixel);
-						nk_property_float(ctx, "y:", 0, &volume.params[1], 1, incStep, incPerPixel);
-						nk_property_float(ctx, "z:", 0, &volume.params[2], 1, incStep, incPerPixel);
+						nk_property_float(ctx, "x:", 0, &volume.ballCenter.x, 1, incStep, incPerPixel);
+						nk_property_float(ctx, "y:", 0, &volume.ballCenter.y, 1, incStep, incPerPixel);
+						nk_property_float(ctx, "z:", 0, &volume.ballCenter.z, 1, incStep, incPerPixel);
 						GAP_SMALL;
 
 						nk_layout_row_dynamic(ctx, rowHeight, 2);
 						nk_label(ctx, "Radius:", NK_TEXT_LEFT);
-						nk_property_float(ctx, "r:", 0, &volume.params[3], 1, incStep, incPerPixel);
+						nk_property_float(ctx, "r:", 0, &volume.ballRadius, 1, incStep, incPerPixel);
 						GAP_SMALL;
 						if (isFLIP) {
 							nk_layout_row_dynamic(ctx, rowHeight, 3);

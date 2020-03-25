@@ -305,14 +305,11 @@ namespace Fluid_3D_PBF {
 
 		for (const InitializationVolume& vol : config.initialVolumes) {
 			if (vol.shapeType == ShapeType::Square) {
-				float3 minPos = make_float3(vol.params[0], vol.params[1], vol.params[2]);
-				float3 maxPos = make_float3(vol.params[3], vol.params[4], vol.params[5]);
-				createSquareFluid(particlesVec, minPos, maxPos);
+				createSquareFluid(particlesVec, vol.boxMin, vol.boxMax);
 			}
 			else if (vol.shapeType == ShapeType::Sphere) {
-				float3 center = make_float3(vol.params[0], vol.params[1], vol.params[2]);
-				float radius = vol.params[3];
-				createSphereFluid(particlesVec, center, radius);
+				
+				createSphereFluid(particlesVec, vol.ballCenter,vol.ballRadius);
 			}
 		}
 

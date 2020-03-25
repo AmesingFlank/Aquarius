@@ -21,9 +21,21 @@ struct InitializationVolume {
 
 	ShapeType shapeType = ShapeType::Square;
 
-	std::vector< float > params = {0,0,0,0,0,0};
+	float3 boxMin = make_float3(0,0,0);
+	float3 boxMax = make_float3(1, 0.1875, 1);
+
+	float3 ballCenter = make_float3(0.5, 0.75, 0.5);
+	float ballRadius = 0.125;
 
 	int phase = 0;
+
+	InitializationVolume() {
+
+	}
+
+	InitializationVolume(ShapeType type) {
+		shapeType = type;
+	}
 };
 
 struct ConfigFLIP {
@@ -73,21 +85,9 @@ struct FluidConfig{
 	ConfigPCISPH PCISPH;
 
 	FluidConfig() {
-		initialVolumes.push_back(
-			{
-				ShapeType::Square,
-				std::vector<float>({0,0,0, 1,0.2,1}),
-				0
-			}
-		);
+		initialVolumes.emplace_back(ShapeType::Square);
 		
-		initialVolumes.push_back(
-			{
-				ShapeType::Sphere,
-				std::vector<float>({0.5,0.67,0.5,   0.27}),
-				1
-			}
-		);
+		initialVolumes.emplace_back(ShapeType::Sphere);
 
 		phaseColors.push_back(make_float4(0, 0, 1, 0.2));
 		phaseColors.push_back(make_float4(1, 0, 0, 1));
