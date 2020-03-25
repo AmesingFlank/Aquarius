@@ -1,7 +1,7 @@
-prefix=C:/Program Files (x86)/Aquarius
+prefix=/usr/local
 exec_prefix=${prefix}
-includedir=C:/Program Files (x86)/Aquarius/include
-libdir=C:/Program Files (x86)/Aquarius/lib
+includedir=/usr/local/include
+libdir=/usr/local/lib
 
 Name: GLFW
 Description: A multi-platform library for OpenGL, window and input
@@ -9,5 +9,5 @@ Version: 3.3.2
 URL: https://www.glfw.org/
 Requires.private: 
 Libs: -L${libdir} -lglfw3
-Libs.private:  -lgdi32
+Libs.private:  -framework Cocoa -framework IOKit -framework CoreFoundation
 Cflags: -I${includedir}

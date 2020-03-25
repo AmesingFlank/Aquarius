@@ -3,7 +3,7 @@
 #define AQUARIUS_INPUTHANDLER_H
 
 #include <memory>
-#include "Rendering/Renderer3D/camera.h"
+#include "../Rendering/Renderer3D/camera.h"
 #include "GpuCommons.h"
 
 namespace InputHandler{

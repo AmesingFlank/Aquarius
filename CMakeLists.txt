@@ -10,8 +10,17 @@ include_directories(Dependencies/glew/include)
 
 include_directories(Dependencies/include)
 
+include_directories(${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math")
+
+set(CMAKE_CXX_STANDARD 17)
+
+IF(APPLE)
+set_property(TARGET Aquarius
+        PROPERTY
+        BUILD_RPATH /usr/local/cuda/lib)
 
 
 add_executable(Aquarius 
@@ -68,4 +77,6 @@ target_link_libraries(Aquarius glew_s ${GLEW_LIBRARIES})
 add_custom_command(TARGET Aquarius PRE_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/resources/ $<TARGET_FILE_DIR:Aquarius>/resources)
+
+set_property(TARGET Aquarius PROPERTY CUDA_STANDARD 11)
 

@@ -249,27 +249,6 @@ inline void initOpenGL() {
 	if (!glfwInit())
 		exit(EXIT_FAILURE);
 
-	// weird behavior under VS2019
-	// if strspn && vsscanf is not used anywhere in the code
-	// there will be a link error...
-	// so they are used here
-
-
-
-	char strtext[] = "129th";
-	char cset[] = "1234567890";
-	strspn(strtext, cset);
-
-	auto GetMatches = [](const char* str, const char* format, ...) {
-		va_list args;
-		va_start(args, format);
-		vsscanf(str, format, args);
-		va_end(args);
-	};
-
-	int val;
-	char buf[100];
-	GetMatches("99 bottles of beer on the wall", " %d %s ", &val, buf);
 }
 
 

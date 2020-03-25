@@ -124,7 +124,7 @@ int main( void ) {
 			glm::vec3 lightPosition(fluidCenter.x, 15, fluidCenter.y);
 
 			DrawCommand drawCommand = {
-			view,projection,camera->getActualPosition(),windowInfo.windowWidth,windowInfo.windowHeight,camera->FOV,near,far,
+			view,projection,camera->getActualPosition(),(float)windowInfo.windowWidth,(float)windowInfo.windowHeight,camera->FOV,near,far,
 			renderMode,paused,lightPosition,environmentMode,skybox.texSkyBox,container->size,container->cornellBoxSize
 			};
 
