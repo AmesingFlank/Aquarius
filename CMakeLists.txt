@@ -17,10 +17,6 @@ set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -use_fast_math")
 
 set(CMAKE_CXX_STANDARD 17)
 
-IF(APPLE)
-set_property(TARGET Aquarius
-        PROPERTY
-        BUILD_RPATH /usr/local/cuda/lib)
 
 
 add_executable(Aquarius 
@@ -70,6 +66,12 @@ add_executable(Aquarius
  UI/ui.h
 
 )
+
+IF(APPLE)
+set_property(TARGET Aquarius
+        PROPERTY
+        BUILD_RPATH /usr/local/cuda/lib)
+ENDIF(APPLE)
 
 target_link_libraries(Aquarius glfw ${GLFW_LIBRARIES})
 target_link_libraries(Aquarius glew_s ${GLEW_LIBRARIES})
