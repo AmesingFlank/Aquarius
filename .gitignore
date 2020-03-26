@@ -29,3 +29,11 @@ Release/
 *CMakeFiles*
 
 *.sln
+
+Dependencies/glew/glew.pc
+Dependencies/glfw/src/glfw3.pc
+Dependencies/glfw/src/glfw3ConfigVersion.cmake
+Dependencies/glfw/src/glfw_config.h
+
+Debug/
+Dependencies/glfw/src/Debug/
