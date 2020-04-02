@@ -37,7 +37,7 @@ On the rendering side, this project follows the proposal by Zhu and Bridson\cite
 \section{Project Outline}
 
 
-This project focuses on investigating and producing highly performant GPU implementations of the most widely used fluid simulation and rendering algorithms. An extended version of the FLIP algorithm, which supports multiple fluid simulation and diffusions between fluids of different colors, is studied and implemented, with the details elaborated in chapter \ref{chapter grid}. Similarly, GPU versions of the PBF algorithm is also created, as described in chapter \ref{chapter particle}. 
+This project focuses on studying fluid simulation algorithms and their GPU parallelization. An extended version of the FLIP algorithm, which supports multiple fluid simulation and diffusions between fluids of different colors, is studied and implemented on GPU, with the details elaborated in chapter \ref{chapter grid}. Similarly, the PBF algorithm is also studied and implemented, as described in chapter \ref{chapter particle}. 
 
 To visualize the simulations, the project implements a fast surface reconstruction algorithm, which transforms a particle cloud representation of fluids into a renderable triangle mesh. A real time renderer is implemented to render the mesh while capturing all the reflection and refraction phenomenons that occur in the real world. Furthermore, the renderer incorporates a novel algorithm that computes the different levels of attenuation of light caused by fluids of different colors, thereby also realistically rendering the liquid diffusion effects. The details of the renderer are given in chapter \ref{chapter render}.
 
