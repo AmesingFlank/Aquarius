@@ -3,12 +3,16 @@
 
 This project explored how modern GPUs can be programmed to efficiently simulate and render multiphase fluids. A software was built that was able to perform real time fluid simulation, and simultaneously render realistic images to be displayed. The project mostly focuses on parallelizing existing algorithms, but invents an original algorithm for performing fast multiphase fluid volume rendering. The software created is named \textit{Aquarius}, and its full source code is available at \url{https://github.com/AmesingFlank/Aquarius}.
 
-During the development of this project, many ideas emerged which would all bring more value to this project. Unfortunately, the time permitted did not allow these ideas to be explored. The next section gives a brief summary of these.
 
-\section{Future Work}
+\section{Limitations \& Future Work}
 \label{section future work}
+
+During the development of this project, many ideas emerged which would all bring more value to this project. Unfortunately, the time permitted did not allow these ideas to be explored. The following are a few interesting features that the software doesn't yet support, but could be added in future endeavors.
+
+
+
 \begin{itemize}
-    \item Adding viscosity.
+    \item Viscosity.
     
     This project focused on fluids that follow the Euler equations, which ignored the effect of viscosity as described in the full Navier-Stokes equations. While not problematic for water-like liquids, many other interesting visual effects of fluids (e.g melting chocolate) are only possible with viscosity. 
     
@@ -35,7 +39,7 @@ During the development of this project, many ideas emerged which would all bring
 \section{Personal Reflections}
 Working on this project has been a gratifying experience. The topic is very exciting, and there was so much to that I learnt during the process. Apart from the improvements mentioned in \ref{section future work}, which I wish I could have made more progress in, I am in general very happy with and proud of the results I achieved.
 
-When I submitted the proposal of this project in February 2019, it was purely based on interest as I had no previous experience and understanding of fluid simulation. So, the first thing I had to do in this project was to learn about the physics of fluids. As a pure computer science student, this proved challenging at first, because the mathematics courses that CS students took virtually did not discuss any vector calculus. In the Easter vacation of 2019, I spent a substantial amount of time catching up with vector calculus and fluid dynamics, which was difficult, but quite educational and layed the ground for my future efforts.
+When I submitted the proposal of this project in February 2019, it was purely based on interest as I had no previous experience and understanding of fluid simulation. So, the first thing I had to do in this project was to learn about the physics of fluids. As a pure computer science student, this proved challenging at first, because the mathematics courses that CS students took virtually did not discuss any vector calculus. In the Easter vacation of 2019, I spent a substantial amount of time catching up with vector calculus and fluid dynamics, which was difficult, but layed the ground for my future efforts.
 
 Before I started reading academic papers on the topic, I read a book called \textit{Fluid Simulation for Computer Graphics}\cite{bridson2015fluid}, written by Robert Bridson, one of the leading experts in the field. This book gave a really good advice: always start by writing a 2D simulator, before moving on to 3D. I did follow this advice, and took it one step further: I started by writing code that only runs on CPU, before moving on to a GPU implementation. This was definitely a good idea because, considering the level of complexity of my GPU implementation right now, it would have been impossible for me to implement it correctly when I was still very unfamiliar with the problem at hand. A lesson learnt here is that for complicated tasks, a good way to start is by building a simple prototype.
 
@@ -43,4 +47,4 @@ One of the biggest frustrations that I faced in this project is the performance 
 
 I absolutely enjoyed learning about fluids and coding a simulator, but, somewhat surprisingly, I also enjoyed writing this report very much. Not only was I able to talk about a project that I worked passionately on, but as I reiterated the methods I used, I cleared up a few technical details which I did not completely understand. Although, I did find it quite stressful to obey the 10,000 word limit. There are a few mathematical details and quite a lot of GPU optimizations, which I spent a considerable amount of time working on, but sadly could not fit into this report.
 
-This project is possibly the biggest intellectual endeavor I have made in my years at Oxford(though waiting to be surpassed by my 4th year project), and I find it to be an unmissable part of my education. Through this project, I was exposed to many spectacular areas of computer graphics that I did not know existed, and I was familiarized with the techniques that is essential to these studies. I have grown as a computer science student because of this project.
+This project is possibly the biggest intellectual endeavor I have made in my years at Oxford(though waiting to be surpassed by my 4th year project), and I find it to be an unmissable part of my education. Through this project, I was exposed to many spectacular areas of computer graphics that I did not know existed, and I was familiarized with the techniques essential to these studies. I have grown as a computer science student because of this project.

@@ -169,7 +169,7 @@ When formalizing the Euler and Navier-Stokes equations, the Lagrangian derivativ
 \end{equation}
 
 
-As a flashforward to chapter \ref{chapter grid} and \ref{chapter particle}, the grid-based methods mainly employ the Eulerian viewpoint, storing quantities on a fixed grid, and using an explicit computational step called \textit{advection} to move around the quantities. In contrast, the particle-based methods always use the Lagrangian viewpoint, with quantities being recorded solely on particles.
+As a flashforward to chapter \ref{chapter grid}, the grid-based methods mainly employ the Eulerian viewpoint, storing the field quantities on a fixed grid. However, the FLIP advection step temporarily employs the Lagrangian viewpoint, where the fluid quantities are carried around the space by a cloud of particles. These procedures will be explored in the next chapter.
 
 
 
@@ -264,7 +264,7 @@ The liquid simulated in this project is contained within a cubic box. Moreover,i
 \label{section multiple fluids}
 Finally, this section introduces an equation that governs the concentration changes in a mixture of more than one type of miscible fluids, for example, ink and water. In physics, the different types of fluids are sometimes referred to as \textit{phases}.
 
-Concentration of different fluid phases will be represented using \textit{volume fractions}. Specifically, for an infinitesimal fluid element at location $\textbf{x}$ with volume $\textbf{V}(\textbf{x})$, and let the portion of this volume occupied by the $i$th fluids phase be $\textbf{V}^i(\textbf{x})$, then the concentration of the $i$th phase at $\textbf{x}$ will be $\alpha^i(\textbf{x}) = \dfrac{\textbf{V}^i(\textbf{x})}{\textbf{V}(\textbf{x})}$.
+Concentration of different fluid phases will be represented using \textit{volume fractions}. Specifically, for an infinitesimal fluid element at location $\textbf{x}$ with volume $\textbf{V}(\textbf{x})$, and let the portion of this volume occupied by the $i$th fluids phase be $\textbf{V}^i(\textbf{x})$, then the concentration of the $i$th phase at $\textbf{x}$ will be $\alpha^i(\textbf{x}) = \dfrac{\textbf{V}^i(\textbf{x})}{\textbf{V}(\textbf{x})}$. Together, the $\alpha^i$ for all phases form a vector $\bm{\alpha}$, whose components are non-negative and sum up to $1$.
 
 The diffusion among multiple fluid phases is a result of the random Brownian motion of the fluid particles. However, it's possible to model this process from a macroscopic viewpoint, where an equation can be written that governs the expectation of how the concentrations change:
 \begin{equation}

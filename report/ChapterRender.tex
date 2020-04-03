@@ -1,10 +1,41 @@
 \chapter{Rendering}
 \label{chapter render}
-In computer graphics applications, the ultimate goal for fluid simulation is usually so that the fluid can be rendered and displayed to the human user. Thus, in addition to the FLIP and PBF algorithm, this project also implements a rendering pipeline, so that the simulation and rendering and be conducted together in real time. This chapter introduces the key rendering facilities that are implemented and the algorithms used.
+In computer graphics applications, the ultimate goal for fluid simulation is usually so that the fluid can be rendered and displayed to the human user. Thus, in addition to the FLIP simulation, this project also implements a rendering procedure, so that the simulation and rendering and be conducted together in real time. This chapter introduces the key rendering facilities that are implemented and the algorithms used.
+
+
+\section{The OpenGL Render Pipeline}
+\label{section opengl}
+
+This project uses the OpenGL API for rendering. OpenGL is a widely used standard to program the GPU for graphics purposes, and understanding its main pipeline is key to building a realistic and fast renderer. In OpenGL (and other APIs such as Direct3D and Vulkan), the only types of geometries that can be rendered are points, lines, and triangles. For this reason, in order to render complex 3D objects, a mesh of triangles is often used to represent the surface of the object. After being fed into OpenGL's pipeline, these triangles go through 4 main stages:
+\begin{enumerate}
+    \item 
+    \textit{The Vertex Shader}
+
+    The vertex shader is a piece of GPU program (usually written in GLSL), and it's executed for each vertex of every triangle to be rendered. Usually, the vertex shader computes essential geometric information (e.g position on screen, normal) of the vertices, which are passed on to the next stage.
+    
+    \item 
+    \textit{Rasterization}
+
+    In the rasterization stage, a piece of hardware in the GPU uses the screen positions of vertices to determine, for each triangle, which pixels does the triangle cover. Each pixel of each triangle is then passed on to the next stage for coloring.
+    
+    \item
+    \textit{The Pixel Shader}
+
+    Also referred to as the \textit{fragment shader}, the pixel shader is also a piece of GPU program. The pixel shader culminates the job of the entire graphics pipeline: it computes of the color of each pixel to be displayed.
+
+    \item 
+    \textit{Compositing}
+
+    In 3D scene, objects might hide behind each other, and some pixels might be covered by multiple objects at different depth. The compositor's job is to determine which shading of the pixel to should be used, and in some cases (e.g opaque objects), how the differently shaded colors should be mixed together to give the final output. This process is essential to the multiphase fluid rendering algorithm invented in this project, to be described in subsection \ref{subsection multiphase render}.
+    
+\end{enumerate}
+
+The full OpenGL pipeline includes a few extra stages, such as the geometry shader and the tesselation shader. However, these are optional stages and is not used in this project. 
+
 
 \section{Surface Reconstruction}
 \label{section surface reconstruction}
-To render liquids, the first step is to represent the surface of the liquid as a mesh of triangles, which can then be fed into the GPU rendering pipeline. Since this triangle mesh is not maintained by the simulation algorithms, it needs to be generated in each frame. Fortunately, both FLIP and PBF maintains a cloud of particles that occupy the entire fluid region, so if an algorithm can reconstruct a triangle mesh from particles, it can be used to render the results of both simulation algorithms.
+To render liquids, the first step is to represent the surface of the liquid as a mesh of triangles, which can then be fed into the GPU rendering pipeline. Since this triangle mesh is not maintained by the simulation algorithms, it needs to be generated in each frame. This project implements an algorithm that uses the cloud of FLIP particles, which occupy the entire fluid region, to generate these triangles.
 
 In the paper where they also described FLIP\cite{zhu2005animating}, Zhu and Bridson utilized a concept called \textit{Signed Distance Field} to perform surface reconstruction. The signed distance field $\phi : \mathbb{R} ^3 \rightarrow \mathbb{R}$  is a scalar field, with the property that, given a 3D cartesian coordinate $\textbf{x}$:
 \begin{itemize}
@@ -28,7 +59,7 @@ This is then generalized to $N$ particles, where $\textbf{x}_0$ is replaced by a
         \overline{\textbf{x}}&= \frac{\sum_{i=1}^{N} W(\textbf{x}-\textbf{x}_i,h)\textbf{x}_i}{\sum_{i=1}^{N} W(\textbf{x}-\textbf{x}_i,h)}
     \end{aligned}
 \end{equation}
-where it is assumed that all particles have the same radius $r$. The $W$ and $h$ are respectively a smoothing kernel and a smoothing radius, which behaves similarly as the ones used during the PBF simulation. The specific one proposed by Zhu and Bridson and used in this project is 
+where it is assumed that all particles have the same radius $r$. The $W$ is a bell-shaped kernel function, which weights the contribution of all particles within a radius of $h$. Particles beyond this distance are given a weight of $0$. This project chooses $h$ to be $2\triangle x$, and uses the $W$ proposed by Zhu and Bridson:
 $$
 W(\textbf{r},h) = max(0,(1-\frac{||\textbf{r}||^2}{h^2})^3) 
 $$
@@ -57,7 +88,7 @@ When the triangle mesh of the fluid surface is being rendered, the normal vector
         \centering
         \vspace{0pt}
         \includegraphics[width=7.4cm]{meshing_cropped/particles}
-        \subcaption{PBF Particles}
+        \subcaption{Particle Cloud}
     \end{minipage}
     \begin{minipage}[t]{.49\linewidth}
         \centering
@@ -183,7 +214,7 @@ A frequently used method for computing $\tau$ is \textit{ray marching}, where th
     While rendering the mesh, at each pixel, sample the concentration texture, and use the accumulated concentration to determine $\tau$. The correct coloring can then be computed.
     
 \end{enumerate}
-Example results of the intermediary render stages is shown in this figure:
+Example results of the intermediary render stages are shown in this figure:
 \newpage
 
 %\begin{changemargin}

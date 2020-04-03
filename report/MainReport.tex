@@ -4,7 +4,7 @@
 
 %load any additional packages
 
-
+\usepackage{bm}
 
 \usepackage{graphicx}
 \graphicspath{ {./images/} }
@@ -16,6 +16,8 @@
 \usepackage{physics}
 \usepackage{titlesec}
 \usepackage{lipsum}
+
+\usepackage[bottom]{footmisc}
 
 %\usepackage{newtxtext,newtxmath}
 
@@ -119,7 +121,7 @@
                 \vspace{0pt}
                 \centering
                 \includegraphics[width=14cm]{FrontSinglephase_cropped}
-                \subcaption{A PBF simulation}
+                \subcaption{A water simulation}
         \end{minipage}
         
         \hspace{5pt}
@@ -128,7 +130,7 @@
                 \vspace{0pt}
                 \centering
                 \includegraphics[width=14cm]{FrontMultiphase_cropped}
-                \subcaption{A multi-fluid FLIP simulation}        
+                \subcaption{A multi-fluid simulation}        
         \end{minipage}
                 
         \caption{Screenshots of the fluid simulated and rendered by the software created in this project. More images can be found at \url{https://github.com/AmesingFlank/Aquarius}}
@@ -144,10 +146,17 @@
 %now include the files of latex for each of the chapters etc
 \include{ChapterIntro}
 \include{ChapterPhysics}
-\include{ChapterGPU}
+
+
+%\include{ChapterGPU}
+
+
 \include{ChapterGrid}
 
-\include{ChapterParticle}
+%\include{ChapterParticle}
+
+\include{ChapterImplementFLIP}
+
 \include{ChapterRender}
 \include{ChapterConclusions}
 
