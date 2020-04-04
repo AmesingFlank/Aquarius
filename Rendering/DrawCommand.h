@@ -15,7 +15,8 @@ enum class RenderMode:int {
 	Phase1Mesh = 7,
 
 	Particles = 8,
-	MAX = 9
+	None = 9,
+	MAX = 10
 };
 
 enum class EnvironmentMode : int {

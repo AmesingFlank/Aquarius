@@ -132,46 +132,52 @@ int main( void ) {
 				fluid->simulationStep();
 			}
 
-			if (environmentMode == EnvironmentMode::Skybox) {
-				skybox.draw(drawCommand);
+			if (drawCommand.renderMode != RenderMode::None) {
+				if (environmentMode == EnvironmentMode::Skybox) {
+					skybox.draw(drawCommand);
+				}
+				container->drawFace(drawCommand);
+				fluid->draw(drawCommand);
 			}
-			container->drawFace(drawCommand);
-			fluid->draw(drawCommand);
 		}
 
+
+		if (renderMode != RenderMode::None) {
+			drawUI(uiContext, config, [&]()
+				{
+					if (config.initialVolumes.size() == 0) {
+						std::cout << "ERROR: No Initial Volumes" << std::endl;
+						return;
+					}
+
+					if (hasCreatedFluid) {
+						fluid.reset();
+					}
+					if (config.method == "FLIP") {
+						fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_FLIP::Fluid>(std::make_shared<Fluid_3D_FLIP::Fluid>());
+					}
+					else if (config.method == "PCISPH") {
+						fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_PCISPH::Fluid>(std::make_shared<Fluid_3D_PCISPH::Fluid>());
+					}
+					else if (config.method == "PBF") {
+						fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_PBF::Fluid>(std::make_shared<Fluid_3D_PBF::Fluid>());
+					}
+
+
+
+					fluid->init(config);
+					hasCreatedFluid = true;
+
+					camera = std::make_shared<Camera>(fluid->getCenter());
+					container = std::make_shared<Container>(fluid->getContainerSize());
+					inputHandler.camera = camera;
+					paused = true;
+				}
+			);
+		}
 		
 
-		drawUI(uiContext,config, [&]() 
-			{
-				if (config.initialVolumes.size() == 0) {
-					std::cout << "ERROR: No Initial Volumes" << std::endl;
-					return;
-				}
-
-				if (hasCreatedFluid) {
-					fluid.reset();
-				}
-				if (config.method == "FLIP") {
-					fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_FLIP::Fluid>(std::make_shared<Fluid_3D_FLIP::Fluid>());
-				}
-				else if (config.method == "PCISPH") {
-					fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_PCISPH::Fluid>(std::make_shared<Fluid_3D_PCISPH::Fluid>());
-				}
-				else if (config.method == "PBF") {
-					fluid = std::static_pointer_cast<Fluid_3D, Fluid_3D_PBF::Fluid>(std::make_shared<Fluid_3D_PBF::Fluid>());
-				}
-				
-				
-
-				fluid->init(config);
-				hasCreatedFluid = true;
-
-				camera = std::make_shared<Camera>(fluid->getCenter());
-				container = std::make_shared<Container>(fluid->getContainerSize());
-				inputHandler.camera = camera;
-				paused = true;
-			}
-		);
+		
 
         ++framesSinceLast;
 
