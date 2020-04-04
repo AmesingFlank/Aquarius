@@ -3,10 +3,10 @@
 In computer graphics applications, the ultimate goal for fluid simulation is usually so that the fluid can be rendered and displayed to the human user. Thus, in addition to the FLIP simulation, this project also implements a rendering procedure, so that the simulation and rendering and be conducted together in real time. This chapter introduces the key rendering facilities that are implemented and the algorithms used.
 
 
-\section{The OpenGL Render Pipeline}
+\section{The OpenGL Drawing Pipeline}
 \label{section opengl}
 
-This project uses the OpenGL API for rendering. OpenGL is a widely used standard to program the GPU for graphics purposes, and understanding its main pipeline is key to building a realistic and fast renderer. In OpenGL (and other APIs such as Direct3D and Vulkan), the only types of geometries that can be rendered are points, lines, and triangles. For this reason, in order to render complex 3D objects, a mesh of triangles is often used to represent the surface of the object. After being fed into OpenGL's pipeline, these triangles go through 4 main stages:
+This project uses the OpenGL API for rendering. OpenGL is a widely used standard to program the GPU for graphics purposes, and just like any other graphics API (e.g Direct3D, Vulkan), the only types of geometric primitives that can be drawn are points, lines, and triangles. For this reason, in order to render complex 3D objects, a mesh of triangles is often used to represent the surface of the object. After being fed into OpenGL's pipeline, these triangles go through 4 main stages:
 \begin{enumerate}
     \item 
     \textit{The Vertex Shader}
@@ -66,7 +66,7 @@ $$
 Using formula \ref{eqn SDF}, a discretized signed distance field can be computed and stored on a 3D grid. Notice that since the summation in $\overline{\textbf{x}}$ again sums over neighbor particles, the spatial indexing technique described in section \ref{subsection spatial indexing} will again be needed when implementing the formula. The 3D grid of discrete $\phi$ values is often called a \textit{level set} in literature\cite{bridson2015fluid}.
 
 
-Having computed the discrete signed distance field $\phi$, it remains to extract its zero isosurface as a triangle mesh. This is done using a famous algorithm called \textit{Marching Cubes}, invented by Wyvill\cite{wyvill1986soft} and Lorensen\cite{lorensen1987marching}. The algorithm considers each cubic grid cell in the level set grid, and puts a triangle vertex at each edge of the cube if one end of the edge is outside the fluid($\phi>0$) and the other end is inside the fluid ($\phi\leq 0$). Since for each cube has 8 vertices, and each vertex can be either inside or outside the fluid, there're a total of $2^8=256$ different cases for each cube. A selection of them is shown in this figure:
+Having computed the discrete signed distance field $\phi$, it remains to extract its zero isosurface as a triangle mesh. This is done using a famous algorithm called \textit{Marching Cubes}, invented by Wyvill\cite{wyvill1986soft} and Lorensen\cite{lorensen1987marching}. The algorithm considers each cubic grid cell in the level set grid, and puts a triangle vertex at each edge of the cube if one end of the edge is outside the fluid($\phi>0$) and the other end is inside the fluid ($\phi\leq 0$). Since for each cube has 8 vertices, and each vertex can be either inside or outside the fluid, there're a total of $2^8=256$ different cases for each cube. A selection of them is shown in the following figure:
 
 \begin{figure}[H]
     \centering
@@ -88,7 +88,7 @@ When the triangle mesh of the fluid surface is being rendered, the normal vector
         \centering
         \vspace{0pt}
         \includegraphics[width=7.4cm]{meshing_cropped/particles}
-        \subcaption{Particle Cloud}
+        \subcaption{Particle cloud}
     \end{minipage}
     \begin{minipage}[t]{.49\linewidth}
         \centering
@@ -158,7 +158,7 @@ Let $\textbf{v}_i$ be the direction of the incident ray, and let $\textbf{v}_{re
     \textbf{v}_{refl} = 2\textbf{N}(-\textbf{v}_i \cdot N) + \textbf{v}_i
 \end{equation}
 
-The direction of the refracted ray, $\textbf{v}_{refr}$, is slightly more complicated to compute. The angle $\theta_2$ between $\textbf{v}_{refr}$ and the inverse of $\textbf{N}$ is governed by the Snell's law:
+The direction of the refracted ray, $\textbf{v}_{refr}$, is slightly more complicated to compute. The angle $\theta_2$ between $\textbf{v}_{refr}$ and the $-\textbf{N}$ is governed by the Snell's law:
 $$
 \frac{\sin\theta_1}{\sin\theta_2}=\frac{n_2}{n_1}
 $$
@@ -172,7 +172,7 @@ where $n_1$ is the \textit{Index of Refraction} of air, and $n_2$ that of the li
         k &= \sqrt{1+(m-n)(m+n)} 
     \end{aligned}
 \end{equation}
-Besides the direction of the reflected and refracted ray, it's also necessary to know the ratio of the incident energy that is reflected. Let this ratio be $F$, then, due to conservation of energy, the ratio of the refracted light must be $1-F$. The exact value of $F$ is determined by the Fresnel equation, which is also dependent on the polarization and spectral distribution of the light. Due to the complexity of these equations, real time computer graphics applications often use an approximation given by Schlick\cite{schlick1994inexpensive}:
+Besides the direction of the reflection and refraction, it's also necessary to know the ratio of the incident energy that is reflected and refracted. Let the reflection ratio be $F$, then, conservation of energy dictates that the ratio of refracted energy must be $1-F$. The exact value of $F$ is determined by the Fresnel equation, which is also dependent on the polarization and spectral distribution of the light. Due to the complexity of these equations, real time computer graphics applications often use an approximation given by Schlick\cite{schlick1994inexpensive}:
 \begin{equation}
     \label{eqn Schlick}
     \begin{aligned}
@@ -215,10 +215,16 @@ A frequently used method for computing $\tau$ is \textit{ray marching}, where th
     
 \end{enumerate}
 Example results of the intermediary render stages are shown in this figure:
-\newpage
 
+
+
+
+
+\newpage
+\thispagestyle{empty}
 %\begin{changemargin}
     
+
 \addtolength{\topmargin}{-.875in}
 
 \begin{figure}[H]

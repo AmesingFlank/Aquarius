@@ -169,11 +169,6 @@ When formalizing the Euler and Navier-Stokes equations, the Lagrangian derivativ
 \end{equation}
 
 
-As a flashforward to chapter \ref{chapter grid}, the grid-based methods mainly employ the Eulerian viewpoint, storing the field quantities on a fixed grid. However, the FLIP advection step temporarily employs the Lagrangian viewpoint, where the fluid quantities are carried around the space by a cloud of particles. These procedures will be explored in the next chapter.
-
-
-
-
 
 
 
@@ -224,7 +219,7 @@ With $\textbf{g}$ representing the acceleration caused by an external force fiel
 $$
 \dfrac{D\u}{Dt} = \frac{F_{in}}{m} + \textbf{g}
 $$
-The internal forces within a fluid is caused by an imbalance in pressure. Specifically, if one side of a infinitesimal particle has a greater pressure than the opposite side, then the particle will be pushed towards the low pressure region. This justifies why the pressure forces are in the direction of $-\nabla p$, which computes the direction of fastest decrease of pressure. From a dimensional analysis point of view, the unit of $p$ is $\dfrac{force}{length^2}$, thus the unit of $\nabla p$ is $\dfrac{force}{length^3}$. This indicates that to obtain the pressure force, it's necessary to multiply by the volume $V$ of the infinitesimal particle, which produces
+The internal forces within a fluid is caused by an imbalance in pressure. Specifically, if one side of a infinitesimal particle has a greater pressure than the opposite side, then the particle will be pushed towards the low pressure region. This justifies why the pressure forces are in the direction of $-\nabla p$, which computes the direction of fastest decrease of pressure. It can be shown that this actual pressure force exerted on the particle is the negative pressure gradient $-\nabla p$ multiplied by its volume $V$, which gives
 $$
 \dfrac{D\u}{Dt} = -\frac{V \nabla p}{m} + \textbf{g}
 $$
@@ -232,19 +227,19 @@ Using $\rho = \dfrac{m}{V}$, this becomes:
 $$
 \dfrac{D\u}{Dt} =  -\frac{\nabla p}{\rho} + \textbf{g}
 $$
-Which is Euler's momentum equation. It is important to note that the justifications of the fluid equations given in this section is far from a rigorous mathematical derivation, which would not fit into this report due to its complexity. 
+Which is Euler's momentum equation. It is important to note that the justifications given in this section merely offers intuitions, and is far from a rigorous mathematical derivation, which would not fit into this report due to its complexity. 
 
 
 The Navier-Stokes momentum equation extends the Euler momentum equation by considering viscosity. In a viscous fluid, the velocity of a particle tends to diffuse into its surrounding particles, causing the velocity in the neighborhood to converge into its average. The difference between the average of $\u$ in the neighborhood and the value of $\u$ of the particle is captured by the Laplacian of the velocity: $\nabla \cdot \nabla \u$, thus adding a positive multiple of this quantity creates a viscous effect:
 $$
 \frac{D\u}{Dt}   =   -\frac{\nabla p}{\rho} + \textbf{g} + \nu \nabla \cdot \nabla \u 
 $$
-where $\nu$ is a constant property, known as the kinematic viscosity of the fluid. For water, which is a rather inviscid fluid, this quantity is almost negligible. When simulating water, considering the effects of viscosity requires considerable extra computation, while bringing little improvements to the visual fidelity. As a result, this project chooses to only solve the Euler equations during simulation. 
+where $\nu$ is a constant property, known as the kinematic viscosity of the fluid. For water, which is a rather inviscid fluid, this quantity is negligible, at least for rendering purposes. When simulating water, considering the effects of viscosity requires considerable extra computation, while bringing little improvements to the visual fidelity. As a result, this project chooses to only solve the Euler equations during simulation. 
 
 
 \section{Boundary Conditions}
 \label{section boundary conditions}
-For a fluid region that is not the entirety of $\mathbb{R}^3$, boundary conditions must be specified, which defines the behavior of the fluid in the physical boundary of the fluid region.
+For a fluid region that is not the entirety of $\mathbb{R}^3$, boundary conditions must be specified, which define the behavior of the fluid in the physical boundaries of the fluid region.
 
 When simulating liquids, there are two types of boundary conditions: the solid boundaries and the free surface boundaries. At a solid boundary, the condition is 
 $$
@@ -271,5 +266,4 @@ The diffusion among multiple fluid phases is a result of the random Brownian mot
     \tag{Advection-Diffusion Equation}
     \frac{D \alpha^i}{D t} = C\nabla \cdot \nabla \alpha^i
 \end{equation}
-where $C$ is the diffusion coefficient. Informally, if the concentration of a fluid region has a different concentration than its surroundings, this difference will tend to "diffuse" into the neighborhood, so that the concentrations tends to become more similar. This explains why the rate of change of the concentration is proportional to the Laplacian of the concentration.
-
+where $C$ is the diffusion coefficient. Informally, if the concentration of a fluid region has a different concentration than its surroundings, this difference tends to "diffuse" into the neighborhood, and thus be reduced. This explains why the rate of change of the concentration is proportional to its Laplacian.
