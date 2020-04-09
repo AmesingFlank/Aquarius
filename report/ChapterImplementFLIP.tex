@@ -36,7 +36,7 @@ The rest of the algorithm, line 7, 12 and 14, requires much more attention. Line
 With $\triangle x$ being the edge length of each cubic grid cell, finding all particles within a radius $\triangle x$ of each cell can be reduced to finding the particles that are \textit{inside} each cell. Then, for a certain cell, it suffices to check all the 27 cells in the neighborhood, because all particles within a radius $\triangle x$ must be contained inside these 27 cells. 
 
 
-To create an index from each cell to the particles inside the cell, this project uses the parallel algorithm proposed by Green \cite{harlow1965numerical}. The algorithm proceeds in the following steps:
+To create an index from each cell to the particles inside the cell, this project uses the parallel algorithm proposed by Green \cite{green2008cuda}. The algorithm proceeds in the following steps:
 
 \begin{figure}[p]
     \begin{minipage}[t]{.65\linewidth}
