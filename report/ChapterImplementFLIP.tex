@@ -8,9 +8,9 @@ In order to achieve real time simulation, algorithm \ref{algo multiphase flip} n
 
 \section{The CUDA Programming Model}
 
-Originally built for graphics applications, GPUs are designed to handle a massive amount of geometries and pixels in parallel, because in graphics applications the computation for different geometries and pixels are largely independent. The ability to do massively parallel computation motivated GPGPU (General Purpose GPU) programming models to arise, which became significantly useful for scientific computing purposes. The software in this project is written using the CUDA programming model, developed by the NVIDIA Corporation.
+Originally built for graphics applications, GPUs are designed to handle a massive amount of geometries and pixels in parallel, because in graphics applications the computations for different geometries and pixels are largely independent. The ability to do massively parallel computation motivated GPGPU (General Purpose GPU) programming models to arise, which became significantly useful for scientific computing purposes. The software in this project is written using the CUDA programming model, developed by the NVIDIA Corporation.
 
-CUDA employs the executing model known as SIMT (Single Instruction Multiple Thread). In this model, a large amount of GPU threads can be spawned simultaneously, each running the same sequence of code on different sets of data. GPU threads are organized in groups of 32, known as \textit{warps}, and the instructions running on threads of the same warp must be synchronized. However, different warps does not need to remain in sync. When the threads within a warp access the memory, the entire warp can be swapped out, so that a different warp can start executing before the memory access finishes. Using this mechanism, the GPU hides memory access latencies by allowing very fast context switching. As a result, each physical core in the GPU (known as a CUDA core) can simultaneously handle multiple logical threads.
+CUDA employs the execution model known as SIMT (Single Instruction Multiple Threads). In this model, a large amount of GPU threads can be spawned simultaneously, each running the same sequence of code on different sets of data. GPU threads in CUDA are organized in groups of 32, known as \textit{warps}, and the instructions running on threads of the same warp must be synchronized. However, different warps do not need to remain in sync. When the threads within a warp access the memory, the entire warp can be paused and swapped out, so that a different warp can start executing before the memory access finishes. Using this mechanism, the GPU hides memory access latencies by allowing very fast context switching. As a result, each physical core in the GPU (known as a CUDA core) can simultaneously handle multiple logical threads.
 
 As an example, the GPU used for development of this project is an NVIDIA GTX1060 Mobile, which contains 10 \textit{Streaming Multiprocessors}, each of which consists of 128 CUDA cores. Each streaming multiprocessors can have up to 2048 resident threads, giving a total of 20480 threads that can be simultaneously handled. Even though each GPU thread is not as fast as a CPU thread, the aggregated performance of the CUDA cores can still be many times faster than the CPU.
 
@@ -21,19 +21,20 @@ As an example, the GPU used for development of this project is an NVIDIA GTX1060
     \caption{Architecture of a GTX 1060 (GP106), showing its 10 streaming multiprocessors, each containing 128 CUDA cores. Image courtesy to NVIDIA Corporation.}
     \label{figure GTX1060}
 \end{figure}
+%https://images.nvidia.com/content/pdf/tesla/whitepaper/pascal-architecture-whitepaper.pdf
 
 
 
 \section{Parallelization}
 The pseudocode representation of algorithm \ref{algo multiphase flip} takes a sequential form, so in order to create an efficient CUDA implementation, the challenge remains to parallelize the algorithm.
 
-For certain parts of the algorithm, parallelization is straightforward. Examples include line 2-4 and line 8-9 within the qseudocode. These are all operations performed within a loop body, with the convenient property that, in different loop iterations, the data being operated on are completely different, and does not depend on previous iterations. This means it is safe to use parallel threads instead of actual loops to perform these operations. Similarly, the velocity field updates in line 11 and 13 are also easy to parallelize, with each thread operating on one grid cell of the discretized velocity field. 
+For certain parts of the algorithm, parallelization is straightforward. Examples include line 2-4 and line 8-9 within the pseudocode. These are all operations performed within a loop body, with the convenient property that, in different loop iterations, the data being operated on are completely different, and do not depend on previous iterations. This means it is safe to use parallel threads instead of actual loops to perform these operations. Similarly, the velocity field updates in line 11 and 13 are also easy to parallelize, with each thread operating on one grid cell of the discretized velocity field. 
 
-The rest of the algorithm, line 7, 12 and 14, requires much more attention. Line 7 performs a task called \textit{spatial indexing}: associating each grid cell with all the particles that are within radius $\triangle x$ at each time step. A naive implementation would require a linear search on all particles, and this has to be performed for all grid cells, which is intolerable because the simulation could involve up to around 1,000,000 particles and 100,000 grid cells. In line 12 and 14, a linear equation needs to be solved, where there's an unknown for each fluid cell. As a result, the total amount of unknowns is in the order of 100,000. A naive linear solver have a $O(N^3)$ complexity, which is also too costly. Each of these operations, indexing 1,000,000 million particles and solving linear equations with 100,000 unknowns, needs to be performed at least around 20 times per second, if the simulation is to be performed in real time. This section will focus on how this is made possible in this project.
+The rest of the algorithm, lines 7, 12 and 14, requires much more attention. Line 7 performs a task called \textit{spatial indexing}: associating each grid cell with all the particles that are within radius $\triangle x$ at each time step. A naive implementation would require a linear search on all particles, and this has to be performed for all grid cells, which is intolerable because the simulation could involve up to around 1,000,000 particles and 100,000 grid cells. In line 12 and 14, a linear equation needs to be solved, where there's an unknown for each fluid cell. As a result, the total amount of unknowns is in the order of 100,000. A naive linear solver would have a $O(N^3)$ complexity, which is also too costly. Each of these operations, indexing 1,000,000 million particles and solving linear equations with 100,000 unknowns, needs to be performed at least around 20 times per second, if the simulation is to be performed in real time. This section will focus on how this is made possible in this project.
 
 \subsection{Spatial Indexing}
 \label{subsection spatial indexing}
-With $\triangle x$ being the edge length of each cubic grid cell, finding all particles within a radius $\triangle x$ of each cell can be reduced to finding the particles that are \textit{inside} each cell. Then, for a certain cell, it suffices to check all the 27 cells in the neighborhood, because all particles within a radius $\triangle x$ must be contained inside these 27 cells. 
+With $\triangle x$ being the edge length of each cubic grid cell, finding all particles within a radius $\triangle x$ of each cell can be reduced to finding the particles that are \textit{inside} each cell. Then, for a certain cell, it suffices to check all the 27 cells in the neighbourhood, because all particles within a radius $\triangle x$ must be contained inside these 27 cells. 
 
 
 To create an index from each cell to the particles inside the cell, this project uses the parallel algorithm proposed by Green \cite{green2008cuda}. The algorithm proceeds in the following steps:
@@ -259,7 +260,7 @@ To create an index from each cell to the particles inside the cell, this project
 \begin{enumerate}
     \item Decide on a hash function for 3D grid coordinates. For example, in an $N*N*N$ grid, the hash of the coordinate $(x,y,z)$ can be $xN^2+yN+z$, which fully avoids hash collision.
     
-    \item Create an array of hashes for particles. For each particle, use its physical position to compute the cell that it is in, and compute the hash of that cell as the hash of the particle. Store the hashes of all particles in this array. Since these steps is independent for each particle, it can be efficiently parallelized.
+    \item Create an array of hashes for particles. For each particle, use its physical position to compute the cell that it is in, and compute the hash of that cell as the hash of the particle. Store the hashes of all particles in this array. Since this steps is independent for each particle, it can be efficiently parallelized.
     
     \item Sort this array of particle hashes, and sort the array of particles into the same order. 
     
@@ -296,7 +297,7 @@ which motives an iterative scheme: begin with an initial guess $\textbf{x}_0$, a
     \textbf{x}_{i+1} = D^{-1}(\textbf{b} - C\textbf{x}_{i})
     \label{eqn jacobi}
 \end{equation}
-For a certain amount of iterations. The computation of this formula between different unknowns are completely independent. Therefore, by designating a CUDA thread for each unknown $x$ (and thus, for each cell), the Jacobi iteration step is completely parallelized.
+For a certain amount of iterations. The computations of this formula for different unknowns (different components of $\textbf{x}_{i+1}$) are completely independent. Therefore, by designating a CUDA thread for each unknown (and thus, for each cell), the Jacobi iteration step is completely parallelized.
 
 Additionally, by observing the pressure equation \ref{eqn poisson pressure} and the diffusion equation \ref{eqn diffusion}, a further simplification can be made, because the matrix $C$ corresponding to these equations has some convenient properties. For the unknown $x$ corresponding to each cell, the row of $C$ corresponding to that cell only has non-zero entries for immediately adjacent cells. Consequently, for each cell, the computation of formula \ref{eqn jacobi} only requires sampling the $x$ at adjacent cells. This leads to a very efficient parallel implementation of the Jacobi iteration:
 
@@ -348,7 +349,7 @@ Using the parallel spatial indexing algorithm and the Jacobi linear solver, the 
     }
     Using Jacobi, solve the Poisson pressure equation to obtain pressure $p$\;
     \ForEach{grid cell at location $(x,y,z)$\textbf{in parallel}}{
-        Compute The new velocity field at the cell: $\u_{[n+1]} = \u_{[n+1]}^{compressible} - \triangle t \dfrac{\nabla p}{\rho}$\;
+        Compute the new velocity field at the cell: $\u_{[n+1]} = \u_{[n+1]}^{compressible} - \triangle t \dfrac{\nabla p}{\rho}$\;
     }
     Using Jacobi, solve the diffusion equation to obtain $\bm{\alpha}_{[n+1]}$.
 
@@ -374,6 +375,6 @@ This memory access pattern as described exhibits \textit{spatial locality}. Howe
     \label{}
 \end{figure}
 
-Using a space filling curve, the texture memory convert the desired 2D/3D spatial locality into 1D locality, which allows the memory access to be more cache friendly. With all the grids stored in textures, the performance of the implementation saw an improvement of 10\% to 20\%.
+Using a space filling curve, the texture memory convert the desired 2D/3D spatial locality into 1D locality, which allows the memory access to be more cache friendly. 
 
 

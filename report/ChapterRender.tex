@@ -16,17 +16,17 @@ This project uses the OpenGL API for rendering. OpenGL is a widely used standard
     \item 
     \textit{Rasterization}
 
-    In the rasterization stage, a piece of hardware in the GPU uses the screen positions of vertices to determine, for each triangle, which pixels does the triangle cover. Each pixel of each triangle is then passed on to the next stage for coloring.
+    In the rasterization stage, a piece of hardware in the GPU uses the screen positions of vertices to determine, for each triangle, which pixels are within the triangle. Each pixel of each triangle is then passed on to the next stage for colouring.
     
     \item
     \textit{The Pixel Shader}
 
-    Also referred to as the \textit{fragment shader}, the pixel shader is also a piece of GPU program. The pixel shader culminates the job of the entire graphics pipeline: it computes of the color of each pixel to be displayed.
+    Also referred to as the \textit{fragment shader}, the pixel shader is also a piece of GPU program. The pixel shader culminates the job of the entire graphics pipeline: it computes of the colour of each pixel to be displayed.
 
     \item 
     \textit{Compositing}
 
-    In 3D scene, objects might hide behind each other, and some pixels might be covered by multiple objects at different depth. The compositor's job is to determine which shading of the pixel to should be used, and in some cases (e.g opaque objects), how the differently shaded colors should be mixed together to give the final output. This process is essential to the multiphase fluid rendering algorithm invented in this project, to be described in subsection \ref{subsection multiphase render}.
+    In 3D scene, objects might hide behind each other, and some pixels might be covered by multiple objects at different depth. The compositor's job is to determine which shading of the pixel to should be used, and in some cases (e.g. when rendering translucent objects), how the differently shaded colours should be mixed together to give the final output. This process is essential to the multiphase fluid rendering algorithm invented in this project, to be described in subsection \ref{subsection multiphase render}.
     
 \end{enumerate}
 
@@ -51,7 +51,7 @@ Zhu and Bridson's method\cite{zhu2005animating} begins by considering the specia
 $$
 \phi(\textbf{x}) = ||\textbf{x}-\textbf{x}_0|| - r_0
 $$
-This is then generalized to $N$ particles, where $\textbf{x}_0$ is replaced by a weighed average of the center positions of nearby particles:
+This is then generalized to $N$ particles, where $\textbf{x}_0$ is replaced by a weighted average of the center positions of nearby particles:
 \begin{equation}
     \label{eqn SDF}
     \begin{aligned}
@@ -71,7 +71,7 @@ Having computed the discrete signed distance field $\phi$, it remains to extract
 \begin{figure}[H]
     \centering
     \includegraphics[width=12cm]{MarchingCubesPng}
-    \caption{15 of the 256 cases for each cube. The colored vertices are the ones inside the fluid. The orange triangles are the results generated for each cube. Image courtesy of the Wikipedia page on Marching Cubes. }
+    \caption{15 of the 256 cases for each cube. The coloured vertices are the ones inside the fluid. The orange triangles are the results generated for each cube. Image courtesy of the Wikipedia page on Marching Cubes. }
     \label{figure marching cubes}
 \end{figure}
 
@@ -94,7 +94,7 @@ When the triangle mesh of the fluid surface is being rendered, the normal vector
         \centering
         \vspace{0pt}
         \includegraphics[width=7.4cm]{meshing_cropped/normal}
-        \subcaption{Constructed mesh and its normal.\\Direction represented by colors: 
+        \subcaption{Constructed mesh and its normal.\\Direction represented by colours: 
         \\ Red:$+x$ ~~ Green:$+y$ ~~ Blue:$+z$}
     \end{minipage}
     
@@ -107,7 +107,7 @@ When the triangle mesh of the fluid surface is being rendered, the normal vector
 
 \section{Surface Shading}
 
-After the triangle mesh representing the liquid surface is constructed, it is put through the OpenGL pipeline for shading. The most important task falls upon the fragment shader, where the color of each pixel on the mesh is computed. In order to generate realistic coloring, it is necessary to model how rays of light interact with the liquid.
+After the triangle mesh representing the liquid surface is constructed, it is put through the OpenGL pipeline for shading. The most important task falls upon the fragment shader, where the colour of each pixel on the mesh is computed. In order to generate realistic colouring, it is necessary to model how rays of light interact with the liquid.
 
 \subsection{Reflection And Refraction}
 As a ray of light hits the boundary between air and liquid, part of its energy is bounced away from the surface, while the rest of enters the liquid and continues to travel inside. The two resulting rays are respectively called the \textit{reflection} and the \textit{refraction}. 
@@ -132,11 +132,11 @@ As a ray of light hits the boundary between air and liquid, part of its energy i
 
         \pic [draw, "\large{$\theta_1$}", angle eccentricity=2.0,line width=0.25mm] {angle = NEnd--intersect--inciStart};
 
-        \draw[->,-latex,line width=0.5mm] (intersect) -- (2.2,2.2) node[above](reflEnd) {\large{$\textbf{v}_{refl}$}};
+        \draw[->,-latex,line width=0.5mm] (intersect) -- (2.2,2.2) node[above](reflEnd) {\large{$\textbf{v}_{\mbox{\small{refl}}}$}};
 
         \pic [draw, "\large{$\theta_1$}", angle eccentricity=2.0,line width=0.25mm] {angle = reflEnd--intersect--NEnd};
 
-        \draw[->,-latex,line width=0.5mm] (intersect) -- (1.3,-2.4) node[below](refrEnd) {\large{$\textbf{v}_{refr}$}};
+        \draw[->,-latex,line width=0.5mm] (intersect) -- (1.3,-2.4) node[below](refrEnd) {\large{$\textbf{v}_{\mbox{\small{refr}}}$}};
 
         \pic [draw, "\large{$\theta_{2}$}", angle eccentricity=2.5,line width=0.25mm] {angle = NEndInv--intersect--refrEnd};
 
@@ -152,23 +152,23 @@ As a ray of light hits the boundary between air and liquid, part of its energy i
     \label{figure reflection refraction}
 \end{figure}
 
-Let $\textbf{v}_i$ be the direction of the incident ray, and let $\textbf{v}_{refl}$ be the direction of the reflected ray. The angle $\theta_i$ between $\textbf{v}_i$ and the surface normal $\textbf{N}$ will always be same as the angle between $\textbf{N}$ and $\textbf{v}_{refl}$. Knowing $\textbf{v}_i$ and $\textbf{N}$, $\textbf{v}_{refl}$ can be computed as:
+Let $\textbf{v}_i$ be the direction of the incident ray, and let $\textbf{v}_{\mbox{\small{refl}}}$ be the direction of the reflected ray. The angle $\theta_i$ between $\textbf{v}_i$ and the surface normal $\textbf{N}$ will always be same as the angle between $\textbf{N}$ and $\textbf{v}_{\mbox{\small{refl}}}$. Knowing $\textbf{v}_i$ and $\textbf{N}$, $\textbf{v}_{\mbox{\small{refl}}}$ can be computed as:
 \begin{equation}
     \label{eqn direction of reflection}
-    \textbf{v}_{refl} = 2\textbf{N}(-\textbf{v}_i \cdot N) + \textbf{v}_i
+    \textbf{v}_{\mbox{\small{refl}}} = 2\textbf{N}(-\textbf{v}_i \cdot \textbf{N}) + \textbf{v}_i
 \end{equation}
 
-The direction of the refracted ray, $\textbf{v}_{refr}$, is slightly more complicated to compute. The angle $\theta_2$ between $\textbf{v}_{refr}$ and the $-\textbf{N}$ is governed by the Snell's law:
+The direction of the refracted ray, $\textbf{v}_{\mbox{\small{refr}}}$, is slightly more complicated to compute. The angle $\theta_2$ between $\textbf{v}_{\mbox{\small{refr}}}$ and the $-\textbf{N}$ is governed by the Snell's law:
 $$
 \frac{\sin\theta_1}{\sin\theta_2}=\frac{n_2}{n_1}
 $$
-where $n_1$ is the \textit{Index of Refraction} of air, and $n_2$ that of the liquid. Usually, $n_1$ is roughly equal to $1$, and the $n_2$ for water is around $1.333$. Based on Snell's law, Bec\cite{bec1997faster} derived a fast formula for computing $\textbf{v}_{refr}$:
+where $n_1$ is the \textit{Index of Refraction} of air, and $n_2$ that of the liquid. Usually, $n_1$ is roughly equal to $1$, and the $n_2$ for water is around $1.333$. Based on Snell's law, Bec\cite{bec1997faster} derived a fast formula for computing $\textbf{v}_{\mbox{\small{refr}}}$:
 \begin{equation}
     \label{eqn direction of refraction}
     \begin{aligned}
-        \textbf{v}_{refr} &= (w-k)\textbf{N} + n\textbf{v}_{i}\mbox{~~~~ where}\\
+        \textbf{v}_{\mbox{\small{refr}}} &= (w-k)\textbf{N} + n\textbf{v}_{i}\mbox{~~~~ where}\\
         n &= \frac{n_1}{n_2}\\
-        w &= n(-\textbf{v}_i \cdot N) \\
+        w &= n(-\textbf{v}_i \cdot \textbf{N}) \\
         k &= \sqrt{1+(m-n)(m+n)} 
     \end{aligned}
 \end{equation}
@@ -182,11 +182,11 @@ Besides the direction of the reflection and refraction, it's also necessary to k
 \end{equation}
 
 
-In the OpenGL fragment shader, the final out put color will be $F$ multiplied by the color of the reflection, and $1-F$ multiplied by the color of the refraction. The reflected color is straightforward to compute, by tracing the ray in the direction of $\textbf{v}_{refl}$. However, for the refracted ray, because its path lies within the liquid, it's necessary to consider the behavior of the light ray within a colored medium. To make things more complicated, since this project supports simulating multiple phases of fluids, different fluids of different color could be mixed together in the same region. This is explored in the next subsection.
+In the OpenGL fragment shader, the final output colour will be $F$ multiplied by the colour of the reflection, and $1-F$ multiplied by the colour of the refraction. The reflected colour is straightforward to compute, by tracing the ray in the direction of $\textbf{v}_{\mbox{\small{refl}}}$. However, for the refracted ray, because its path lies within the liquid, it's necessary to consider the behavior of the light ray within a coloured medium. To make things more complicated, since this project supports simulating multiple phases of fluids, different fluids of different colour could be mixed together in the same region. This is explored in the next subsection.
 
 \subsection{Multiple Fluids Rendering}
 \label{subsection multiphase render}
-As a ray of light travels past a region of colored liquid, the energy of the light ray diminishes as a result of scattering and absorption by the liquid particles. This process is quantified by the \textit{Beer-Lambert Law}, which defines the ratio $T_r$ of the light that remains after it travels through the fluid region:
+As a ray of light travels past a region of coloured liquid, the energy of the light ray diminishes as a result of scattering and absorption by the liquid particles. This process is quantified by the \textit{Beer-Lambert Law}, which defines the ratio $T_r$ of the light that remains after it travels through the fluid region:
 \begin{equation*}
     \begin{aligned}
         T_r &= e^{-\tau} \mbox{~~~where}\\
@@ -197,24 +197,24 @@ In this formula, $\textbf{o}$ is the point where the ray enters the liquid, $\te
 
 For a fluid consisting of only one type of fluid, the parameter $\sigma_t$ stays constant, so $\tau$ can be computed simply as $d\sigma_t$. However, in a region where multiple fluids are mixed together, the integral must be explicitly evaluated, usually numerically.
 
-Moreover, the extinction parameter $\sigma_t$ is highly dependent on the wavelength of the light, which is exactly the cause for different fluids to have different color. For example, a red liquid has the lowest $\sigma_t$ for the wavelength of red, thereby allowing more red light to pass through. As a result, the numerical integration of $\tau$ needs to be performed for each of the RGB channels.
+Moreover, the extinction parameter $\sigma_t$ is highly dependent on the wavelength of the light, which is exactly the cause for different fluids to have different colour. For example, a red liquid has the lowest $\sigma_t$ for the wavelength of red, thereby allowing more red light to pass through. As a result, the numerical integration of $\tau$ needs to be performed for each of the RGB channels.
 
 A frequently used method for computing $\tau$ is \textit{ray marching}, where the ray in question is progressed a small step at a time, accumulating the extinction along the way. Alternatively, this project invented a novel algorithm for accumulating $\sigma_t$, which is more efficient and directly makes use of the FLIP particles, which carry the concentration information:
 \begin{enumerate}
     \item 
-    Create a texture image, where each color channel in the texture will correspond to the thickness of a specific fluid phase. Note that this limits the maximum number of different fluids to 4.
+    Create a texture image, where each colour channel (red, green, blue, alpha) in the texture will correspond to the thickness of a specific fluid phase. Note that this limits the maximum number of different fluids to 4.
 
     \item 
-    Configure OpenGL's compositing step (see section \ref{section opengl}) to perform simple addition for overlapping pixels. This means that, if a pixel is covered by more than one particles, the results from rendering those particles will be added together to form the final result. On the GPU, compositing is not computed by ALUs, but hardware accelerated by a dedicated unit called the ROP(Render Output Unit).
+    Configure OpenGL's compositing step (see section \ref{section opengl}) to perform simple addition for overlapping pixels. This means that, if a pixel is covered by more than one particles, the results from rendering those particles will be added together to form the final result. On the GPU, compositing is not computed by ALUs, but hardware accelerated by a dedicated unit called the ROP (Render Output Unit).
 
     \item 
     Render the FLIP particles and direct the output to the texture created in step 1. For each fluid particle $p$, and for each fluid phase $f$, render the concentration of $f$ that $p$ carries into the channel designated for $f$. The configuration from step 2 will ensure that the concentrations for all particles are accumulated.
 
     \item 
-    While rendering the mesh, at each pixel, sample the concentration texture, and use the accumulated concentration to determine $\tau$. The correct coloring can then be computed.
+    While rendering the mesh, at each pixel, sample the concentration texture, and use the accumulated concentration to determine $\tau$. The correct colouring can then be computed.
     
 \end{enumerate}
-Example results of the intermediary render stages are shown in this figure:
+Example results of the intermediate render stages are shown in this figure:
 
 
 
@@ -242,7 +242,7 @@ Example results of the intermediary render stages are shown in this figure:
             \vspace{0pt}
             \centering
             \includegraphics[width=10cm]{volume_cropped/blue.png}
-            \subcaption{The thickness texture of the blue liquid. \\Brighter color indicates greater thickness.}
+            \subcaption{The thickness texture of the blue liquid. \\Brighter colour indicates greater thickness.}
     \end{minipage}
 
     \hspace{2pt}
@@ -261,7 +261,7 @@ Example results of the intermediary render stages are shown in this figure:
             \vspace{0pt}
             \centering
             \includegraphics[width=10cm]{volume_cropped/refraction.png}
-            \subcaption{The refraction color.}
+            \subcaption{The refraction colour.}
     \end{minipage}
 
     \hspace{2pt}

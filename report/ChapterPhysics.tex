@@ -42,7 +42,7 @@ Given a scalar field $\phi : \mathbb{R} ^3 \rightarrow \mathbb{R} $, the \textit
 \end{equation*} 
 The grad of a scalar quantity $\phi$ represents the rate of change of $\phi$ across each dimension. Moreover, $\nabla \phi$ computes the direction of movement which causes the greatest increase of $\phi$. 
 
-The $\nabla$ operator can also be extended to scaler fields of higher dimensions: let $\phi : \mathbb{R} ^N \rightarrow \mathbb{R} $ be an N-dimensional scalar field, $\nabla \phi$ is then defined as:
+The $\nabla$ operator can also be extended to scalar fields of higher dimensions: let $\phi : \mathbb{R} ^N \rightarrow \mathbb{R} $ be an N-dimensional scalar field, $\nabla \phi$ is then defined as:
 \begin{equation*}
     \nabla \phi \begin{pmatrix}
         x_1 \\
@@ -178,9 +178,9 @@ When formalizing the Euler and Navier-Stokes equations, the Lagrangian derivativ
 \section{The Euler and Navier-Stokes Equations}
 \label{Euler N-S Eqns}
 
-Using the previously defined notations, the Euler equations, which governs the motion of an incompressible and inviscid fluid
+Using the previously defined notations, the Euler equations, which govern the motion of an incompressible and inviscid fluid, can be written as
 %under gravity as the only external force
-, can be written as
+
 
 \begin{equation}
     \tag{Euler Equations}
@@ -191,7 +191,7 @@ Using the previously defined notations, the Euler equations, which governs the m
     \end{aligned} \right.
     \label{eqn:Euler Equations}
 \end{equation} 
-where $\u$ is the velocity field, $p$ is pressure, $\rho$ is the fluid's density, and $\textbf{g}$ the acceleration caused by an external force field (e.g gravity).
+where $\u$ is the velocity field, $p$ is pressure, $\rho$ is the fluid's density, and $\textbf{g}$ the acceleration caused by an external force field (e.g. gravity).
 
 A generalized version of these equations is the famous incompressible Navier-Stokes equations, in which a term that describes viscosity is added:
 \begin{equation}
@@ -219,7 +219,7 @@ With $\textbf{g}$ representing the acceleration caused by an external force fiel
 $$
 \dfrac{D\u}{Dt} = \frac{F_{in}}{m} + \textbf{g}
 $$
-The internal forces within a fluid is caused by an imbalance in pressure. Specifically, if one side of a infinitesimal particle has a greater pressure than the opposite side, then the particle will be pushed towards the low pressure region. This justifies why the pressure forces are in the direction of $-\nabla p$, which computes the direction of fastest decrease of pressure. It can be shown that this actual pressure force exerted on the particle is the negative pressure gradient $-\nabla p$ multiplied by its volume $V$, which gives
+The internal forces within a fluid is caused by an imbalance in pressure. Specifically, if one side of a infinitesimal particle has a greater pressure than the opposite side, then the particle will be pushed towards the low pressure region. This justifies why the pressure forces are in the direction of $-\nabla p$, which computes the direction of fastest decrease of pressure. It can be shown that the actual pressure force exerted on the particle is the negative pressure gradient $-\nabla p$ multiplied by its volume $V$, which gives
 $$
 \dfrac{D\u}{Dt} = -\frac{V \nabla p}{m} + \textbf{g}
 $$
@@ -239,7 +239,7 @@ where $\nu$ is a constant property, known as the kinematic viscosity of the flui
 
 \section{Boundary Conditions}
 \label{section boundary conditions}
-For a fluid region that is not the entirety of $\mathbb{R}^3$, boundary conditions must be specified, which define the behavior of the fluid in the physical boundaries of the fluid region.
+For a fluid region that is not the entirety of $\mathbb{R}^3$, boundary conditions must be specified, which define the behaviour of the fluid on the physical boundaries of the fluid region.
 
 When simulating liquids, there are two types of boundary conditions: the solid boundaries and the free surface boundaries. At a solid boundary, the condition is 
 $$
@@ -266,4 +266,4 @@ The diffusion among multiple fluid phases is a result of the random Brownian mot
     \tag{Advection-Diffusion Equation}
     \frac{D \alpha^i}{D t} = C\nabla \cdot \nabla \alpha^i
 \end{equation}
-where $C$ is the diffusion coefficient. Informally, if the concentration of a fluid region has a different concentration than its surroundings, this difference tends to "diffuse" into the neighborhood, and thus be reduced. This explains why the rate of change of the concentration is proportional to its Laplacian.
+where $C$ is the diffusion coefficient. Informally, if the concentration of a fluid region has a different concentration than its surroundings, this difference tends to ``diffuse" into the neighborhood, and thus be reduced. This explains why the rate of change (Lagrangian derivation) of the concentration is proportional to its Laplacian.

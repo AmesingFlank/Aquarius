@@ -1,7 +1,7 @@
 \chapter{The FLIP Algorithm}
 \label{chapter grid}
 
-This chapter explains the principles of the \textbf{FLIP}(Fluid Implicit Particle) algorithm for fluid simulation, and how it is derived from the Euler equations. In addition, section \ref{section multiple fluids} explains how this project extends the original FLIP algorithm to model multiple fluids with different physical properties, and how different miscible fluids diffuse into each other.
+This chapter explains the principles of the \textbf{FLIP} (Fluid Implicit Particle) algorithm for fluid simulation, and how it is derived from the Euler equations. In addition, section \ref{section multiphase FLIP} explains how this project extends the original FLIP algorithm to model multiple fluids with different physical properties, and how different miscible fluids diffuse into each other.
 
 
 \section{Operator Splitting}
@@ -61,7 +61,7 @@ This then allows the equation, and therefore the simulation algorithm, to be spl
     $$
     \frac{\partial \u}{\partial t}   = -\frac{\nabla p}{\rho} 
     $$
-    Since this is the last step of the splitting, it is essential to make sure that the results of solving this equation satisfies the incompressibility condition $\nabla \cdot \u = 0$. This amounts to finding a pressure field $p$ such that, subtracting by $\triangle t \dfrac{\nabla p}{\rho}$ makes the velocity have zero divergence. This step enforces the incompressibility of the fluid.
+    Since this is the last step of the splitting, it is essential to make sure that the results of solving this equation satisfies the incompressibility condition $\nabla \cdot \u = 0$. This amounts to finding a pressure field $p$ such that, subtracting $\triangle t \dfrac{\nabla p}{\rho}$ from $\u$ makes the velocity have zero divergence. This step enforces the incompressibility of the fluid.
 
 \end{enumerate}
 
@@ -69,7 +69,7 @@ This then allows the equation, and therefore the simulation algorithm, to be spl
 
 \section{Discretization}
 
-The Euler equations involve two important quantities: the the pressure scalar field $p$, and the velocity vector field $\u$. For a numerical simulation, discretized versions of both fields need to maintained. A straightforward choice, which is used for the pressure field, is to maintain a 3d grid, where each cubic grid cell stores the pressure value sampled at the center of the cell. As an example, this figure shows the cell with location $(x,y,z)$, and 3 of its neighbors:
+The Euler equations involve two important quantities: the pressure scalar field $p$, and the velocity vector field $\u$. For a numerical simulation, discretized versions of both fields need to maintained. A straightforward choice, which is used for the pressure field, is to maintain a 3d grid, where each cubic grid cell stores the pressure value sampled at the centre of the cell. As an example, this figure shows the cell with location $(x,y,z)$, and 3 of its neighbors:
 
 
 \begin{figure}[!h]
@@ -251,7 +251,7 @@ Other than being simple to implement, this discretization scheme also has the ad
 where $\triangle x$ is the edge length of the cubic cell. 
 
 
-For the velocity field $\u$, a slightly more sophisticated method known as the \textbf{MAC}(Marker and Cell) grid is used. Instead of storing the value of $\u = (\u_x,\u_y,\u_z)$ sampled at the cell center, an MAC grid stores different components of $\u$ sampled at different locations. Specifically, the grid cell at position $(x,y,z)$ stores the value of $\u_x$ sampled at the center of its left face, the value of $\u_y$ sampled at its lower face, and the value of $\u_z$ sampled at its back face, as illustrated in this figure:
+For the velocity field $\u$, a slightly more sophisticated method known as the \textbf{MAC} (Marker and Cell) grid is used. Instead of storing the value of $\u = (\u_x,\u_y,\u_z)$ sampled at the cell center, an MAC grid stores different components of $\u$ sampled at different locations. Specifically, the grid cell at position $(x,y,z)$ stores the value of $\u_x$ sampled at the center of its left face, the value of $\u_y$ sampled at its lower face, and the value of $\u_z$ sampled at its back face, as illustrated in this figure:
 
 \begin{figure}[!h]
     \centering
@@ -429,7 +429,7 @@ The numerical approximations to $\nabla \cdot \nabla p$, $\nabla \cdot \u$, and 
 
 As previously explained, the first step in each time step of the simulation is to solve the advection equation $\dfrac{D\u}{Dt} = 0$. Intuitively, this equation demands that the velocity of each infinitesimal particle in the fluid remains unchanged (but the velocity field itself will change because the positions of the particles will change).
 
-A once widely used advection algorithm is called \textbf{PIC}(Particle in Cell), which is closely based on the intuition behind the material derivative. Instead of infinitely many infinitely small particles, the fluid is approximately represented using a finite but large cloud of particles, each storing its own velocity. Using the velocity field $\u_{[n]}$ in $n$th time step, the PIC advection at the $n+1$ th time step work in these following steps: 
+A once widely used advection algorithm is called \textbf{PIC} (Particle in Cell), which is closely based on the intuition behind the material derivative. Instead of infinitely many infinitely small particles, the fluid is approximately represented using a finite but large cloud of particles, each storing its own velocity. Using the velocity field $\u_{[n]}$ in $n$th time step, the PIC advection at the $n+1$ th time step works in these following steps: 
 
 \begin{enumerate}
     \item For each particle $p$ with position $\textbf{x}_p$, sample and interpolate the MAC grid to obtain the value of $\u_{[n]}$ at $\textbf{x}_p$. Assign this as the particle's velocity,  $\u_p$.
@@ -450,16 +450,16 @@ A once widely used advection algorithm is called \textbf{PIC}(Particle in Cell),
     
     \item For each MAC grid cell, and for each of its 3 sample points where a component of $\u$ is stored, find all particles within a certain small radius (usually $\triangle x$), and interpolate their value of $\u_p$. Save these values as a temporary velocity field, $\u_{[n+1]}^{advected}$.
 \end{enumerate}
-In short, the PIC algorithm first transfers the velocity field from the MAC grid to the particles, then move the particles, and then transfers the velocity from the particles back to the MAC grid.
+In short, the PIC algorithm first transfers the velocity field from the MAC grid to the particles, then moves the particles, and finally transfers the velocity from the particles back to the MAC grid.
 
 
 
-The PIC algorithm is largely superseded by another algorithm known as \textbf{FLIP}(Fluid Implicit Particle), which is implemented in this project. FLIP is very similar to PIC, with only a slightly different 1st step:
+The PIC algorithm is largely superseded by another algorithm known as \textbf{FLIP} (Fluid Implicit Particle), which is implemented in this project. FLIP is very similar to PIC, with only a slightly different 1st step:
 \begin{enumerate}
     \item [$1'.$]
     For each particle $p$ with position $\textbf{x}_p$, sample and interpolate the MAC grid to obtain the value of $\u_{[n]} - \u_{[n-1]}$ at $\textbf{x}_p$. Add this to the particle's velocity,  $\u_p$.
 \end{enumerate}
-That is, instead of interpolating the value of $\u$ on to the particles, FLIP interpolates the change of $\u$ in the last time step, and add that to the particles' velocities. Zhu and Bridson \cite{zhu2005animating} showed that this method reduces the undesirable effect called \textit{numerical dissipation}, where visually interesting details in the fluid are smoothed away due to excessive interpolation.
+That is, instead of interpolating the value of $\u$ on to the particles, FLIP interpolates the change of $\u$ in the last time step, and adds that to the particles' velocities. Zhu and Bridson \cite{zhu2005animating} showed that this method reduces the undesirable effect called \textit{numerical dissipation}, where visually interesting details in the fluid are smoothed away due to excessive interpolation.
 
 
 
@@ -502,7 +502,7 @@ Using the discretization formulas \ref{eqn discrete laplacian pressure} and \ref
 \end{equation}
 One such equation exists for every cell that contains fluid (i.e contains FLIP particles), and together, they form a system of linear equations, called the \textit{Poisson pressure equation}. The unknowns, $p_{i,j,k}$, correspond to the pressure at the centers of cells.
 
-Since each equation involves not only the pressure of the fluid cell itself, but also the pressure of its 6 adjacent cells, extra care needs to be taken for cells that are at the boundaries of the fluid. Specifically, if a variable $p_{i,j,k}$ in the equations corresponds to the pressure within a air cell, it should automatically be assigned 0, which satisfies the free surface boundary conditions. If the variable $p_{i,j,k}$ corresponds to the pressure within solid, then it suffices to replace it with the pressure of the fluid cell next to the boundary, because the velocities at solid-fluid boundaries were already fixed in the external forces step.
+Since each equation involves not only the pressure of the fluid cell itself, but also the pressure of its 6 adjacent cells, extra care needs to be taken for cells that are at the boundaries of the fluid. Specifically, if a variable $p_{i,j,k}$ in the equations corresponds to the pressure within an air cell, it should automatically be assigned 0, which satisfies the free surface boundary conditions. If the variable $p_{i,j,k}$ corresponds to the pressure within solid, then it suffices to replace it with the pressure of the fluid cell next to the boundary, because the velocities at solid-fluid boundaries were already fixed in the external forces step.
 
 With the boundary conditions satisfied, the equation become a system of $N$ linear equations with $N$ variables, where $N$ is the total amount of fluid cells. Solving this system hence results in a discrete representation of the pressure field $p$ that satisfies 
 $$
@@ -541,6 +541,9 @@ To summarize, using a grid and FLIP advection, the simulation of each time step 
 
 
 \section{Multiphase Fluid Simulation}
+\label{section multiphase FLIP}
+
+
 While algorithm \ref{algo singlephase flip} is only for single phase fluid simulation, it is possible to extend it to support multiple fluid phases. As explained in section \ref{section multiple fluids}, the changes in the concentration $\alpha^i$ of a fluid phase $i$ is governed by the Advection-Diffusion equation:
 $$
 \frac{D \alpha^i}{D t} = C\nabla \cdot \nabla \alpha^i
@@ -554,7 +557,7 @@ To incorporate this equation to the simulation algorithm, the first step is agai
 \end{equation*}
 Just like the Euler momentum equation, this first equation that splitting produces is an advection equation. Thus, the same FLIP advection that was applied for the velocity field can be used to advect the concentration quantities: first transfer the quantities from the grid to the particles by interpolating and adding $\alpha^{i}_{[n]} - \alpha^{i}_{[n-1]}$, then move the particles in the velocity field, then transfer the $\alpha^i$ back to the grid. 
 
-The second equation is the "diffusion" part of the advection-diffusion equation, and is sometimes referred as the diffusion equation by itself. It was shown that using forward Euler scheme for this equation is unstable for large time steps\cite{kang2010hybrid}, so a discretized implicit equation is used:
+The second equation is the ``diffusion" part of the advection-diffusion equation, and is sometimes referred as the diffusion equation by itself. It was shown that using forward Euler scheme for this equation is unstable for large time steps\cite{kang2010hybrid}, so a discretized implicit equation is used:
 \begin{equation}
     \begin{aligned}
         - \lambda\alpha^i_{[n+1]~x-1,y,z}

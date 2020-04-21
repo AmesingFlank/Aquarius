@@ -90,7 +90,7 @@ Combining the FLIP implementation described in chapter \ref{chapter flip impl} a
     \label{fig diffusion 1e-2}
 \end{figure}
 
-\section{Performances}
+\section{Performance}
 
 Performances of the software implemented in this project highly depend on the simulation parameters used. The most influential parameter is the grid resolution, which is required to be at least approximately $50^3$ to give pleasing visual results. The simulation and rendering algorithms take time linear to the number of cells occupied by fluids, which is cubic to the grid resolution in each dimension. In the following figure, the empirical framerate of the software is plotted against the resolution:
 
@@ -147,11 +147,11 @@ Performances of the software implemented in this project highly depend on the si
 \end{figure}
 
 
-As a somewhat surprising observation, the computation time required to render a frame is actually considerable longer then the time taken to advance the simulation by one step. This is because, in order to generate a fine mesh, the resolution of the discrete grid of signed distance field is around 3 times the resolution of the MAC grid, which caused the surface reconstruction step (section \ref{section surface reconstruction}) to be rather expensive. Furthermore, multiphase rendering is noticeably more expensive then single phase rendering, which is because if there is only one fluid phase, the particle-based optical thickness calculation (section \ref{subsection multiphase render}) needs not be applied, and an approximation can be made using the tint color of the fluid.
+As a somewhat surprising observation, the computation time required to render a frame is actually considerable longer than the time taken to advance the simulation by one step. This is because, in order to generate a fine mesh, the resolution of the discrete grid of signed distance field is around 3 times the resolution of the MAC grid, which caused the surface reconstruction step (section \ref{section surface reconstruction}) to be rather expensive. Furthermore, multiphase rendering is noticeably more expensive than single phase rendering, which is because if there is only one fluid phase, the particle-based optical thickness calculation (section \ref{subsection multiphase render}) needs not be applied, and an approximation can be made using the tint colour of the fluid.
 
 \section{Comparison with Existing Software}
 
-The performance of the software created in this project is compared with a public CPU implementation of FLIP, namely the FLIP Fluids add-on\footnote{\url{https://blendermarket.com/products/flipfluids}} to Blender\footnote{\url{https://www.blender.org/}}. The exact same simulation parameters are used, and the softwares are run on the same machine. Figure \ref{figure ball drop single}, \ref{figure ball drop multi}, and \ref{figure ball drop blender} shows an example comparison. In these figures, a $50^3$ grid is used, and while the CPU implementation in Blender takes around 1.1 seconds for each frame, the software of this project can perform simulation and rendering at $20$ FPS, which is substantially faster.
+The performance of the software created in this project is compared with a public CPU implementation of FLIP, namely the FLIP Fluids add-on\footnote{\url{https://blendermarket.com/products/flipfluids}} to Blender\footnote{\url{https://www.blender.org/}}. The same simulation parameters are used, and the programs are run on the same machine. Figure \ref{figure ball drop single}, \ref{figure ball drop multi}, and \ref{figure ball drop blender} show an example comparison. In these figures, a $50^3$ grid is used, which contains around $200k$ FLIP particles. While the CPU implementation in Blender takes around 1.1 seconds for each frame, the software of this project can perform simulation and rendering at $20$ FPS, which is substantially faster.
 
 \gapM
 \gapM
@@ -184,7 +184,7 @@ The performance of the software created in this project is compared with a publi
         \includegraphics[width=5.7cm]{balldrop_cropped2/single3.png}
     \end{minipage}
 
-    \caption{Ball drop. $50^3$ grid, $208k$ FLIP particles}
+    \caption{Screenshots of a ``ball drop" simulation of the software created in this project.}
     \label{figure ball drop single}
 \end{figure}
 
@@ -219,7 +219,7 @@ The performance of the software created in this project is compared with a publi
         \includegraphics[width=5.7cm]{balldrop_cropped2/multi3.png}
     \end{minipage}
 
-    \caption{Same simulation as figure \ref{figure ball drop single}, with 2 differently colored phases}
+    \caption{Same simulation as figure \ref{figure ball drop single}, with 2 differently coloured phases.}
     \label{figure ball drop multi}
 \end{figure}
 
@@ -252,7 +252,7 @@ The performance of the software created in this project is compared with a publi
         \includegraphics[width=5.7cm]{balldrop_cropped2/blender3.png}
     \end{minipage}
 
-    \caption{Same simulation as figure \ref{figure ball drop single}, using a Blender add-on}
+    \caption{Screenshots of Blender performing the same simulation as figure \ref{figure ball drop single}.}
     \label{figure ball drop blender}
 \end{figure}
 
