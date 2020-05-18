@@ -55,7 +55,7 @@ FluidMeshRenderer::FluidMeshRenderer(int count_) :count(count_) {
 
 void FluidMeshRenderer::draw(const DrawCommand& drawCommand,  bool multiphase, std::shared_ptr<PointSprites> points, float radius, std::vector<float4> phaseColors) {
 #if SCREEN_SPACE_NORMAL
-	GLuint screenSpaceNormalTexture = screenSpaceNormal->generateNormalTexture([&]() { drawDepth(drawCommand); }, 6, 5, 6, 0.1, drawCommand);
+	GLuint screenSpaceNormalTexture = screenSpaceNormal->generateNormalTexture([&]() { drawDepth(drawCommand); }, 6, 5, 6, 1, drawCommand);
 #endif
 
 	if (multiphase) {
@@ -109,6 +109,10 @@ void FluidMeshRenderer::draw(const DrawCommand& drawCommand,  bool multiphase, s
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, drawCommand.texSkybox);
 	shader->setUniform1i("skybox", 1);
+
+	glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_2D, drawCommand.texOxLogo);
+	shader->setUniform1i("oxLogo", 5, true);
 
 	shader->setUniformDrawCommand(drawCommand);
 

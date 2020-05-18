@@ -20,54 +20,12 @@
 
 \raggedbottom
 
-%define the default submitted text
-\newcommand{\submittedtext}{{A thesis submitted for the degree of}}
 
-%
-% DECLARATIONS
-%
-% These macros are used to declare arguments needed for the
-% construction of the title page and other preamble.
 
-% The year and term the thesis is submitted 
-\def\degreedate#1{\gdef\@degreedate{#1}}
-% The full (unabbreviated) name of the degree
-\def\degree#1{\gdef\@degree{#1}}
-% The name of your Oxford college (e.g. Christ Church, Pembroke)
-\def\college#1{\gdef\@college{#1}}
 
-\def\supervisor#1{\gdef\@supervisor{#1}}
 
-%
-% Setup choosen crest/logo
-%
+\def\logo{\centering{\includegraphics[width=90mm]{logoE}}}
 
-\ifthenelse{\equal{\logoversion}{shieldcrest}}%
-{
-% Traditional Oxford shield crest
-%Using latex metafont (Mathematical Institute system)
-\font\crestfont=oxcrest40 scaled\magstep3
-\def\logo{{\crestfont \char1}}
-%For comlab system replace 1st line above with
-%\font\crestfont=crest scaled\magstep3
-}{}
-
-\ifthenelse{\equal{\logoversion}{beltcrest}}%
-{
-% Newer Oxford Belt crest
-%Using latex metafont (Mathematical Institute system)
-\font\beltcrestfont=oxbeltcrest
-\def\logo{{\beltcrestfont \char0}}
-%For comlab system replace 1st line above with
-%\font\beltcrestfont=newcrest
-}{}
-
-\ifthenelse{\equal{\logoversion}{squarelogo}}%
-{
-% Latest Logo, Square version (the default!)
-% you need an oxlogo.eps or oxlogo.pdf file as appropriate
-\def\logo{{\includegraphics[width=32mm]{oxlogo}}}
-}{}
 
 %
 % Define text area of page and margin offsets
@@ -102,20 +60,21 @@
   \null\vfill
   \begin{center}
     { \Huge {\bfseries {\@title}} \par}
-{\large \vspace*{40mm} {\logo \par} \vspace*{25mm}}
-    {{\Large \@author} \par}
-{\large \vspace*{1ex}
-    {{\@college} \par}
-\vspace*{1ex}
-    {University of Oxford \par}
-\vspace*{12mm}
-    {Supervised by: {\@supervisor} \par}
-\vspace*{12mm}
-    {{\submittedtext} \par}
-\vspace*{1ex}
-    {\it {\@degree} \par}
-\vspace*{2ex}
-    {\@degreedate}}
+{\large \vspace*{20mm} {\logo \par} \vspace*{20mm}}
+    {{\Large {Dunfan Lu}} \par}
+{\large 
+
+\vspace*{5mm}
+    {Somerville College, University of Oxford \par}
+\vspace*{5mm}
+    {Computer Science 3rd Year Project Report \par}
+\vspace*{5mm}
+    {Supervised by: Joe Pitt-Francis \par}
+
+  
+    
+\vspace*{5mm}
+    {Trinity 2020}}
   \end{center}
   \null\vfill
 \end{alwayssingle}}

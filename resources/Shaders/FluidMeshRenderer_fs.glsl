@@ -9,6 +9,7 @@ uniform float containerSize;
 uniform float cornellBoxSize;
 uniform int environmentMode;
 uniform samplerCube skybox;
+uniform sampler2D oxLogo;
 uniform int renderMode;
 
 uniform mat4 inverseView;
@@ -38,7 +39,7 @@ uniform sampler2D normalTexture;
 
 
 vec4 traceRay(vec3 origin, vec3 direction) {
-	return rayTraceEnvironment(origin,direction, environmentMode, cornellBoxSize, containerSize, lightPosition, skybox);
+	return rayTraceEnvironment(origin,direction, environmentMode, cornellBoxSize, containerSize, lightPosition, skybox,oxLogo);
 }
 
 float schlick(vec3 normal, vec3 incident) {
@@ -77,7 +78,8 @@ vec4 getReflectedColor(vec3 reflectedRay,vec3 fragPos,vec3 normal) {
 	vec3 fragToLight = normalize(lightPosition - fragPos);
 	
 	if (environmentMode == ENVIRONMENT_CHESS_BOARD || environmentMode == ENVIRONMENT_CORNELL_BOX) {
-		color = color * 0.2 + 0.2*dot(normal,fragToLight);
+		float r = 0.3;
+		color = color * ((1-r)+r*dot(normal,fragToLight));
 	}
 	return color;
 	

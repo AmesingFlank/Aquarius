@@ -46,6 +46,7 @@ struct ConfigFLIP {
 	int diffusionIterations = 100;
 	float timestep = 0.033;
 	float FLIPcoeff = 0.95;
+	float particleJitter = 0.05;
 };
 
 struct ConfigPBF {
@@ -53,6 +54,7 @@ struct ConfigPBF {
 	int substeps = 4;
 	int iterations = 2;
 	int maxParticleCount = 3e5;
+	float particleJitter = 0.05;
 };
 
 struct ConfigPCISPH {

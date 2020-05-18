@@ -246,7 +246,7 @@ namespace Fluid_3D_FLIP {
 
 		float3 gridPhysicalSize = make_float3(sizeX, sizeY, sizeZ) * cellPhysicalSize;
 
-		float bounce = -0.5;
+		float bounce = -1;
 
 		if (destPos.x < minDistanceFromWall) {
 			destPos.x = minDistanceFromWall;
@@ -515,7 +515,7 @@ namespace Fluid_3D_FLIP {
 					float xJitter = (random0to1() - 0.5f) ;
 					float yJitter = (random0to1() - 0.5f) ;
 					float zJitter = (random0to1() - 0.5f) ;
-					float3 jitter = make_float3(xJitter, yJitter, zJitter) * particleSpacing * 0.25;
+					float3 jitter = make_float3(xJitter, yJitter, zJitter) * particleSpacing * config.FLIP.particleJitter;
 
 					float3 particlePos = subcellCenter;
 					particlePos += jitter;

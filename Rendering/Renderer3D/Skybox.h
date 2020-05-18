@@ -7,7 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#define STB_IMAGE_IMPLEMENTATION
+
 #include <stb_image.h>
 #include "../../Common/GpuCommons.h"
 #include "../DrawCommand.h"

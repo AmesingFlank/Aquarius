@@ -410,7 +410,7 @@ namespace Fluid_3D_PBF {
 		for (float x = minPhysicalPos.x; x <= maxPhysicalPos.x; x += particleSpacing) {
 			for (float y = minPhysicalPos.y; y <= maxPhysicalPos.y; y += particleSpacing) {
 				for (float z = minPhysicalPos.z; z <= maxPhysicalPos.z; z += particleSpacing) {
-					float jitterMagnitude = particleSpacing / 2.f;
+					float jitterMagnitude = particleSpacing * fluidConfig.PBF.particleJitter;
 					float3 jitter;
 					jitter.x = (random0to1() - 0.5);
 					jitter.y = (random0to1() - 0.5);

@@ -6,7 +6,7 @@ In computer graphics applications, the ultimate goal for fluid simulation is usu
 \section{The OpenGL Drawing Pipeline}
 \label{section opengl}
 
-This project uses the OpenGL API for rendering. OpenGL is a widely used standard to program the GPU for graphics purposes, and just like any other graphics API (e.g Direct3D, Vulkan), the only types of geometric primitives that can be drawn are points, lines, and triangles. For this reason, in order to render complex 3D objects, a mesh of triangles is often used to represent the surface of the object. After being fed into OpenGL's pipeline, these triangles go through 4 main stages:
+This project uses the OpenGL API for rendering. OpenGL is a widely used standard to program the GPU for graphics purposes, and just like any other graphics API (e.g Direct3D, Vulkan), the only types of geometric primitives that can be drawn are points, lines, and triangles. For this reason, in order to render complex 3D objects, a mesh of triangles is often used to represent the surface of the object. In OpenGL's pipeline, these triangles undergo 4 main stages of computation on the GPU:
 \begin{enumerate}
     \item 
     \textit{The Vertex Shader}
@@ -16,7 +16,7 @@ This project uses the OpenGL API for rendering. OpenGL is a widely used standard
     \item 
     \textit{Rasterization}
 
-    In the rasterization stage, a piece of hardware in the GPU uses the screen positions of vertices to determine, for each triangle, which pixels are within the triangle. Each pixel of each triangle is then passed on to the next stage for colouring.
+    During rasterization, a piece of GPU hardware uses the screen positions of vertices to determine, for each triangle, which pixels are within the triangle. Each pixel of each triangle is then passed on to the next stage for colouring.
     
     \item
     \textit{The Pixel Shader}
@@ -63,7 +63,21 @@ where it is assumed that all particles have the same radius $r$. The $W$ is a be
 $$
 W(\textbf{r},h) = max(0,(1-\frac{||\textbf{r}||^2}{h^2})^3) 
 $$
-Using formula \ref{eqn SDF}, a discretized signed distance field can be computed and stored on a 3D grid. Notice that since the summation in $\overline{\textbf{x}}$ again sums over neighbor particles, the spatial indexing technique described in section \ref{subsection spatial indexing} will again be needed when implementing the formula. The 3D grid of discrete $\phi$ values is often called a \textit{level set} in literature\cite{bridson2015fluid}.
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[scale = 1.2]
+        \draw[->] (0,0) -- (1.5,0) node[right] {$||\textbf{r}||$};
+        \draw[->] (0,0) -- (0,1.5) node[above] {$W(\textbf{r},h)$};
+        \draw[scale=1.0,domain=0:1,smooth,variable=\x,blue,line width=0.25mm] plot ({\x},
+           {(1-\x*\x)*(1-\x*\x)*(1-\x*\x)}
+        );
+        
+        
+      \end{tikzpicture}
+      
+      
+\end{figure}
+Using formula \ref{eqn SDF}, a discretized signed distance field can be computed and stored on a 3D grid. Notice that since the computation of $\overline{\textbf{x}}$ sums over neighbor particles, the spatial indexing technique described in section \ref{subsection spatial indexing} will again be needed when implementing the formula. The discrete grid of $\phi$ values is often called a \textit{level set}\cite{bridson2015fluid}.
 
 
 Having computed the discrete signed distance field $\phi$, it remains to extract its zero isosurface as a triangle mesh. This is done using a famous algorithm called \textit{Marching Cubes}, invented by Wyvill\cite{wyvill1986soft} and Lorensen\cite{lorensen1987marching}. The algorithm considers each cubic grid cell in the level set grid, and puts a triangle vertex at each edge of the cube if one end of the edge is outside the fluid($\phi>0$) and the other end is inside the fluid ($\phi\leq 0$). Since for each cube has 8 vertices, and each vertex can be either inside or outside the fluid, there're a total of $2^8=256$ different cases for each cube. A selection of them is shown in the following figure:

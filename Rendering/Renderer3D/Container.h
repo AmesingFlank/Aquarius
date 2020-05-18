@@ -77,9 +77,13 @@ struct Container {
 
 	GLuint bottomVBO, bottomVAO;
 
+	GLuint texOxLogo;
+
 	std::shared_ptr<Shader> faceShader;
 
 	glm::mat4 model = glm::mat4(1.0);
+
+	void loadOxLogo();
 
 	void initEdges();
 

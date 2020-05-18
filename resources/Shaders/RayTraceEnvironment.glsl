@@ -48,16 +48,37 @@ void boxIntersect(vec3 boxMin, vec3 boxMax, Ray r, out Hit hit) {
 	hit.hit = true;
 }
 
+#define EPSILON  1e-3
+ 
+vec3 getCornellColor(vec3 pos, vec3 boxMin, vec3 boxMax,sampler2D oxLogo) {
 
-vec3 getCornellColor(vec3 pos, vec3 boxMin, vec3 boxMax) {
-	if (abs(pos.y - boxMin.y) < 1e-3) {
+	if (abs(pos.z - boxMax.z) < EPSILON) {
+		float logoSizeRelative = 0.3;
+		vec2 logoCenterRelative = vec2(0.5, 0.3);
+		vec2 cornellFaceSize = boxMax.xy - boxMin.xy;
+		vec2 logoSize = logoSizeRelative * cornellFaceSize;
+		vec2 logoCenter = logoCenterRelative * cornellFaceSize + boxMin.xy;
+
+		vec2 logoMin = logoCenter - logoSize / 2;
+		vec2 logoMax = logoCenter + logoSize / 2;
+
+		vec2 logoCoord = pos.xy - logoMin;
+		logoCoord.x /= logoSize.x;
+		logoCoord.y /= logoSize.y;
+		logoCoord = vec2(1, 1) - logoCoord;
+		if (logoCoord.x >= 0 && logoCoord.x <= 1 && logoCoord.y >= 0 && logoCoord.y <= 1) {
+			return texture(oxLogo, logoCoord).rgb;
+		}
+	}
+
+	if (abs(pos.y - boxMin.y) < EPSILON) {
 		return chessBoard(pos.xz);
 	}
 	return vec3(0.8);
-	if (abs(pos.x - boxMin.x) < 1e-3) {
-		return vec3(1, 0, 0);
+	if (abs(pos.x - boxMin.x) < EPSILON) {
+		return vec3(0, 1, 0);
 	}
-	if (abs(pos.x - boxMax.x) < 1e-3) {
+	if (abs(pos.x - boxMax.x) < EPSILON) {
 		return vec3(0, 0, 1);
 	} 
 	return vec3(0.8);
@@ -86,8 +107,8 @@ vec3 getCornellNormal(vec3 pos, vec3 boxMin, vec3 boxMax) {
 }
 
 
-vec3 shadeCornell(vec3 pos, vec3 boxMin, vec3 boxMax,vec3 lightPos) {
-	vec3 baseColor = getCornellColor(pos, boxMin, boxMax);
+vec3 shadeCornell(vec3 pos, vec3 boxMin, vec3 boxMax,vec3 lightPos,sampler2D oxLogo) {
+	vec3 baseColor = getCornellColor(pos, boxMin, boxMax,oxLogo);
 	vec3 normal = getCornellNormal(pos, boxMin, boxMax);
 	vec3 fragToLight = normalize(lightPos - pos);
 
@@ -96,7 +117,7 @@ vec3 shadeCornell(vec3 pos, vec3 boxMin, vec3 boxMax,vec3 lightPos) {
 }
 
 
-vec4 rayTraceEnvironment(vec3 cameraPos, vec3 direction, int environmentMode,float cornellBoxSize, float containerSize,vec3 lightPos,samplerCube skybox) {
+vec4 rayTraceEnvironment(vec3 cameraPos, vec3 direction, int environmentMode,float cornellBoxSize, float containerSize,vec3 lightPos,samplerCube skybox,sampler2D oxLogo) {
 	if (environmentMode == ENVIRONMENT_CORNELL_BOX) {
 		Hit hit;
 
@@ -115,7 +136,7 @@ vec4 rayTraceEnvironment(vec3 cameraPos, vec3 direction, int environmentMode,flo
 		boxIntersect(boxMin, boxMax, ray, hit);
 
 
-		return vec4(shadeCornell(hit.hitPos, boxMin, boxMax, lightPos),1);
+		return vec4(shadeCornell(hit.hitPos, boxMin, boxMax, lightPos,oxLogo),1);
 	}
 	else {
 		float tHitGround = cameraPos.y / -direction.y;

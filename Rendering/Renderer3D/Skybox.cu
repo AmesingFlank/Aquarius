@@ -1,4 +1,8 @@
+#define STB_IMAGE_IMPLEMENTATION
+
 #include "Skybox.h"
+
+#define STB_IMAGE_IMPLEMENTATION
 
 Skybox::Skybox(const std::string& path, const std::string& extension) {
 

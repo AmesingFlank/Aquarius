@@ -7,12 +7,12 @@ uniform float containerSize;
 uniform float cornellBoxSize;
 uniform int environmentMode;
 uniform samplerCube skybox;
-
+uniform sampler2D oxLogo;
 
 void main() {
 	
 	color = vec4(1);
-	color = rayTraceEnvironment(cameraPosition, normalize(FragPos-cameraPosition), environmentMode,  cornellBoxSize, containerSize, lightPosition, skybox);
+	color = rayTraceEnvironment(cameraPosition, normalize(FragPos-cameraPosition), environmentMode,  cornellBoxSize, containerSize, lightPosition, skybox,oxLogo);
 
 
 }

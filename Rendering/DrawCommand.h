@@ -54,4 +54,6 @@ struct DrawCommand {
 
 	float containerSize;
 	float cornellBoxSize;
+
+	unsigned int texOxLogo;
 };

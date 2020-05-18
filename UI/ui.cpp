@@ -325,6 +325,12 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 			nk_layout_row_dynamic(ctx, rowHeight, 1);
 			nk_label(ctx, "FLIP/PIC Coefficient", NK_TEXT_LEFT);
 			nk_property_float(ctx, "", 0, &fluidConfig.FLIP.FLIPcoeff, 1,0.05 , incPerPixel);
+
+			GAP_SMALL;
+
+			nk_layout_row_dynamic(ctx, rowHeight, 1);
+			nk_label(ctx, "Particle Jitter", NK_TEXT_LEFT);
+			nk_property_float(ctx, "", 0, &fluidConfig.FLIP.particleJitter, 0.5, 0.025, incPerPixel);
 			
 		}
 	}
@@ -358,6 +364,12 @@ void drawUI(nk_context* ctx, FluidConfig& fluidConfig,std::function<void()> onSt
 			nk_label(ctx, "Max Particle Count (k)", NK_TEXT_LEFT);
 			nk_property_int(ctx, "", 100, &count, 1000, 100, incPerPixel);
 			fluidConfig.PBF.maxParticleCount = count * 1000;
+
+			GAP_SMALL;
+
+			nk_layout_row_dynamic(ctx, rowHeight, 1);
+			nk_label(ctx, "Particle Jitter", NK_TEXT_LEFT);
+			nk_property_float(ctx, "", 0, &fluidConfig.PBF.particleJitter, 0.5, 0.025, incPerPixel);
 		}
 	}
 

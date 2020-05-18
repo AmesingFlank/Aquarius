@@ -1,12 +1,42 @@
+#define STB_IMAGE_IMPLEMENTATION
+
+
 #include "Container.h"
+#include <stb_image.h>
+
 
 Container::Container(float size) {
+	loadOxLogo();
+
 	initEdges();
 	initBottom();
 	model = glm::scale(model, glm::vec3(size, size, size));
 	this->size = size;
 	cornellBoxSize = size * 4;
 	bigChessBoardSize = size * 100;
+}
+
+void Container::loadOxLogo() {
+	glGenTextures(1, &texOxLogo);
+	glBindTexture(GL_TEXTURE_2D, texOxLogo);
+
+	int width, height;
+	const std::string file = "resources/oxlogo.png";
+
+	unsigned const char* image = stbi_load(file.c_str(), &width, &height, 0, STBI_rgb);
+	if (!image) {
+		std::cerr << "read image failed: " << file << std::endl;
+	}
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+	free((void*)image);
 }
 
 void Container::drawEdges(const DrawCommand& drawCommand) {
@@ -47,9 +77,14 @@ void Container::initEdges() {
 void Container::drawFace(const DrawCommand& drawCommand) {
 	faceShader->use();
 
+	glActiveTexture(GL_TEXTURE5);
+	glBindTexture(GL_TEXTURE_2D, texOxLogo);
+	faceShader->setUniform1i("oxLogo", 5, true);
 	
 
 	if (drawCommand.environmentMode == EnvironmentMode::CornellBox) {
+
+		
 		float cornellBoxPadding = (cornellBoxSize - size) / 2;
 
 

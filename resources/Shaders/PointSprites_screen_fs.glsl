@@ -27,6 +27,7 @@ uniform float cornellBoxSize;
 uniform int environmentMode;
 uniform samplerCube skybox;
 uniform int renderMode;
+uniform sampler2D oxLogo;
 
 #define M_PI 3.1415926535897932384626433832795
 
@@ -62,7 +63,7 @@ vec3 getWorldNormal() {
 }
 
 vec4 traceRay(vec3 origin, vec3 direction) {
-	return rayTraceEnvironment(origin, direction, environmentMode, cornellBoxSize, containerSize, lightPosition, skybox);
+	return rayTraceEnvironment(origin, direction, environmentMode, cornellBoxSize, containerSize, lightPosition, skybox,oxLogo);
 }
 
 
