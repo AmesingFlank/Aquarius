@@ -21,7 +21,7 @@ A \textit{scalar field} on $ \mathbb{R} ^3 $ is a mapping $\phi : \mathbb{R} ^3 
 
 \gapS
 
-A \textit{vector field} on $ \mathbb{R} ^3 $ is a mapping $\phi : \mathbb{R} ^3 \rightarrow \mathbb{R} ^3 $ from 3D cartesian coordinates to 3D vectors. A very commonly used vector field is the velocity field $\u$, which describes the direction and speed of the fluid's movement at each point in the 3D space
+A \textit{vector field} on $ \mathbb{R} ^3 $ is a mapping $\phi : \mathbb{R} ^3 \rightarrow \mathbb{R} ^3 $ from 3D cartesian coordinates to 3D vectors. A commonly seen vector field is the velocity field $\u$, which describes the direction and speed of the fluid's movement at each point in the 3D space
 
 
 \gapM
@@ -40,7 +40,7 @@ Given a scalar field $\phi : \mathbb{R} ^3 \rightarrow \mathbb{R} $, the \textit
         \frac{\partial \phi}{\partial z}
     \end{aligned} \right)
 \end{equation*} 
-The grad of a scalar quantity $\phi$ represents the rate of change of $\phi$ across each dimension. Moreover, $\nabla \phi$ computes the direction of movement which causes the greatest increase of $\phi$. 
+The grad of a scalar quantity $\phi$ represents the rate of change of $\phi$ across each dimension. Moreover, $\nabla \phi$ computes the direction of movement that causes the greatest increase in $\phi$. 
 
 The $\nabla$ operator can also be extended to scalar fields of higher dimensions: let $\phi : \mathbb{R} ^N \rightarrow \mathbb{R} $ be an N-dimensional scalar field, $\nabla \phi$ is then defined as:
 \begin{equation*}
@@ -155,7 +155,7 @@ $$
         &=\frac{D\phi}{Dt}
 \end{aligned}
 $$
-Which is precisely the Lagrangian derivative.
+which is precisely the Lagrangian derivative.
 
 When formalizing the Euler and Navier-Stokes equations, the Lagrangian derivative $\dfrac{D}{Dt}$ will be automatically extended to be applied to vector fields, where each component of the vector field is differentiated separately. This allows the term $\dfrac{D\u}{Dt}$ to be written, representing the acceleration of the infinitesimal fluid particles:
 \begin{equation}
@@ -206,12 +206,12 @@ A generalized version of these equations is the famous incompressible Navier-Sto
 where $\nu$ is the kinematic viscosity coefficient.
 
 
-As described in the last section, the quantity $(\nabla \cdot \u)$ represents the rate at which the fluid is expanding or shrinking. Fluids in the real world usually remains in constant volume, unless in extreme conditions. This motivates the equation $\nabla \cdot \u = 0$, included in both Euler and Navier-Stokes.
+As described in the last section, the quantity $(\nabla \cdot \u)$ represents the rate at which the fluid is expanding or shrinking. Fluids in the real world usually remain in constant volume, unless in extreme conditions. This motivates the equation $\nabla \cdot \u = 0$, included in both Euler and Navier-Stokes.
 
 
-Besides the incompressibility condition, both Euler and Navier-Stokes include another equation known as the momentum equation (which is in fact a set of equations, because the quantities are vectors). The momentum equation essentially specifies Newton's 2nd law: $\textbf{a}$ = $\dfrac{\textbf{F}}{m}$ , i.e the acceleration is the force divided by the mass.
+Besides the incompressibility condition, both Euler and Navier-Stokes include another equation known as the momentum equation (which is in fact a set of equations, because the quantities are vectors). The momentum equation essentially specifies Newton's 2nd law: $\textbf{a}$ = $\dfrac{\textbf{F}}{m}$ , i.e. the acceleration is the force divided by the mass.
 
-As previously explained, the quantity $\dfrac{D\u}{Dt}$ represents the acceleration of the infinitesimal fluid particles. Thus, to explain the momentum equations, it remains to demonstrate that the right hand side correctly computes the force divided by the mass. Let the mass of the infinitesimal particle be $m$, and let the force be separated into the internal forces within the fluid $F_{in}$ and the external forces $F_{ext}$:
+As previously explained, the quantity $\dfrac{D\u}{Dt}$ represents the acceleration of the infinitesimal fluid particles. Thus, to explain the momentum equations, it remains to demonstrate that the right-hand side correctly computes the force divided by the mass. Let the mass of the infinitesimal particle be $m$, and let the force be separated into the internal forces within the fluid $F_{in}$ and the external forces $F_{ext}$:
 $$
 \dfrac{D\u}{Dt} = \frac{F_{in} + F_{ext}}{m}
 $$
@@ -219,7 +219,7 @@ With $\textbf{g}$ representing the acceleration caused by an external force fiel
 $$
 \dfrac{D\u}{Dt} = \frac{F_{in}}{m} + \textbf{g}
 $$
-The internal forces within a fluid is caused by an imbalance in pressure. Specifically, if one side of a infinitesimal particle has a greater pressure than the opposite side, then the particle will be pushed towards the low pressure region. This justifies why the pressure forces are in the direction of $-\nabla p$, which computes the direction of fastest decrease of pressure. It can be shown that the actual pressure force exerted on the particle is the negative pressure gradient $-\nabla p$ multiplied by its volume $V$, which gives
+The internal forces within a fluid are caused by an imbalance in pressure. Specifically, if one side of an infinitesimal particle experiences greater pressure than the opposite side, then the particle will be pushed towards the low-pressure region. This justifies why the pressure forces are in the direction of $-\nabla p$, which computes the direction of fastest decrease of pressure. It can be shown that the actual pressure force exerted on the particle is the negative pressure gradient $-\nabla p$ multiplied by its volume $V$, which gives
 $$
 \dfrac{D\u}{Dt} = -\frac{V \nabla p}{m} + \textbf{g}
 $$
@@ -227,7 +227,7 @@ Using $\rho = \dfrac{m}{V}$, this becomes:
 $$
 \dfrac{D\u}{Dt} =  -\frac{\nabla p}{\rho} + \textbf{g}
 $$
-Which is Euler's momentum equation. It is important to note that the justifications given in this section merely offers intuitions, and is far from a rigorous mathematical derivation, which would not fit into this report due to its complexity. 
+which is Euler's momentum equation. It is important to note that the justifications given in this section merely offers intuitions, and is far from a rigorous mathematical derivation, which would not fit into this report due to its complexity. 
 
 
 The Navier-Stokes momentum equation extends the Euler momentum equation by considering viscosity. In a viscous fluid, the velocity of a particle tends to diffuse into its surrounding particles, causing the velocity in the neighborhood to converge into its average. The difference between the average of $\u$ in the neighborhood and the value of $\u$ of the particle is captured by the Laplacian of the velocity: $\nabla \cdot \nabla \u$, thus adding a positive multiple of this quantity creates a viscous effect:
@@ -239,29 +239,29 @@ where $\nu$ is a constant property, known as the kinematic viscosity of the flui
 
 \section{Boundary Conditions}
 \label{section boundary conditions}
-For a fluid region that is not the entirety of $\mathbb{R}^3$, boundary conditions must be specified, which define the behaviour of the fluid on the physical boundaries of the fluid region.
+For a fluid region that is not the entirety of $\mathbb{R}^3$, boundary conditions must be specified, which define the fluid's behaviour on the physical boundaries of the fluid region.
 
-When simulating liquids, there are two types of boundary conditions: the solid boundaries and the free surface boundaries. At a solid boundary, the condition is 
+When simulating liquids, there are two types of boundary conditions: the solid boundaries and the free-surface boundaries. At a solid boundary, the condition is 
 $$
     \u \cdot \textbf{n} = 0
 $$
 where $\textbf{n}$ is the normal of the solid surface. This condition ensures that the fluid cannot flow into a solid. 
 
-The second type of boundary is the free surface boundary, which is the boundary between the liquids and some region of space that is not occupied by anything. In this case, that region of space will not exert any force, and therefore pressure, to the fluid, which motivates the condition
+The second type of boundary is the free-surface boundary, which is the boundary between the liquids and some region of space that is not occupied by anything. In this case, that region of space will not exert any force, and therefore pressure, to the fluid, which motivates the condition
 $$
 p = 0
 $$
-This free surface condition can be also applied to the boundary between liquid and air, which is because air is significantly lighter than liquid, and hence does not influence the motion of the liquid.
+This free surface-condition can also be applied to the boundary between liquid and air, which is because air is significantly lighter than liquid, and hence does not influence the motion of the liquid.
 
-The liquid simulated in this project is contained within a cubic box. Moreover,it doesn't fill the box entirely and thus has a free surface. Thus, both type of boundary conditions must be considered during the simulation. 
+The liquid simulated in this project is contained within a cubic box. Moreover, it does not fill the box entirely and thus has a free surface. Thus, both types of boundary conditions must be considered during the simulation. 
 
 \section{Multiple Fluids}
 \label{section multiple fluids}
 Finally, this section introduces an equation that governs the concentration changes in a mixture of more than one type of miscible fluids, for example, ink and water. In physics, the different types of fluids are sometimes referred to as \textit{phases}.
 
-Concentration of different fluid phases will be represented using \textit{volume fractions}. Specifically, for an infinitesimal fluid element at location $\textbf{x}$ with volume $\textbf{V}(\textbf{x})$, and let the portion of this volume occupied by the $i$th fluids phase be $\textbf{V}^i(\textbf{x})$, then the concentration of the $i$th phase at $\textbf{x}$ will be $\alpha^i(\textbf{x}) = \dfrac{\textbf{V}^i(\textbf{x})}{\textbf{V}(\textbf{x})}$. Together, the $\alpha^i$ for all phases form a vector $\bm{\alpha}$, whose components are non-negative and sum up to $1$.
+The concentration of different fluid phases will be represented using \textit{volume fractions}. Specifically, for an infinitesimal fluid element at location $\textbf{x}$ with volume $\textbf{V}(\textbf{x})$, and let the portion of this volume occupied by the $i$th fluids phase be $\textbf{V}^i(\textbf{x})$, then the concentration of the $i$th phase at $\textbf{x}$ will be $\alpha^i(\textbf{x}) = \dfrac{\textbf{V}^i(\textbf{x})}{\textbf{V}(\textbf{x})}$. Together, the $\alpha^i$ for all phases form a vector $\bm{\alpha}$, whose components are non-negative and sum up to $1$.
 
-The diffusion among multiple fluid phases is a result of the random Brownian motion of the fluid particles. However, it's possible to model this process from a macroscopic viewpoint, where an equation can be written that governs the expectation of how the concentrations change:
+The diffusion among multiple fluid phases is a result of the random Brownian motion of the fluid particles. However, it is possible to model this process from a macroscopic viewpoint, where an equation can be written that governs the expectation of how the concentrations change:
 \begin{equation}
     \tag{Advection-Diffusion Equation}
     \frac{D \alpha^i}{D t} = C\nabla \cdot \nabla \alpha^i

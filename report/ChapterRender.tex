@@ -6,12 +6,12 @@ In computer graphics applications, the ultimate goal for fluid simulation is usu
 \section{The OpenGL Drawing Pipeline}
 \label{section opengl}
 
-This project uses the OpenGL API for rendering. OpenGL is a widely used standard to program the GPU for graphics purposes, and just like any other graphics API (e.g Direct3D, Vulkan), the only types of geometric primitives that can be drawn are points, lines, and triangles. For this reason, in order to render complex 3D objects, a mesh of triangles is often used to represent the surface of the object. In OpenGL's pipeline, these triangles undergo 4 main stages of computation on the GPU:
+This project uses the OpenGL API for rendering. OpenGL is a widely used standard to program the GPU for graphics purposes, and just like any other graphics API (e.g. Direct3D, Vulkan), the only types of geometric primitives that can be drawn are points, lines, and triangles. For this reason, in order to render complex 3D objects, a mesh of triangles is often used to represent the surface of the object. In OpenGL's pipeline, these triangles undergo 4 main stages of computation on the GPU:
 \begin{enumerate}
     \item 
     \textit{The Vertex Shader}
 
-    The vertex shader is a piece of GPU program (usually written in GLSL), and it's executed for each vertex of every triangle to be rendered. Usually, the vertex shader computes essential geometric information (e.g position on screen, normal) of the vertices, which are passed on to the next stage.
+    The vertex shader is a piece of GPU program (usually written in GLSL), and it is executed for each vertex of every triangle to be rendered. Usually, the vertex shader computes essential geometric information (e.g. normal vector, position on screen) of the vertices, which are passed on to the next stage.
     
     \item 
     \textit{Rasterization}
@@ -21,16 +21,16 @@ This project uses the OpenGL API for rendering. OpenGL is a widely used standard
     \item
     \textit{The Pixel Shader}
 
-    Also referred to as the \textit{fragment shader}, the pixel shader is also a piece of GPU program. The pixel shader culminates the job of the entire graphics pipeline: it computes of the colour of each pixel to be displayed.
+    Also referred to as the \textit{fragment shader}, the pixel shader is also a piece of GPU program. The pixel shader culminates the job of the entire graphics pipeline: it computes the colour of each pixel to be displayed.
 
     \item 
     \textit{Compositing}
 
-    In 3D scene, objects might hide behind each other, and some pixels might be covered by multiple objects at different depth. The compositor's job is to determine which shading of the pixel to should be used, and in some cases (e.g. when rendering translucent objects), how the differently shaded colours should be mixed together to give the final output. This process is essential to the multiphase fluid rendering algorithm invented in this project, to be described in subsection \ref{subsection multiphase render}.
+    In 3D scenes, objects might hide behind each other, and some pixels might be covered by multiple objects at different depths. The compositor's job is to determine which shading of the pixel should be used, and in some cases (e.g. when rendering translucent objects), how the differently shaded colours should be mixed together to give the final output. This process is essential to the multiphase fluid rendering algorithm invented in this project, to be described in subsection \ref{subsection multiphase render}.
     
 \end{enumerate}
 
-The full OpenGL pipeline includes a few extra stages, such as the geometry shader and the tesselation shader. However, these are optional stages and is not used in this project. 
+The full OpenGL pipeline includes a few extra stages, such as the geometry shader and the tesselation shader. However, these are optional stages and are not used in this project. 
 
 
 \section{Surface Reconstruction}
@@ -45,7 +45,7 @@ In the paper where they also described FLIP\cite{zhu2005animating}, Zhu and Brid
     
     \item $\phi(\textbf{x}) = -d$ if $\textbf{x}$ is inside the fluid region, and the shortest distance between $\textbf{x}$ and any point on the surface is $d$.
 \end{itemize}
-Thus, the magnitude of $\phi(\textbf{x})$ indicates the distance between $\textbf{x}$ and the surface, and the sign of $\phi(\textbf{x})$ indicates whether $\textbf{x}$ is in the inside or outside. The fluid surface is then precisely the set of points where $\phi$ evaluates to 0. In literature, this is often called the \textit{zero isocontour} or \textit{zero isosurface}.
+Thus, the magnitude of $\phi(\textbf{x})$ indicates the distance between $\textbf{x}$ and the surface, and the sign of $\phi(\textbf{x})$ indicates whether $\textbf{x}$ is in the inside or outside. The fluid surface is then precisely the set of points where $\phi$ evaluates to 0. In literature, this is often called the \textit{zero-isocontour} or \textit{zero-isosurface}.
 
 Zhu and Bridson's method\cite{zhu2005animating} begins by considering the special case where there is only a single particle in the fluid. Assume the particle is centered at $\textbf{x}_0$ and has radius $r_0$, the signed distanced field of this spherical fluid region must then be:
 $$
@@ -80,7 +80,7 @@ $$
 Using formula \ref{eqn SDF}, a discretized signed distance field can be computed and stored on a 3D grid. Notice that since the computation of $\overline{\textbf{x}}$ sums over neighbor particles, the spatial indexing technique described in section \ref{subsection spatial indexing} will again be needed when implementing the formula. The discrete grid of $\phi$ values is often called a \textit{level set}\cite{bridson2015fluid}.
 
 
-Having computed the discrete signed distance field $\phi$, it remains to extract its zero isosurface as a triangle mesh. This is done using a famous algorithm called \textit{Marching Cubes}, invented by Wyvill\cite{wyvill1986soft} and Lorensen\cite{lorensen1987marching}. The algorithm considers each cubic grid cell in the level set grid, and puts a triangle vertex at each edge of the cube if one end of the edge is outside the fluid($\phi>0$) and the other end is inside the fluid ($\phi\leq 0$). Since for each cube has 8 vertices, and each vertex can be either inside or outside the fluid, there're a total of $2^8=256$ different cases for each cube. A selection of them is shown in the following figure:
+Having computed the discrete signed distance field $\phi$, it remains to extract its zero-isosurface as a triangle mesh. This is done using a famous algorithm called \textit{Marching Cubes}, invented by Wyvill\cite{wyvill1986soft} and Lorensen\cite{lorensen1987marching}. The algorithm considers each cubic grid cell in the level set grid, and puts a triangle vertex at each edge of the cube if one end of the edge is outside the fluid($\phi>0$) and the other end is inside the fluid ($\phi\leq 0$). Since each cube has 8 vertices, and each vertex can be either inside or outside the fluid, there're a total of $2^8=256$ different cases for each cube. A selection of them is shown in the following figure:
 
 \begin{figure}[H]
     \centering
@@ -89,9 +89,9 @@ Having computed the discrete signed distance field $\phi$, it remains to extract
     \label{figure marching cubes}
 \end{figure}
 
-The triangles generated for all the cells connect together into a watertight mesh, which can be fed into the OpenGL pipeline for rendering. This project implements the Marching Cubes algorithm by using a precomputed look-up table, which maps each of the 256 cases into an array of corresponding triangle vertices.
+The triangles generated for all the cells connect together into a watertight mesh, which can be fed into the OpenGL pipeline for rendering. This project implements the Marching Cubes algorithm by using a precomputed lookup table, which maps each of the 256 cases into an array of corresponding triangle vertices.
 
-When the triangle mesh of the fluid surface is being rendered, the normal vectors of the surface is needed. This project chooses to approximate the normal vector using the discrete gradient of the signed distance field, $\nabla \phi$. This vector represents the normal because, intuitively, $\nabla \phi$ points in the direction where $\phi$ increases the most, which is also the direction that perpendicularly points away from the liquid surface.
+When the triangle mesh of the liquid's surface is being rendered, the normal vectors of the surface is needed. This project chooses to approximate the normal vector using the discrete gradient of the signed distance field, $\nabla \phi$. This vector represents the normal because, intuitively, $\nabla \phi$ points in the direction where $\phi$ increases the most, which is also the direction that perpendicularly points away from the liquid surface.
 
 
 
@@ -124,7 +124,7 @@ When the triangle mesh of the fluid surface is being rendered, the normal vector
 After the triangle mesh representing the liquid surface is constructed, it is put through the OpenGL pipeline for shading. The most important task falls upon the fragment shader, where the colour of each pixel on the mesh is computed. In order to generate realistic colouring, it is necessary to model how rays of light interact with the liquid.
 
 \subsection{Reflection And Refraction}
-As a ray of light hits the boundary between air and liquid, part of its energy is bounced away from the surface, while the rest of enters the liquid and continues to travel inside. The two resulting rays are respectively called the \textit{reflection} and the \textit{refraction}. 
+As a ray of light hits the boundary between air and liquid, part of its energy is bounced away from the surface, while the rest enters the liquid and continues to travel inside. The two resulting rays are respectively called the \textit{reflection} and the \textit{refraction}. 
 
 \begin{figure}[H]
     \centering
@@ -166,7 +166,7 @@ As a ray of light hits the boundary between air and liquid, part of its energy i
     \label{figure reflection refraction}
 \end{figure}
 
-Let $\textbf{v}_i$ be the direction of the incident ray, and let $\textbf{v}_{\mbox{\small{refl}}}$ be the direction of the reflected ray. The angle $\theta_i$ between $\textbf{v}_i$ and the surface normal $\textbf{N}$ will always be same as the angle between $\textbf{N}$ and $\textbf{v}_{\mbox{\small{refl}}}$. Knowing $\textbf{v}_i$ and $\textbf{N}$, $\textbf{v}_{\mbox{\small{refl}}}$ can be computed as:
+Let $\textbf{v}_i$ be the direction of the incident ray, and let $\textbf{v}_{\mbox{\small{refl}}}$ be the direction of the reflected ray. The angle $\theta_i$ between $\textbf{v}_i$ and the surface normal $\textbf{N}$ will always be the same as the angle between $\textbf{N}$ and $\textbf{v}_{\mbox{\small{refl}}}$. Knowing $\textbf{v}_i$ and $\textbf{N}$, $\textbf{v}_{\mbox{\small{refl}}}$ can be computed as:
 \begin{equation}
     \label{eqn direction of reflection}
     \textbf{v}_{\mbox{\small{refl}}} = 2\textbf{N}(-\textbf{v}_i \cdot \textbf{N}) + \textbf{v}_i
@@ -186,7 +186,7 @@ where $n_1$ is the \textit{Index of Refraction} of air, and $n_2$ that of the li
         k &= \sqrt{1+(m-n)(m+n)} 
     \end{aligned}
 \end{equation}
-Besides the direction of the reflection and refraction, it's also necessary to know the ratio of the incident energy that is reflected and refracted. Let the reflection ratio be $F$, then, conservation of energy dictates that the ratio of refracted energy must be $1-F$. The exact value of $F$ is determined by the Fresnel equation, which is also dependent on the polarization and spectral distribution of the light. Due to the complexity of these equations, real time computer graphics applications often use an approximation given by Schlick\cite{schlick1994inexpensive}:
+Besides the direction of the reflection and refraction, it's also necessary to know the ratio of the incident energy that is reflected and refracted. Let the reflection ratio be $F$, then, conservation of energy dictates that the ratio of refracted energy must be $1-F$. The exact value of $F$ is determined by the Fresnel equation, which is also dependent on the polarization and spectral distribution of the light. Due to the complexity of these equations, real-time computer graphics applications often use an approximation given by Schlick\cite{schlick1994inexpensive}:
 \begin{equation}
     \label{eqn Schlick}
     \begin{aligned}
@@ -209,9 +209,9 @@ As a ray of light travels past a region of coloured liquid, the energy of the li
 \end{equation*}
 In this formula, $\textbf{o}$ is the point where the ray enters the liquid, $\textbf{v}$ its direction of travel, and $d$ the length of the path of the ray inside the water. The function $\sigma_t(\textbf{x})$ indicates how much of the light becomes extinct at location $\textbf{x}$, and the integral of the extinction across the entire path is $\tau$, the \textit{optical thickness}.
 
-For a fluid consisting of only one type of fluid, the parameter $\sigma_t$ stays constant, so $\tau$ can be computed simply as $d\sigma_t$. However, in a region where multiple fluids are mixed together, the integral must be explicitly evaluated, usually numerically.
+For a fluid consisting of only one type of fluid, the parameter $\sigma_t$ stays constant, so $\tau$ can be computed simply as $\sigma_td$. However, in a region where multiple fluids are mixed together, the integral must be explicitly evaluated, usually numerically.
 
-Moreover, the extinction parameter $\sigma_t$ is highly dependent on the wavelength of the light, which is exactly the cause for different fluids to have different colour. For example, a red liquid has the lowest $\sigma_t$ for the wavelength of red, thereby allowing more red light to pass through. As a result, the numerical integration of $\tau$ needs to be performed for each of the RGB channels.
+Moreover, the extinction parameter $\sigma_t$ is highly dependent on the wavelength of the light, which is precisely the cause for different fluids to have different colours. For example, a red liquid has the lowest $\sigma_t$ for the wavelength of red, thereby allowing more red light to pass through. As a result, the numerical integration of $\tau$ needs to be performed for each of the RGB channels.
 
 A frequently used method for computing $\tau$ is \textit{ray marching}, where the ray in question is progressed a small step at a time, accumulating the extinction along the way. Alternatively, this project invented a novel algorithm for accumulating $\sigma_t$, which is more efficient and directly makes use of the FLIP particles, which carry the concentration information:
 \begin{enumerate}
@@ -290,7 +290,7 @@ Example results of the intermediate render stages are shown in this figure:
     \hspace{2pt}
             
 
-    \caption{Intermediary and final outputs of the renderer. The images show the moment after a large ball of red liquid falls into a box of blue liquid}
+    \caption{Intermediary and final outputs of the renderer. The images show the moment after a large ball of red liquid falls into a box of blue liquid.}
     \label{figure volume render}
 \end{figure}
 

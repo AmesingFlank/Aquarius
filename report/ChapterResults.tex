@@ -147,7 +147,7 @@ Performances of the software implemented in this project highly depend on the si
 \end{figure}
 
 
-As a somewhat surprising observation, the computation time required to render a frame is actually considerable longer than the time taken to advance the simulation by one step. This is because, in order to generate a fine mesh, the resolution of the discrete grid of signed distance field is around 3 times the resolution of the MAC grid, which caused the surface reconstruction step (section \ref{section surface reconstruction}) to be rather expensive. Furthermore, multiphase rendering is noticeably more expensive than single phase rendering, which is because if there is only one fluid phase, the particle-based optical thickness calculation (section \ref{subsection multiphase render}) needs not be applied, and an approximation can be made using the tint colour of the fluid.
+As a somewhat surprising observation, the computation time required to render a frame is actually considerably longer than the time taken to advance the simulation by one step. This is because, in order to generate a fine mesh, the resolution of the discrete grid of signed distance field is around 3 times the resolution of the MAC grid, which caused the surface reconstruction step (section \ref{section surface reconstruction}) to be rather expensive. Furthermore, multiphase rendering is noticeably more expensive than single-phase rendering, which is because if there is only one fluid phase, the particle-based optical thickness calculation (section \ref{subsection multiphase render}) is not required, and an approximation can be made using the tint colour of the fluid.
 
 \section{Comparison with Existing Software}
 

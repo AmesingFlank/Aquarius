@@ -1,7 +1,7 @@
 \chapter{The FLIP Algorithm}
 \label{chapter grid}
 
-This chapter explains the principles of the \textbf{FLIP} (Fluid Implicit Particle) algorithm for fluid simulation, and how it is derived from the Euler equations. In addition, section \ref{section multiphase FLIP} explains how this project extends the original FLIP algorithm to model multiple fluids with different physical properties, and how different miscible fluids diffuse into each other.
+This chapter explains the principles of the \textbf{FLIP} (Fluid Implicit Particle) algorithm for fluid simulation, and how it is derived from the Euler equations. Additionally, section \ref{section multiphase FLIP} explains how this project extends the original FLIP algorithm to model multiple fluids with different physical properties, and how different miscible fluids diffuse into each other.
 
 
 \section{Operator Splitting}
@@ -61,7 +61,7 @@ This then allows the equation, and therefore the simulation algorithm, to be spl
     $$
     \frac{\partial \u}{\partial t}   = -\frac{\nabla p}{\rho} 
     $$
-    Since this is the last step of the splitting, it is essential to make sure that the results of solving this equation satisfies the incompressibility condition $\nabla \cdot \u = 0$. This amounts to finding a pressure field $p$ such that, subtracting $\triangle t \dfrac{\nabla p}{\rho}$ from $\u$ makes the velocity have zero divergence. This step enforces the incompressibility of the fluid.
+    Since this is the last step of the splitting, it is essential to make sure that the results of solving this equation satisfy the incompressibility condition $\nabla \cdot \u = 0$. This amounts to finding a pressure field $p$ such that, subtracting $\triangle t \dfrac{\nabla p}{\rho}$ from $\u$ makes the velocity have zero divergence. This step enforces the incompressibility of the fluid.
 
 \end{enumerate}
 
@@ -69,7 +69,7 @@ This then allows the equation, and therefore the simulation algorithm, to be spl
 
 \section{Discretization}
 
-The Euler equations involve two important quantities: the pressure scalar field $p$, and the velocity vector field $\u$. For a numerical simulation, discretized versions of both fields need to maintained. A straightforward choice, which is used for the pressure field, is to maintain a 3d grid, where each cubic grid cell stores the pressure value sampled at the centre of the cell. As an example, this figure shows the cell with location $(x,y,z)$, and 3 of its neighbors:
+The Euler equations involve two crucial quantities: the pressure scalar field $p$, and the velocity vector field $\u$. For a numerical simulation, discretized versions of both fields need to maintained. A straightforward choice, which is used for the pressure field, is to maintain a 3d grid, where each cubic grid cell stores the pressure value sampled at the centre of the cell. As an example, this figure shows the cell with location $(x,y,z)$, and 3 of its neighbors:
 
 
 \begin{figure}[!h]
@@ -229,7 +229,7 @@ The Euler equations involve two important quantities: the pressure scalar field 
     
     \label{pressure cell}
 \end{figure}
-In this grid, $p$ is only sampled at finitely many discrete locations, but it serves as an approximation of the continuous field. Specifically, the value $p(\textbf{x})$ at a location $\textbf{x}$ that is not a cell center can be approximated by interpolating of the nearby $p$ samples.
+In this grid, $p$ is only sampled at finitely many discrete locations, but it serves as an approximation of the continuous field. Specifically, the value $p(\textbf{x})$ at a location $\textbf{x}$ that is not a cell center can be approximated by interpolating nearby $p$ samples.
 
 Other than being simple to implement, this discretization scheme also has the advantage that the finite difference approximation of the Laplacian of the pressure field, sampled at the center of the cells, can be easily computed:
 
@@ -416,7 +416,7 @@ Using these quantities, an approximation of the divergence of the velocity, $\na
     \label{eqn discrete div u}
 \end{equation}
 
-During the incompressibility step of the simulation, the velocity field will be updated according the gradient of the pressure field. Thus, it's also important to compute the approximation of $\nabla p$ at the velocity field sample points, i.e the centers of faces of the cells. This is made easy by the fact that, the pressure field is sampled at the centers of the cells:
+During the incompressibility step of the simulation, the velocity field will be updated according to the gradient of the pressure field. Thus, it is also important to compute the approximation of $\nabla p$ at the velocity field sample points, i.e., the centres of faces of the cells. This is made easy by the fact that the pressure field is sampled at the cells' centres:
 \begin{equation}
     \label{eqn discrete grad p}
     \begin{aligned}
@@ -445,7 +445,7 @@ A once widely used advection algorithm is called \textbf{PIC} (Particle in Cell)
                 )
         \end{aligned}
     \end{equation*}
-    For particles near the boundaries of the fluid, some of the $\u_{temp}$ values might be sampled outside the fluid region, which is slightly problematic because the velocity isn't defined outside the fluids. This is fixed by a simple \textit{extrapolation} step, which extends the velocity to a few grid cells outside its original region.
+    For particles near the fluid boundaries, some of the $\u_{temp}$ values might be sampled outside the fluid region, which is slightly problematic because the velocity isn't defined outside the fluids. This is fixed by a simple \textit{extrapolation} step, which extends the velocity to a few grid cells outside its original region.
     
     
     \item For each MAC grid cell, and for each of its 3 sample points where a component of $\u$ is stored, find all particles within a certain small radius (usually $\triangle x$), and interpolate their value of $\u_p$. Save these values as a temporary velocity field, $\u_{[n+1]}^{advected}$.
@@ -459,7 +459,7 @@ The PIC algorithm is largely superseded by another algorithm known as \textbf{FL
     \item [$1'.$]
     For each particle $p$ with position $\textbf{x}_p$, sample and interpolate the MAC grid to obtain the value of $\u_{[n]} - \u_{[n-1]}$ at $\textbf{x}_p$. Add this to the particle's velocity,  $\u_p$.
 \end{enumerate}
-That is, instead of interpolating the value of $\u$ on to the particles, FLIP interpolates the change of $\u$ in the last time step, and adds that to the particles' velocities. Zhu and Bridson \cite{zhu2005animating} showed that this method reduces the undesirable effect called \textit{numerical dissipation}, where visually interesting details in the fluid are smoothed away due to excessive interpolation.
+That is, instead of interpolating the value of $\u$ on to the particles, FLIP interpolates the change of $\u$ in the last time step, and adds that to the particles' velocities. Zhu and Bridson\cite{zhu2005animating} showed that this method reduces the undesirable effect called \textit{numerical dissipation}, where visually interesting details in the fluid are smoothed away due to excessive interpolation.
 
 
 
@@ -470,7 +470,7 @@ After obtaining the temporary velocity field $\u_{[n+1]}^{advected}$, the next s
 Let $\textbf{g}$ denote the acceleration caused by the external force field, (for gravity, $\textbf{g}\approx[0,-0.98,0]^T$), applying the forces is then achieved by adding $\triangle t \textbf{g}$. In a MAC grid, this is done by updating the components of $\u$ sampled at different faces using the different components of $\triangle t \textbf{g}$. 
 
 
-To apply the solid boundary condition $\u \cdot \textbf{n} = 0$, as mentioned in section \ref{section boundary conditions}, components of $\u$ sampled at faces that represent solid-fluid boundaries need to be set to 0. For example, if the solid region is considered to be exactly the region of space outside the MAC grid, then the leftmost faces of the leftmost cells (and rightmost faces of rightmost cells...etc) will be considered as a solid-fluid boundary. For all such boundary faces, the velocity component there will be set to 0. 
+To apply the solid boundary condition $\u \cdot \textbf{n} = 0$, as mentioned in section \ref{section boundary conditions}, components of $\u$ sampled at faces that represent solid-fluid boundaries need to be set to 0. For example, if the solid region is considered to be exactly the region of space outside the MAC grid, then the leftmost faces of the leftmost cells (and rightmost faces of rightmost cells...etc.) will be considered as a solid-fluid boundary. For all such boundary faces, the velocity component there will be set to 0. 
 
 Starting from an incompressible velocity field $\u_{[n]}$, performing advection to obtain $\u_{[n+1]}^{advected}$, and then applying external forces, the resulting velocity will likely not be incompressible anymore. Let this field be called $\u_{[n+1]}^{compressible}$, and the next step will be to apply pressure within the fluid, so that the incompressibility is restored.
 
@@ -502,9 +502,9 @@ Using the discretization formulas \ref{eqn discrete laplacian pressure} and \ref
 \end{equation}
 One such equation exists for every cell that contains fluid (i.e contains FLIP particles), and together, they form a system of linear equations, called the \textit{Poisson pressure equation}. The unknowns, $p_{i,j,k}$, correspond to the pressure at the centers of cells.
 
-Since each equation involves not only the pressure of the fluid cell itself, but also the pressure of its 6 adjacent cells, extra care needs to be taken for cells that are at the boundaries of the fluid. Specifically, if a variable $p_{i,j,k}$ in the equations corresponds to the pressure within an air cell, it should automatically be assigned 0, which satisfies the free surface boundary conditions. If the variable $p_{i,j,k}$ corresponds to the pressure within solid, then it suffices to replace it with the pressure of the fluid cell next to the boundary, because the velocities at solid-fluid boundaries were already fixed in the external forces step.
+Since each equation involves not only the pressure of the fluid cell itself, but also the pressure of its 6 adjacent cells, extra care needs to be taken for cells that are at the boundaries of the fluid. Specifically, if a variable $p_{i,j,k}$ in the equations corresponds to the pressure within an air cell, it should automatically be assigned 0, which satisfies the free-surface boundary conditions. If the variable $p_{i,j,k}$ corresponds to the pressure within solid, then it suffices to replace it with the pressure of the fluid cell next to the boundary, because the velocities at solid-fluid boundaries were already fixed in the external forces step.
 
-With the boundary conditions satisfied, the equation become a system of $N$ linear equations with $N$ variables, where $N$ is the total amount of fluid cells. Solving this system hence results in a discrete representation of the pressure field $p$ that satisfies 
+With the boundary conditions satisfied, the equation becomes a system of $N$ linear equations with $N$ variables, where $N$ is the total amount of fluid cells. Solving this system hence results in a discrete representation of the pressure field $p$ that satisfies 
 $$
 \nabla \cdot
  ( \u_{[n+1]}^{compressible} - \triangle t \frac{\nabla p}{\rho} ) = 0
@@ -544,11 +544,11 @@ To summarize, using a grid and FLIP advection, the simulation of each time step 
 \label{section multiphase FLIP}
 
 
-While algorithm \ref{algo singlephase flip} is only for single phase fluid simulation, it is possible to extend it to support multiple fluid phases. As explained in section \ref{section multiple fluids}, the changes in the concentration $\alpha^i$ of a fluid phase $i$ is governed by the Advection-Diffusion equation:
+While algorithm \ref{algo singlephase flip} is only for single-phase fluid simulation, it is possible to extend it to support multiple fluid phases. As explained in section \ref{section multiple fluids}, the changes in the concentration $\alpha^i$ of a fluid phase $i$ are governed by the Advection-Diffusion equation:
 $$
 \frac{D \alpha^i}{D t} = C\nabla \cdot \nabla \alpha^i
 $$
-To incorporate this equation to the simulation algorithm, the first step is again to apply splitting. The equation is split into two parts:
+To incorporate this equation into the simulation algorithm, the first step is again to apply splitting. The equation is split into two parts:
 \begin{equation*}
     \begin{aligned}
         \frac{D \alpha^i}{D t} &= 0\\
