@@ -2,7 +2,7 @@
 
 A Fluid Simulator on GPU (CUDA)
 
-This is Dunfan Lu's 3rd year project at the CS department of Oxford.
+This is Candidate 1023011's 3rd year project at the CS department of Oxford.
 
 ## Algorithms implemented:
 * FLIP (Fluid Implicit Particle) advection
