@@ -64,3 +64,7 @@ Ball Drop       |  Single Phase PBF
 :-------------------------:|:-------------------------:
 ![](report/images/balldrop_cropped2/pbf0.png)  |  ![](report/images/balldrop_cropped2/pbf1.png)
 ![](report/images/balldrop_cropped2/pbf2.png)  |  ![](report/images/balldrop_cropped2/pbf3.png)
+
+![](report/logoF.png)
+
+![](report/logoE.png)
