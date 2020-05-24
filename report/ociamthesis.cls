@@ -61,11 +61,11 @@
   \begin{center}
     { \Huge {\bfseries {\@title}} \par}
 {\large \vspace*{20mm} {\logo \par} \vspace*{20mm}}
-    {{\Large {Dunfan Lu}} \par}
+    {{\Large {Candidate Number: 1023011}} \par}
 {\large 
 
 \vspace*{5mm}
-    {Somerville College, University of Oxford \par}
+    {University of Oxford \par}
 \vspace*{5mm}
     {Computer Science 3rd Year Project Report \par}
 \vspace*{5mm}
