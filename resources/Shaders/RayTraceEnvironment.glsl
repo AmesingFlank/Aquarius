@@ -30,19 +30,28 @@ void boxIntersect(vec3 boxMin, vec3 boxMax, Ray r, out Hit hit) {
 	vec3 ttop = r.invDir * (boxMax - r.origin);
 	vec3 tmin = min(ttop, tbot);
 	vec3 tmax = max(ttop, tbot);
-	vec2 t = max(tmin.xx, tmin.yz);
-	float t0 = max(t.x, t.y);
-	t = min(tmax.xx, tmax.yz);
-	float t1 = min(t.x, t.y);
+
+	float t0 = max(tmin.x, max(tmin.y, tmin.z)); // max of min
+	float t1 = min(tmax.x, min(tmax.y, tmax.z)); // min of max
+
+
+	if (t0 >= t1) {
+		hit.hit = false;
+		return;
+	}
 
 	if (t1 < 0) {
 		hit.hit = false;
+		return;
 	}
 
-	hit.t = t0;
 	if (t0 < 0) {
 		hit.t = t1;
 	}
+	else {
+		hit.t = t0;
+	}
+
 	hit.hitPos = r.origin + hit.t * r.dir;
 
 	hit.hit = true;
@@ -108,11 +117,11 @@ vec3 getCornellNormal(vec3 pos, vec3 boxMin, vec3 boxMax) {
 
 
 vec3 shadeCornell(vec3 pos, vec3 boxMin, vec3 boxMax,vec3 lightPos,sampler2D oxLogo) {
-	vec3 baseColor = getCornellColor(pos, boxMin, boxMax,oxLogo);
+	vec3 baseColor = getCornellColor(pos, boxMin, boxMax, oxLogo);
 	vec3 normal = getCornellNormal(pos, boxMin, boxMax);
 	vec3 fragToLight = normalize(lightPos - pos);
 
-	vec3 result = baseColor * (0.1 + 0.5 * dot(normal, fragToLight));
+	vec3 result = baseColor * (0.1 + 0.5 * max(0,dot(normal, fragToLight)));
 	return result;
 }
 
@@ -124,7 +133,7 @@ vec4 rayTraceEnvironment(vec3 cameraPos, vec3 direction, int environmentMode,flo
 		float cornellBoxPadding = (cornellBoxSize - containerSize) / 2;
 
 		vec3 boxMin = vec3(-1, 0, -1) * cornellBoxPadding;
-		vec3 boxMax = vec3(2,3,2) * cornellBoxPadding;
+		vec3 boxMax = boxMin + vec3(cornellBoxSize);
 
 		Ray ray;
 		ray.origin = cameraPos;
@@ -134,6 +143,10 @@ vec4 rayTraceEnvironment(vec3 cameraPos, vec3 direction, int environmentMode,flo
 		ray.invDir.z = 1.0 / direction.z;
 
 		boxIntersect(boxMin, boxMax, ray, hit);
+
+		if (!hit.hit) {
+			return vec4(0);
+		}
 
 
 		return vec4(shadeCornell(hit.hitPos, boxMin, boxMax, lightPos,oxLogo),1);
