@@ -4,7 +4,7 @@ import taichi as ti
 
 ti.init(arch=ti.cuda)
 
-
+USE_APIC = True
 
 grid_size = (64,64)
 (grid_size_x,grid_size_y) = grid_size
@@ -51,6 +51,17 @@ def kernel_1d(r,support):
 def kernel_2d(r,support):
     return kernel_1d(r[0],support) * kernel_1d(r[1],support)
 
+@ti.func
+def kernel_grad(r,support):
+    r /= support
+    result = ti.Vector([0.0,0.0])
+    if r[0] < 1 and r[1] < 1:
+        result = ti.Vector([abs(r[1])-1.0,abs(r[0])-1.0]) / support
+    if r[0] < 0:
+        result[0] *= -1
+    if r[1] < 0:
+        result[1] *= -1
+    return result
 
 
 @ti.data_oriented
@@ -133,6 +144,8 @@ class Particles:
 
         self.position = ti.Vector.field(2,dtype=ti.f32,shape = self.count)
         self.velocity = ti.Vector.field(2,dtype=ti.f32,shape = self.count)
+        self.cx = ti.Vector.field(2,dtype=ti.f32,shape = self.count)
+        self.cy = ti.Vector.field(2,dtype=ti.f32,shape = self.count)
     
     def init_particles(self):
         self.position.from_numpy(self.position_host)
@@ -140,8 +153,19 @@ class Particles:
 
     @ti.kernel
     def init_velocity(self):
-        for v in self.velocity:
-            self.velocity[v]=ti.Vector([0,0])
+        for p in self.velocity:
+            self.cx[p] = ti.Vector([0,0])
+            self.cy[p] = ti.Vector([0,0])
+
+            self.velocity[p]=ti.Vector([0,0])
+
+            #rotation:
+            # pos = self.position[p]
+            # center = ti.Vector([grid_size_x*cell_size/2,grid_size_y*cell_size/2])
+            # d = (pos-center)
+            # self.velocity[p]=ti.Vector([d[1],-d[0]])
+
+            #self.velocity[p]=ti.Vector([-1,0])
 
 
 
@@ -177,8 +201,54 @@ grid = Grid()
 def grid_to_particles():
     for p in particles.velocity:
         pos = particles.position[p]
-        v = grid.get_velocity(pos)
-        particles.velocity[p] = v
+
+        pos[0] = max(epsilon,min(grid_size_x*cell_size-epsilon,pos[0]))
+        pos[1] = max(epsilon,min(grid_size_y*cell_size-epsilon,pos[1]))
+
+        x = ti.cast(ti.floor(pos[0] / cell_size),ti.i32)
+        y = ti.cast(ti.floor(pos[1] / cell_size),ti.i32)
+
+        vel = ti.Vector([0.0,0.0])
+        cx = ti.Vector([0.0,0.0])
+        cy = ti.Vector([0.0,0.0])
+        sum_weights = ti.Vector([0.0,0.0])
+
+        for i,j in ti.ndrange(3,3):
+            this_x = x+i-1
+            this_y = y+j-1
+
+            if this_x < 0 or this_x >= grid_size_x+1 or this_y < 0 or this_y >= grid_size_y+1:
+                continue
+
+            x_vel_pos = ti.Vector([this_x,this_y+0.5]) * cell_size
+            y_vel_pos = ti.Vector([this_x+0.5,this_y]) * cell_size
+
+            x_weight = kernel_2d(x_vel_pos-pos,cell_size)
+            y_weight = kernel_2d(y_vel_pos-pos,cell_size)
+
+            weights = ti.Vector([x_weight,y_weight])
+            velocity_contribution = grid.velocity[this_x,this_y] * weights
+
+            #cx += grid.velocity[this_x,this_y][0] * x_weight * (x_vel_pos-pos)  / (cell_size ** 2)
+            #cy += grid.velocity[this_x,this_y][1] * y_weight * (y_vel_pos-pos)  / (cell_size ** 2)
+
+            cx += grid.velocity[this_x,this_y][0] * x_weight * kernel_grad(x_vel_pos-pos,cell_size)
+            cy += grid.velocity[this_x,this_y][1] * y_weight * kernel_grad(y_vel_pos-pos,cell_size)
+
+            vel += velocity_contribution
+            sum_weights += weights
+
+        if sum_weights[0] > 0:
+            vel[0] /= sum_weights[0]
+            cx /= sum_weights[0]
+        if sum_weights[1] > 0:
+            vel[1] /= sum_weights[1]
+            cy /= sum_weights[1]
+
+
+        particles.velocity[p] = vel
+        particles.cx[p] = cx
+        particles.cy[p] = cy
             
     
 
@@ -227,6 +297,8 @@ def particles_to_grid():
     for p in particles.velocity:
         pos = particles.position[p]
         vel = particles.velocity[p]
+        cx = particles.cx[p]
+        cy = particles.cy[p]
         x = ti.cast(ti.floor(pos[0] / cell_size),ti.i32)
         y = ti.cast(ti.floor(pos[1] / cell_size),ti.i32)
 
@@ -250,6 +322,8 @@ def particles_to_grid():
 
             weights = ti.Vector([x_weight,y_weight])
             velocity_contribution = vel * weights
+            if USE_APIC:
+                velocity_contribution += ti.Vector([cx.dot(x_vel_pos-pos) , cy.dot(y_vel_pos-pos) ]) * weights
 
             grid.velocity[this_x,this_y] += velocity_contribution
             grid.velocity_weights[this_x,this_y] += weights
@@ -375,6 +449,8 @@ def substep():
 
 particles.init_particles()
 grid.init_grid()
+
+particles_to_grid()
 
 gui = ti.GUI('Aquarius', window_size)
 while gui.running:
