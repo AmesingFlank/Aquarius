@@ -16,7 +16,7 @@ cell_size = 10 / grid_size_x
 
 ppc = 8
 
-epsilon = cell_size * 0.001
+epsilon = cell_size * 0.5
 
 g = 9.8
 dt = 0.016
@@ -53,14 +53,16 @@ def kernel_2d(r,support):
 
 @ti.func
 def kernel_grad(r,support):
-    r /= support
     result = ti.Vector([0.0,0.0])
-    if r[0] < 1 and r[1] < 1:
-        result = ti.Vector([abs(r[1])-1.0,abs(r[0])-1.0]) / support
-    if r[0] < 0:
-        result[0] *= -1
-    if r[1] < 0:
-        result[1] *= -1
+    if abs(r[0])<support and abs(r[1])<support:
+        if r[0] < 0 and r[1] < 0:
+            result= ti.Vector([1.0/support + r[1] / (support*support), 1.0/support + r[0] / (support*support)]) 
+        if r[0] < 0 and r[1] > 0:
+            result= ti.Vector([1.0/support - r[1] / (support*support), -1.0/support - r[0] / (support*support)]) 
+        if r[0] > 0 and r[1] < 0:
+            result= ti.Vector([-1.0/support - r[1] / (support*support), 1.0/support - r[0] / (support*support)]) 
+        if r[0] > 0 and r[1] > 0:
+            result= ti.Vector([-1.0/support + r[1] / (support*support), -1.0/support + r[0] / (support*support)]) 
     return result
 
 
@@ -111,6 +113,11 @@ class Grid:
             x_weight = kernel_2d(x_vel_pos-pos,cell_size)
             y_weight = kernel_2d(y_vel_pos-pos,cell_size)
 
+            if y_vel_pos[0] >  grid_size_x*cell_size:
+                y_weight = 0
+            if x_vel_pos[1] >  grid_size_y*cell_size:
+                x_weight = 0
+
             weights = ti.Vector([x_weight,y_weight])
             velocity_contribution = self.velocity[this_x,this_y] * weights
 
@@ -134,8 +141,8 @@ class Particles:
     def init_host_particles(self):
         for x,y in ti.ndrange(int(grid_size_x/2),int(grid_size_y/2)):
             for i in range(ppc):
-                x_pos = (x+ random.random())*cell_size + grid_size_x*cell_size/4
-                y_pos = (y+ random.random())*cell_size + grid_size_x*cell_size/4
+                x_pos = (x+ random.random())*cell_size + grid_size_x*cell_size * 0.25
+                y_pos = (y+ random.random())*cell_size + grid_size_x*cell_size * 0.25
                 x_pos = max(epsilon,min(cell_size*grid_size_x-epsilon,x_pos))
                 y_pos = max(epsilon,min(cell_size*grid_size_y-epsilon,y_pos))
                 self.position_host.append([x_pos,y_pos])
@@ -165,7 +172,7 @@ class Particles:
             # d = (pos-center)
             # self.velocity[p]=ti.Vector([d[1],-d[0]])
 
-            #self.velocity[p]=ti.Vector([-1,0])
+            #self.velocity[p]=ti.Vector([0,-1])
 
 
 
@@ -226,14 +233,20 @@ def grid_to_particles():
             x_weight = kernel_2d(x_vel_pos-pos,cell_size)
             y_weight = kernel_2d(y_vel_pos-pos,cell_size)
 
+            if y_vel_pos[0] >  grid_size_x*cell_size:
+                y_weight = 0
+            if x_vel_pos[1] >  grid_size_y*cell_size:
+                x_weight = 0
+
             weights = ti.Vector([x_weight,y_weight])
             velocity_contribution = grid.velocity[this_x,this_y] * weights
 
             #cx += grid.velocity[this_x,this_y][0] * x_weight * (x_vel_pos-pos)  / (cell_size ** 2)
             #cy += grid.velocity[this_x,this_y][1] * y_weight * (y_vel_pos-pos)  / (cell_size ** 2)
 
-            cx += grid.velocity[this_x,this_y][0] * x_weight * kernel_grad(x_vel_pos-pos,cell_size)
-            cy += grid.velocity[this_x,this_y][1] * y_weight * kernel_grad(y_vel_pos-pos,cell_size)
+            cx += grid.velocity[this_x,this_y][0] * kernel_grad(x_vel_pos-pos,cell_size) * -1
+            cy += grid.velocity[this_x,this_y][1] * kernel_grad(y_vel_pos-pos,cell_size) * -1
+            
 
             vel += velocity_contribution
             sum_weights += weights
@@ -262,7 +275,7 @@ def move_particles():
         u3 = grid.get_velocity(pos+dt * u2 *3 / 4)
 
         final_pos = pos + dt *  (u1 * 2 / 9 + u2 * 3 / 9 + u3 * 4 / 9)
-        final_pos = pos + dt * particles.velocity[p]
+        #final_pos = pos + dt * particles.velocity[p]
 
         bounce = 0
 
@@ -320,11 +333,16 @@ def particles_to_grid():
             x_weight = kernel_2d(x_vel_pos-pos,cell_size)
             y_weight = kernel_2d(y_vel_pos-pos,cell_size)
 
+            if y_vel_pos[0] >  grid_size_x*cell_size:
+                y_weight = 0
+            if x_vel_pos[1] >  grid_size_y*cell_size:
+                x_weight = 0
+
             weights = ti.Vector([x_weight,y_weight])
             velocity_contribution = vel * weights
             if USE_APIC:
                 velocity_contribution += ti.Vector([cx.dot(x_vel_pos-pos) , cy.dot(y_vel_pos-pos) ]) * weights
-
+                
             grid.velocity[this_x,this_y] += velocity_contribution
             grid.velocity_weights[this_x,this_y] += weights
     
@@ -364,7 +382,7 @@ def compute_divergence():
     for x,y in ti.ndrange(grid_size_x,grid_size_y):
         if grid.content[x,y]==FLUID:
             div = grid.velocity[x+1,y][0] - grid.velocity[x,y][0] + grid.velocity[x,y+1][1] - grid.velocity[x,y][1]
-            #div -= (grid.particle_count[x,y] - ppc) * 0.001
+            div -= (grid.particle_count[x,y] - ppc) * 0.001
             grid.divergence[x,y] = div
         else:
             grid.divergence[x,y] = 0
@@ -409,19 +427,32 @@ def apply_pressure():
 @ti.kernel
 def extrapolate_velocity_once():
     for x,y in ti.ndrange(grid_size_x+1,grid_size_y+1):
-        vel = grid.velocity[x,y]
-        if vel[0] > 0:
-            if x+1 < grid_size_x and grid.content[x+1,y] != FLUID:
-                grid.velocity[x+1,y][0] = vel[0]
-        if vel[0] < 0:
-            if x-1 > 0 and grid.content[x-1,y] != FLUID:
-                grid.velocity[x-1,y][0] = vel[0]
-        if vel[1] > 0:
-            if y+1 < grid_size_y and grid.content[x,y+1] != FLUID:
-                grid.velocity[x,y+1][1] = vel[1]
-        if vel[1] < 0:
-            if y-1 > 0 and grid.content[x,y-1] != FLUID:
-                grid.velocity[x,y-1][1] = vel[1]
+        if grid.velocity_weights[x,y][0] > 0:
+            grid.velocity_weights[x,y][0] = 1
+        if grid.velocity_weights[x,y][1] > 0:
+            grid.velocity_weights[x,y][1] = 1
+    for x,y in ti.ndrange(grid_size_x+1,grid_size_y+1):
+        vel = ti.Vector([0.0,0.0])
+        weights = ti.Vector([0.0,0.0])
+
+        for i,j in ti.ndrange(3,3):
+            if abs(i) + abs(j) == 1:
+                this_x = x+i-1
+                this_y = y+j-1
+                
+                if grid.velocity_weights[this_x,this_y][0] > 0:
+                    vel[0] += grid.velocity[this_x,this_y][0]
+                    weights[0] += 1
+                if grid.velocity_weights[this_x,this_y][1] > 0:
+                    vel[1] += grid.velocity[this_x,this_y][1]
+                    weights[1] += 1
+
+        if grid.velocity_weights[x,y][0] == 0 and weights[0] > 0:
+            grid.velocity_weights[x,y][0] = 1
+            grid.velocity[x,y][0] = vel[0] / weights[0]
+        if grid.velocity_weights[x,y][1] == 0 and weights[1] > 0:
+            grid.velocity_weights[x,y][1] = 1
+            grid.velocity[x,y][1] = vel[1] / weights[1]
                 
 
 def extrapolate_velocity():
@@ -443,7 +474,7 @@ def substep():
     apply_boundaries()
 
 
-    #extrapolate_velocity()
+    extrapolate_velocity()
     
     
 
