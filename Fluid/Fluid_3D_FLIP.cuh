@@ -10,8 +10,8 @@
 #include <unordered_map>
 #include <thrust/functional.h>
 #include <thrust/reduce.h>
-#include "FLuid_3D_common.cuh"
-#include "FLuid_3D_kernels.cuh"
+#include "Fluid_3D_common.cuh"
+#include "Fluid_3D_kernels.cuh"
 #include "../Rendering/Renderer3D/PointSprites.h"
 #include "../Rendering/Renderer3D/Skybox.h"
 #include "../Rendering/Renderer3D/Mesher.cuh"

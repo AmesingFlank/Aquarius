@@ -478,7 +478,7 @@ namespace Fluid_3D_FLIP {
 		HANDLE_ERROR(cudaMalloc(&cellStart, cellCount * sizeof(*cellStart)));
 		HANDLE_ERROR(cudaMalloc(&cellEnd, cellCount * sizeof(*cellEnd)));
 
-		numThreadsParticle = min(1024, particleCount);
+		numThreadsParticle = min(512, particleCount);
 		numBlocksParticle = divUp(particleCount, numThreadsParticle);
 
 
